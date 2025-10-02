@@ -100,13 +100,12 @@ local function setupAtTarget(targetPlayer)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local basePosition = targetRoot.Position
     local index = getAltIndex(player.Name)
-    local spacing = 1
+    local spacing = 6
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = basePosition + behindDirection * spacing * (index + 1)
     local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.InOut)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(offsetPosition, basePosition)})
     tween:Play()
-    task.wait(0.1)
 end
 
 local function enableNoclip(char)
@@ -219,8 +218,11 @@ end
 local function airlockAlt()
     if not humanoidRootPart then return end
     originalHideCFrame = humanoidRootPart.CFrame
-    local targetCFrame = originalHideCFrame + Vector3.new(0, 15, 0)
+    local currentY = humanoidRootPart.Position.Y
+    local targetY = currentY + 20
+    local targetCFrame = CFrame.new(humanoidRootPart.Position.X, targetY, humanoidRootPart.Position.Z) * humanoidRootPart.CFrame.Rotation
     enableNoclip(character)
+    humanoidRootPart.Anchored = false
     local tweenInfo = TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
     tween:Play()
@@ -304,45 +306,6 @@ local function stopFollowAllAlts()
     setupAtTarget(hostPlayer)
 end
 
-local function spreadAlts()
-    local alts = {}
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= hostPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            table.insert(alts, p)
-        end
-    end
-    if #alts == 0 then
-        print("No alts found")
-        return
-    end
-
-    table.sort(alts, function(a, b) return getAltIndex(a.Name) < getAltIndex(b.Name) end)
-    local totalAlts = #alts
-    local half = math.ceil(totalAlts / 2)
-    local spacing = 2
-    local hostPos = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position
-
-    if not hostPos then
-        print("Host position not found")
-        return
-    end
-
-    local behindDirection = -hostPlayer.Character.HumanoidRootPart.CFrame.LookVector
-    local sideDirection = hostPlayer.Character.HumanoidRootPart.CFrame.RightVector
-
-    for i, alt in ipairs(alts) do
-        local altChar = alt.Character
-        local altHumanoidRootPart = altChar.HumanoidRootPart
-        local row = (i <= half) and 1 or 2
-        local indexInRow = (i <= half) and (i - 1) or (i - half - 1)
-        local offset = behindDirection * spacing * (indexInRow + 1) + sideDirection * ((row - 1.5) * spacing * 2)
-        local targetPos = hostPos + offset
-        local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.InOut)
-        local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(targetPos, hostPos)})
-        tween:Play()
-    end
-end
-
 local function hideAlts()
     for _, alt in pairs(Players:GetPlayers()) do
         if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
@@ -393,6 +356,57 @@ local function rejoinGame()
             print("Failed to rejoin: PlaceId or JobId not available")
         end
     end)
+end
+
+local function syncAllAlts()
+    for _, alt in pairs(Players:GetPlayers()) do
+        if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
+            local altHumanoidRootPart = alt.Character.HumanoidRootPart
+            local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hostRoot then
+                local targetCFrame = hostRoot.CFrame
+                enableNoclip(alt.Character)
+                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+                local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+                tween:Play()
+                tween.Completed:Connect(function()
+                    disableNoclip(alt.Character)
+                    pcall(function()
+                        mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                    end)
+                end)
+            end
+        end
+    end
+end
+
+local function circleHost()
+    for _, alt in pairs(Players:GetPlayers()) do
+        if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
+            local altHumanoidRootPart = alt.Character.HumanoidRootPart
+            local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hostRoot then
+                local center = hostRoot.Position
+                local index = getAltIndex(alt.Name)
+                local totalAlts = #Players:GetPlayers() - 1
+                local radius = 12 -- A balanced radius for visibility and spacing
+                local angle = (2 * math.pi * index) / totalAlts
+                local x = center.X + radius * math.cos(angle)
+                local z = center.Z + radius * math.sin(angle)
+                local targetPosition = Vector3.new(x, center.Y, z)
+                enableNoclip(alt.Character)
+                local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+                local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(targetPosition, center)})
+                tween:Play()
+                tween.Completed:Connect(function()
+                    disableNoclip(alt.Character)
+                    pcall(function()
+                        mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                    end)
+                end)
+            end
+        end
+    end
 end
 
 Players.PlayerRemoving:Connect(function(leavingPlayer)
@@ -466,8 +480,6 @@ hostPlayer.Chatted:Connect(function(message)
             end
         elseif cmd == "unfollow" then
             stopFollowAllAlts()
-        elseif cmd == "spread" then
-            spreadAlts()
         elseif cmd == "hide" then
             hideAlts()
         elseif cmd == "unhide" then
@@ -478,6 +490,10 @@ hostPlayer.Chatted:Connect(function(message)
             kickAlt()
         elseif cmd == "rejoin" then
             rejoinGame()
+        elseif cmd == "sync host" then
+            syncAllAlts()
+        elseif cmd == "circle host" then
+            circleHost()
         end
     end)
 end)
