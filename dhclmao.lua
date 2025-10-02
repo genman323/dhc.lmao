@@ -339,6 +339,21 @@ local function stackAllAlts()
     end
 end
 
+local function unstackAllAlts()
+    for _, alt in pairs(Players:GetPlayers()) do
+        if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
+            local altHumanoidRootPart = alt.Character.HumanoidRootPart
+            enableNoclip(alt.Character)
+            altHumanoidRootPart.Anchored = false
+            setupAtTarget(hostPlayer) -- Repositions alt behind host
+            disableNoclip(alt.Character)
+            pcall(function()
+                mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+            end)
+        end
+    end
+end
+
 local function resetAlts()
     setupAtTarget(hostPlayer)
 end
@@ -425,6 +440,8 @@ hostPlayer.Chatted:Connect(function(message)
             stopFollowAllAlts()
         elseif cmd == "stack host" then
             stackAllAlts()
+        elseif cmd == "unstack" then
+            unstackAllAlts()
         elseif cmd == "reset" then
             resetAlts()
         elseif cmd == "kick" then
