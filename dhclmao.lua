@@ -91,7 +91,7 @@ local function getAltIndex(playerName)
     return index
 end
 
-local function setupAtTarget(targetPlayer)
+local function setupAtTarget(targetPlayer, altHumanoidRootPart)
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         print("Target not found or invalid")
         return
@@ -99,12 +99,12 @@ local function setupAtTarget(targetPlayer)
     
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local basePosition = targetRoot.Position
-    local index = getAltIndex(player.Name)
+    local index = getAltIndex(Players:GetPlayerFromCharacter(altHumanoidRootPart.Parent))
     local spacing = 1
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = basePosition + behindDirection * spacing * (index + 1)
     local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.InOut)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(offsetPosition, basePosition)})
+    local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(offsetPosition, basePosition)})
     tween:Play()
 end
 
@@ -340,15 +340,27 @@ local function stackAllAlts()
 end
 
 local function unstackAllAlts()
+    local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hostRoot then return end
+
     for _, alt in pairs(Players:GetPlayers()) do
         if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
             local altHumanoidRootPart = alt.Character.HumanoidRootPart
             enableNoclip(alt.Character)
             altHumanoidRootPart.Anchored = false
-            setupAtTarget(hostPlayer) -- Repositions alt behind host
-            disableNoclip(alt.Character)
-            pcall(function()
-                mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+            local basePosition = hostRoot.Position
+            local index = getAltIndex(alt.Name)
+            local spacing = 1
+            local behindDirection = -hostRoot.CFrame.LookVector
+            local targetPosition = basePosition + behindDirection * spacing * (index + 1)
+            local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+            local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(targetPosition, basePosition)})
+            tween:Play()
+            tween.Completed:Connect(function()
+                disableNoclip(alt.Character)
+                pcall(function()
+                    mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                end)
             end)
         end
     end
