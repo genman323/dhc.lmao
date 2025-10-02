@@ -14,25 +14,21 @@ local originalHideCFrame = nil
 local connections = {drop = nil, swarm = nil, spin = nil, follow = {}, fps = nil}
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
-
 -- Cache player list once per function call
 local function getPlayers()
     return Players:GetPlayers()
 end
-
 local function disableAllSeats()
     for _, seat in pairs(game.Workspace:GetDescendants()) do
         if seat:IsA("Seat") then seat.Disabled = true end
     end
 end
-
 local function createOverlay()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Parent = player:WaitForChild("PlayerGui")
     screenGui.Name = "DhcOverlay"
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
-
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, 0, 1, 0)
     frame.Position = UDim2.new(0, 0, 0, 0)
@@ -40,7 +36,6 @@ local function createOverlay()
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
-
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(0, 200, 0, 50)
     textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
@@ -51,7 +46,6 @@ local function createOverlay()
     textLabel.Font = Enum.Font.SourceSansBold
     textLabel.Parent = frame
 end
-
 local function limitFPS()
     local targetDeltaTime = 1 / 5
     local lastTime = tick()
@@ -62,7 +56,6 @@ local function limitFPS()
         lastTime = currentTime
     end)
 end
-
 local function getAltIndex(playerName, players)
     local alts = {}
     for _, p in pairs(players) do if p ~= hostPlayer then table.insert(alts, p) end end
@@ -70,7 +63,6 @@ local function getAltIndex(playerName, players)
     for i, p in ipairs(alts) do if p.Name == playerName then return i - 1 end end
     return 0
 end
-
 local function setupAtTarget(targetPlayer, altHumanoidRootPart)
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         warn("Setup failed: Invalid target player or HumanoidRootPart")
@@ -95,13 +87,11 @@ local function setupAtTarget(targetPlayer, altHumanoidRootPart)
         end)
     end)
 end
-
 local function toggleNoclip(char, enable)
     for _, part in pairs(char:GetChildren()) do
         if part:IsA("BasePart") then part.CanCollide = not enable end
     end
 end
-
 local function dropAllCash()
     isDropping = true
     if connections.drop then connections.drop:Disconnect() end
@@ -120,7 +110,6 @@ local function dropAllCash()
         end
     end)
 end
-
 local function stopDrop()
     isDropping = false
     if connections.drop then connections.drop:Disconnect(); connections.drop = nil end
@@ -130,7 +119,6 @@ local function stopDrop()
         warn("Failed to stop block: " .. tostring(err))
     end)
 end
-
 local function circleFormation()
     isCircled = true
     -- Disable conflicting states
@@ -182,12 +170,11 @@ local function circleFormation()
                 end)
                 if tweenConnection then
                     tweenConnection:Disconnect()
-                end)
-            end
+                end
+            end)
         end
     end
 end
-
 local function swarmPlayer(start, target)
     isSwarming = start
     if start then
@@ -232,7 +219,6 @@ local function swarmPlayer(start, target)
         setupAtTarget(hostPlayer, humanoidRootPart)
     end
 end
-
 local function spin(start)
     isSpinning = start
     if start then
@@ -248,7 +234,6 @@ local function spin(start)
         if connections.spin then connections.spin:Disconnect(); connections.spin = nil end
     end
 end
-
 local function airlockAlt()
     if not humanoidRootPart then return end
     originalHideCFrame = humanoidRootPart.CFrame
@@ -265,7 +250,6 @@ local function airlockAlt()
         warn("Failed to update position in airlockAlt: " .. tostring(err))
     end)
 end
-
 local function unairlockAlt()
     if isAirlocked and originalHideCFrame then
         toggleNoclip(character, true)
@@ -280,7 +264,6 @@ local function unairlockAlt()
         end)
     end
 end
-
 local function followAllAlts(targetPlayer)
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         warn("Follow failed: Invalid target player or HumanoidRootPart")
@@ -313,14 +296,12 @@ local function followAllAlts(targetPlayer)
         end
     end
 end
-
 local function stopFollowAllAlts()
     for _, conn in pairs(connections.follow) do if conn then conn:Disconnect() end end
     connections.follow = {}
     toggleNoclip(character, false)
     setupAtTarget(hostPlayer, humanoidRootPart)
 end
-
 local function bringAllAlts()
     local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not hostRoot then
@@ -340,7 +321,6 @@ local function bringAllAlts()
         end
     end
 end
-
 local function stackAllAlts()
     isStacked = true
     -- Disable conflicting states
@@ -405,7 +385,6 @@ local function stackAllAlts()
         end
     end
 end
-
 local function unstackAllAlts()
     isStacked = false
     local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -439,7 +418,6 @@ local function unstackAllAlts()
         end
     end
 end
-
 local function resetAlts()
     isStacked = false
     isCircled = false
@@ -449,7 +427,6 @@ local function resetAlts()
     stopFollowAllAlts()
     setupAtTarget(hostPlayer, humanoidRootPart)
 end
-
 local function kickAlt()
     pcall(function()
         player:Kick("Kicked by host.")
@@ -457,7 +434,6 @@ local function kickAlt()
         warn("Failed to kick alt: " .. tostring(err))
     end)
 end
-
 local function rejoinGame()
     pcall(function()
         local placeId, jobId = game.PlaceId, game.JobId
@@ -470,21 +446,18 @@ local function rejoinGame()
         warn("Failed to rejoin game: " .. tostring(err))
     end)
 end
-
 Players.PlayerRemoving:Connect(function(leavingPlayer)
     if leavingPlayer == hostPlayer then kickAlt() end
 end)
-
 createOverlay()
 limitFPS()
 disableAllSeats()
-
 hostPlayer.Chatted:Connect(function(message)
     pcall(function()
         local lowerMsg = string.lower(message)
         if string.sub(lowerMsg, 1, 1) ~= "?" then return end
         local cmd = string.sub(lowerMsg, 2)
-        
+       
         if cmd == "setup host" then
             setupAtTarget(hostPlayer, humanoidRootPart)
         elseif cmd:find("^setup ") then
@@ -586,18 +559,16 @@ hostPlayer.Chatted:Connect(function(message)
         warn("Error processing command: " .. tostring(err))
     end)
 end)
-
 player.CharacterAdded:Connect(function(newChar)
     character = newChar
-    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    humanoid = character:WaitForChild("Humanoid")
+    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+    humanoid = newChar:WaitForChild("Humanoid")
     if isSwarming then swarmPlayer(true, swarmTarget) end
     if isSpinning then spin(true) end
     if isAirlocked then airlockAlt() end
     if isStacked then stackAllAlts() end
     if isCircled then circleFormation() end
 end)
-
 -- Cleanup connections when player leaves
 player.AncestryChanged:Connect(function()
     if not player:IsDescendantOf(game) then
@@ -612,5 +583,4 @@ player.AncestryChanged:Connect(function()
         end
     end
 end)
-
 print("dhc.lmao Alt Control Script loaded for " .. player.Name)
