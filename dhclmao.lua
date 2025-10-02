@@ -16,8 +16,23 @@ local connections = {drop = nil, swarm = nil, spin = nil, follow = nil, fps = ni
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
 
+-- Anti-cheat bypass hook (blocks detection fires)
+local detectionFlags = {
+    "CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK",
+    "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"
+}
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+    if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
+        return wait(9e9)  -- Block detection
+    end
+    return oldNamecall(self, ...)
+end)
+
 if not mainEvent then
-    warn("MainEvent not found. Some features like dropping cash and position updates may not work.")
+    warn("MainEvent not found. Some features like dropping cash may not work.")
 end
 
 -- Wait for host with timeout
@@ -107,7 +122,7 @@ local function getAltIndex(playerName, players)
     return 0
 end
 
--- Reusable tween function
+-- Reusable tween function (removed UpdatePosition fires)
 local function tweenToPosition(rootPart, targetCFrame, duration, easingStyle, delay)
     if not rootPart then return end
     toggleNoclip(rootPart.Parent, true)
@@ -116,28 +131,8 @@ local function tweenToPosition(rootPart, targetCFrame, duration, easingStyle, de
     local tween = TweenService:Create(rootPart, tweenInfo, {CFrame = targetCFrame})
     if delay then task.wait(delay) end
     tween:Play()
-    local tweenConnection = RunService.Heartbeat:Connect(function()
-        if tween.PlaybackState == Enum.PlaybackState.Playing then
-            if mainEvent then
-                xpcall(function()
-                    mainEvent:FireServer("UpdatePosition", rootPart.Position)
-                end, function(err)
-                    warn("Failed to update position: " .. tostring(err))
-                end)
-            end
-        end
-    end)
-    tween.Completed:Connect(function()
-        toggleNoclip(rootPart.Parent, false)
-        if mainEvent then
-            xpcall(function()
-                mainEvent:FireServer("UpdatePosition", rootPart.Position)
-            end, function(err)
-                warn("Failed to update position: " .. tostring(err))
-            end)
-        end
-        tweenConnection:Disconnect()
-    end)
+    tween.Completed:Wait()
+    toggleNoclip(rootPart.Parent, false)
 end
 
 -- Setup alt behind target player
@@ -152,7 +147,7 @@ local function setupAtTarget(targetPlayer, altHumanoidRootPart)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(Players:GetPlayerFromCharacter(altHumanoidRootPart.Parent).Name, players)
-    local spacing = 1  -- Changed to 1 stud spacing for perfect single-file line
+    local spacing = 1
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * spacing * (index + 1)
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
@@ -240,32 +235,8 @@ local function circleFormation()
     local targetCFrame = CFrame.lookAt(position, basePosition)
     humanoidRootPart.Anchored = false
     task.wait(index * 0.1)
-    local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-    tween:Play()
-    local tweenConnection = RunService.Heartbeat:Connect(function()
-        if tween.PlaybackState == Enum.PlaybackState.Playing then
-            if mainEvent then
-                xpcall(function()
-                    mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
-                end, function(err)
-                    warn("Failed to update position in circleFormation: " .. tostring(err))
-                end)
-            end
-        end
-    end)
-    tween.Completed:Connect(function()
-        humanoidRootPart.Anchored = true
-        toggleNoclip(character, false)
-        if mainEvent then
-            xpcall(function()
-                mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
-            end, function(err)
-                warn("Failed to update position in circleFormation: " .. tostring(err))
-            end)
-        end
-        tweenConnection:Disconnect()
-    end)
+    tweenToPosition(humanoidRootPart, targetCFrame, 1.0, Enum.EasingStyle.Quad)
+    humanoidRootPart.Anchored = true
 end
 
 -- Swarm around target player
@@ -282,23 +253,16 @@ local function swarmPlayer(start, target)
         if connections.swarm then connections.swarm:Disconnect() end
         toggleNoclip(character, true)
         connections.swarm = RunService.RenderStepped:Connect(function(deltaTime)
-            if isSwarming then
-                local targetChar = swarmTarget.Character
-                if not targetChar or not targetChar:FindFirstChild("HumanoidRootPart") then
-                    warn("Swarm target lost, stopping swarm")
-                    swarmPlayer(false)
-                    return
-                end
-                local center = targetChar.HumanoidRootPart.Position
-                local radius = 10
-                local players = getPlayers()
-                local index = getAltIndex(player.Name, players)
-                local angle = (index * math.pi / 2) + (os.clock() * 2)
-                local x, z = math.cos(angle) * radius, math.sin(angle) * radius
-                local position = center + Vector3.new(x, 0, z)
-                local lookAtCFrame = CFrame.lookAt(position, center)
-                tweenToPosition(humanoidRootPart, lookAtCFrame, 0.2, Enum.EasingStyle.Sine)  -- Fixed invalid Smooth to Sine
-            end
+            if not isSwarming or not humanoidRootPart or not character or not swarmTarget or not swarmTarget.Character or not swarmTarget.Character:FindFirstChild("HumanoidRootPart") then return end
+            local center = swarmTarget.Character.HumanoidRootPart.Position
+            local radius = 10
+            local players = getPlayers()
+            local index = getAltIndex(player.Name, players)
+            local angle = (index * math.pi / 2) + (os.clock() * 2)
+            local x, z = math.cos(angle) * radius, math.sin(angle) * radius
+            local position = center + Vector3.new(x, 0, z)
+            local lookAtCFrame = CFrame.lookAt(position, center)
+            tweenToPosition(humanoidRootPart, lookAtCFrame, 0.2, Enum.EasingStyle.Sine)
         end)
     else
         isSwarming = false
@@ -315,10 +279,9 @@ local function spin(start)
     if start then
         if connections.spin then connections.spin:Disconnect() end
         connections.spin = RunService.RenderStepped:Connect(function(deltaTime)
-            if isSpinning then
-                local currentCFrame = humanoidRootPart.CFrame
-                tweenToPosition(humanoidRootPart, currentCFrame * CFrame.Angles(0, math.rad(360 * deltaTime * 2), 0), 0.15, Enum.EasingStyle.Cubic)
-            end
+            if not isSpinning or not humanoidRootPart or not character then return end
+            local currentCFrame = humanoidRootPart.CFrame
+            tweenToPosition(humanoidRootPart, currentCFrame * CFrame.Angles(0, math.rad(360 * deltaTime * 2), 0), 0.15, Enum.EasingStyle.Cubic)
         end)
     else
         if connections.spin then connections.spin:Disconnect(); connections.spin = nil end
@@ -331,35 +294,17 @@ local function airlockAlt()
     originalHideCFrame = humanoidRootPart.CFrame
     local referenceHeight = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or humanoidRootPart.Position.Y
     local targetCFrame = CFrame.new(humanoidRootPart.Position.X, referenceHeight + 15, humanoidRootPart.Position.Z) * humanoidRootPart.CFrame.Rotation
-    toggleNoclip(character, true)
+    tweenToPosition(humanoidRootPart, targetCFrame, 0.5, Enum.EasingStyle.Quad)
     humanoidRootPart.Anchored = true
-    humanoidRootPart.CFrame = targetCFrame
     isAirlocked = true
-    toggleNoclip(character, false)
-    if mainEvent then
-        xpcall(function()
-            mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
-        end, function(err)
-            warn("Failed to update position in airlockAlt: " .. tostring(err))
-        end)
-    end
 end
 
 -- Unairlock alt
 local function unairlockAlt()
     if isAirlocked and originalHideCFrame then
-        toggleNoclip(character, true)
         humanoidRootPart.Anchored = false
         isAirlocked = false
-        humanoidRootPart.CFrame = originalHideCFrame
-        toggleNoclip(character, false)
-        if mainEvent then
-            xpcall(function()
-                mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
-            end, function(err)
-                warn("Failed to update position in unairlockAlt: " .. tostring(err))
-            end)
-        end
+        tweenToPosition(humanoidRootPart, originalHideCFrame, 0.5, Enum.EasingStyle.Quad)
     end
 end
 
@@ -377,14 +322,15 @@ local function followAllAlts(targetPlayer)
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     toggleNoclip(character, true)
-    task.wait(index * 0.1)  -- Stagger start to prevent clumping
+    task.wait(index * 0.1)
     connections.follow = RunService.RenderStepped:Connect(function()
+        if not targetRoot or not humanoidRootPart or not character then return end
         local targetPos = targetRoot.Position
         local offsetDistance = 2 + (index * 0.5)
         local behindOffset = -targetRoot.CFrame.LookVector * offsetDistance
         local myPos = targetPos + behindOffset
-        local lookPos = targetPos  -- Fixed to look at target, not always host
-        tweenToPosition(humanoidRootPart, CFrame.lookAt(myPos, lookPos), 0.15, Enum.EasingStyle.Cubic)  -- Removed per-frame delay
+        local lookPos = targetPos
+        tweenToPosition(humanoidRootPart, CFrame.lookAt(myPos, lookPos), 0.15, Enum.EasingStyle.Cubic)
     end)
 end
 
@@ -448,32 +394,8 @@ local function stackAllAlts()
     local targetCFrame = CFrame.new(targetPosition) * hostRoot.CFrame.Rotation
     humanoidRootPart.Anchored = false
     task.wait(index * 0.1)
-    local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-    tween:Play()
-    local tweenConnection = RunService.Heartbeat:Connect(function()
-        if tween.PlaybackState == Enum.PlaybackState.Playing then
-            if mainEvent then
-                xpcall(function()
-                    mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
-                end, function(err)
-                    warn("Failed to update position in stackAllAlts: " .. tostring(err))
-                end)
-            end
-        end
-    end)
-    tween.Completed:Connect(function()
-        humanoidRootPart.Anchored = true
-        toggleNoclip(character, false)
-        if mainEvent then
-            xpcall(function()
-                mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
-            end, function(err)
-                warn("Failed to update position in stackAllAlts: " .. tostring(err))
-            end)
-        end
-        tweenConnection:Disconnect()
-    end)
+    tweenToPosition(humanoidRootPart, targetCFrame, 1.0, Enum.EasingStyle.Quad)
+    humanoidRootPart.Anchored = true
 end
 
 -- Unstack all alts (per-alt version)
