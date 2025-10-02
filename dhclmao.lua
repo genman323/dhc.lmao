@@ -123,19 +123,6 @@ local function getAltIndex(playerName, players)
     return 0
 end
 
--- Reusable tween function
-local function tweenToPosition(rootPart, targetCFrame, duration, easingStyle, delay)
-    if not rootPart or not character then return end
-    toggleNoclip(character, true)
-    rootPart.Anchored = false
-    local tweenInfo = TweenInfo.new(duration, easingStyle or Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-    local tween = TweenService:Create(rootPart, tweenInfo, {CFrame = targetCFrame})
-    if delay then task.wait(delay) end
-    tween:Play()
-    tween.Completed:Wait()
-    toggleNoclip(character, false)
-end
-
 -- Toggle noclip for character
 local function toggleNoclip(char, enable)
     if not char then return end
@@ -163,10 +150,11 @@ end
 -- Setup line behind target
 local function setup(targetPlayer)
     disableCurrentMode()
-    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        warn("Setup failed: Invalid target")
+    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+        warn("Setup failed: Invalid target or local character")
         return
     end
+    toggleNoclip(character, true)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
@@ -174,7 +162,8 @@ local function setup(targetPlayer)
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * spacing * (index + 1)
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
-    tweenToPosition(humanoidRootPart, targetCFrame, 0.8, Enum.EasingStyle.Cubic, index * 0.1)
+    humanoidRootPart.CFrame = targetCFrame
+    toggleNoclip(character, false)
 end
 
 -- Swarm around target
@@ -182,24 +171,27 @@ local function swarm(targetPlayer)
     disableCurrentMode()
     currentMode = "swarm"
     currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-        warn("Swarm failed: Invalid target")
+    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+        warn("Swarm failed: Invalid target or local character")
         currentMode = nil
         currentTarget = nil
         return
     end
     toggleNoclip(character, true)
     connections.swarm = RunService.RenderStepped:Connect(function()
-        if not currentMode == "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then return end
+        if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then return end
         local center = currentTarget.Character.HumanoidRootPart.Position
+        local hash = 0
+        for i = 1, #player.Name do
+            hash = hash + string.byte(player.Name, i)
+        end
+        local angle = (hash % 360) / 180 * math.pi + os.clock() * 2 -- Decent speed
         local radius = 10
-        local players = getPlayers()
-        local index = getAltIndex(player.Name, players)
-        local angle = (index * math.pi / 2) + (os.clock() * 4)  -- Faster speed
-        local x, z = math.cos(angle) * radius, math.sin(angle) * radius
+        local x = math.cos(angle) * radius
+        local z = math.sin(angle) * radius
         local position = center + Vector3.new(x, 0, z)
-        local lookAtCFrame = CFrame.lookAt(position, center)
-        tweenToPosition(humanoidRootPart, lookAtCFrame, 0.1, Enum.EasingStyle.Sine)
+        humanoidRootPart.CFrame = CFrame.lookAt(position, center)
+        task.wait(0.05)
     end)
 end
 
@@ -208,25 +200,25 @@ local function follow(targetPlayer)
     disableCurrentMode()
     currentMode = "follow"
     currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-        warn("Follow failed: Invalid target")
+    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+        warn("Follow failed: Invalid target or local character")
         currentMode = nil
         currentTarget = nil
         return
     end
     toggleNoclip(character, true)
-    local players = getPlayers()
-    local index = getAltIndex(player.Name, players)
-    task.wait(index * 0.1)
     connections.follow = RunService.RenderStepped:Connect(function()
-        if not currentMode == "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then return end
+        if currentMode ~= "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then return end
         local targetRoot = currentTarget.Character.HumanoidRootPart
         local targetPos = targetRoot.Position
-        local offsetDistance = 1 + (index * 1)  -- 1 stud spacing
+        local players = getPlayers()
+        local index = getAltIndex(player.Name, players)
+        local offsetDistance = 1 + (index * 1)
         local behindOffset = -targetRoot.CFrame.LookVector * offsetDistance
         local myPos = targetPos + behindOffset
         local lookPos = targetPos
-        tweenToPosition(humanoidRootPart, CFrame.lookAt(myPos, lookPos), 0.15, Enum.EasingStyle.Cubic)
+        humanoidRootPart.CFrame = CFrame.lookAt(myPos, lookPos)
+        task.wait(0.05)
     end)
 end
 
@@ -235,23 +227,24 @@ local function stack(targetPlayer)
     disableCurrentMode()
     currentMode = "stack"
     currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-        warn("Stack failed: Invalid target")
+    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+        warn("Stack failed: Invalid target or local character")
         currentMode = nil
         currentTarget = nil
         return
     end
+    toggleNoclip(character, true)
     local targetRoot = currentTarget.Character.HumanoidRootPart
     local basePosition = targetRoot.Position
-    local heightOffset = 5  -- Perfect spacing for characters
+    local heightOffset = 5
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local targetPosition = Vector3.new(basePosition.X, basePosition.Y + (index + 1) * heightOffset, basePosition.Z)
     local targetCFrame = CFrame.new(targetPosition) * targetRoot.CFrame.Rotation
     humanoidRootPart.Anchored = false
-    task.wait(index * 0.1)
-    tweenToPosition(humanoidRootPart, targetCFrame, 1.0, Enum.EasingStyle.Quad)
+    humanoidRootPart.CFrame = targetCFrame
     humanoidRootPart.Anchored = true
+    toggleNoclip(character, false)
 end
 
 -- Airlock alts
@@ -261,17 +254,23 @@ local function airlock()
     originalCFrame = humanoidRootPart.CFrame
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local targetHeight = originalCFrame.Position.Y + 10  -- Exactly 10 studs up
+    local commonY = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
+    local targetHeight = commonY + 10
     local targetCFrame = CFrame.new(originalCFrame.Position.X, targetHeight, originalCFrame.Position.Z) * originalCFrame.Rotation
-    tweenToPosition(humanoidRootPart, targetCFrame, 0.5, Enum.EasingStyle.Quad, index * 0.1)
+    toggleNoclip(character, true)
+    humanoidRootPart.Anchored = false
+    humanoidRootPart.CFrame = targetCFrame
     humanoidRootPart.Anchored = true
+    toggleNoclip(character, false)
 end
 
 -- Unairlock alts
 local function unairlock()
     if not humanoidRootPart or not originalCFrame then return end
+    toggleNoclip(character, true)
     humanoidRootPart.Anchored = false
-    tweenToPosition(humanoidRootPart, originalCFrame, 0.5, Enum.EasingStyle.Quad)
+    humanoidRootPart.CFrame = originalCFrame
+    toggleNoclip(character, false)
     originalCFrame = nil
 end
 
