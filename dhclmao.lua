@@ -100,7 +100,7 @@ local function setupAtTarget(targetPlayer)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local basePosition = targetRoot.Position
     local index = getAltIndex(player.Name)
-    local spacing = 6
+    local spacing = 1
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = basePosition + behindDirection * spacing * (index + 1)
     local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.InOut)
@@ -133,6 +133,7 @@ local function dropAllCash()
             if currentTime - lastDropTime >= dropCooldown then
                 pcall(function()
                     mainEvent:FireServer("DropMoney", 15000)
+                    mainEvent:FireServer("Block", true)
                 end)
                 lastDropTime = currentTime
             end
@@ -146,6 +147,9 @@ local function stopDrop()
         dropConnection:Disconnect()
         dropConnection = nil
     end
+    pcall(function()
+        mainEvent:FireServer("Block", false)
+    end)
 end
 
 local function swarmPlayer(start, target)
@@ -208,49 +212,30 @@ local function spin(start)
     end
 end
 
-local function toggleBlock(start)
-    pcall(function()
-        mainEvent:FireServer("Block", start)
-    end)
-    task.wait(0.1)
-end
-
 local function airlockAlt()
     if not humanoidRootPart then return end
     originalHideCFrame = humanoidRootPart.CFrame
-    local currentY = humanoidRootPart.Position.Y
-    local targetY = currentY + 20
-    local targetCFrame = CFrame.new(humanoidRootPart.Position.X, targetY, humanoidRootPart.Position.Z) * humanoidRootPart.CFrame.Rotation
+    local referenceHeight = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y or humanoidRootPart.Position.Y
+    local targetCFrame = CFrame.new(humanoidRootPart.Position.X, referenceHeight + 7, humanoidRootPart.Position.Z) * humanoidRootPart.CFrame.Rotation
     enableNoclip(character)
-    humanoidRootPart.Anchored = false
-    local tweenInfo = TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-    tween:Play()
-    
-    tween.Completed:Connect(function()
-        humanoidRootPart.Anchored = true
-        isAirlocked = true
-        disableNoclip(character)
-        pcall(function()
-            mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
-        end)
+    humanoidRootPart.Anchored = true
+    humanoidRootPart.CFrame = targetCFrame
+    isAirlocked = true
+    disableNoclip(character)
+    pcall(function()
+        mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
     end)
 end
 
 local function unairlockAlt()
     if isAirlocked and originalHideCFrame then
+        enableNoclip(character)
         humanoidRootPart.Anchored = false
         isAirlocked = false
-        enableNoclip(character)
-        local tweenInfo = TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-        local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = originalHideCFrame})
-        tween:Play()
-        
-        tween.Completed:Connect(function()
-            disableNoclip(character)
-            pcall(function()
-                mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
-            end)
+        humanoidRootPart.CFrame = originalHideCFrame
+        disableNoclip(character)
+        pcall(function()
+            mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
         end)
     end
 end
@@ -306,32 +291,50 @@ local function stopFollowAllAlts()
     setupAtTarget(hostPlayer)
 end
 
-local function hideAlts()
+local function bringAllAlts()
     for _, alt in pairs(Players:GetPlayers()) do
         if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
             local altHumanoidRootPart = alt.Character.HumanoidRootPart
-            local currentPos = altHumanoidRootPart.Position
-            local hidePos = currentPos - Vector3.new(0, 10, 0)
-            local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-            local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.new(hidePos)})
-            tween:Play()
-            tween.Completed:Connect(function()
-                altHumanoidRootPart.Anchored = true
-            end)
+            local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hostRoot then
+                local targetCFrame = hostRoot.CFrame + Vector3.new(math.random(-5,5), 0, math.random(-5,5))
+                enableNoclip(alt.Character)
+                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+                local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+                tween:Play()
+                tween.Completed:Connect(function()
+                    disableNoclip(alt.Character)
+                    pcall(function()
+                        mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                    end)
+                end)
+            end
         end
     end
 end
 
-local function unhideAlts()
+local function stackAllAlts()
+    local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hostRoot then return end
+
+    local basePosition = hostRoot.Position
+    local heightOffset = 2 -- 2 studs between each alt
     for _, alt in pairs(Players:GetPlayers()) do
         if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
             local altHumanoidRootPart = alt.Character.HumanoidRootPart
-            local currentPos = altHumanoidRootPart.Position
-            local surfacePos = currentPos + Vector3.new(0, 10, 0)
-            altHumanoidRootPart.Anchored = false
-            local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-            local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.new(surfacePos)})
+            local index = getAltIndex(alt.Name)
+            local targetPosition = Vector3.new(basePosition.X, basePosition.Y + (index * heightOffset), basePosition.Z)
+            enableNoclip(alt.Character)
+            local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+            local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
             tween:Play()
+            tween.Completed:Connect(function()
+                altHumanoidRootPart.Anchored = true
+                disableNoclip(alt.Character)
+                pcall(function()
+                    mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                end)
+            end)
         end
     end
 end
@@ -356,57 +359,6 @@ local function rejoinGame()
             print("Failed to rejoin: PlaceId or JobId not available")
         end
     end)
-end
-
-local function syncAllAlts()
-    for _, alt in pairs(Players:GetPlayers()) do
-        if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
-            local altHumanoidRootPart = alt.Character.HumanoidRootPart
-            local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if hostRoot then
-                local targetCFrame = hostRoot.CFrame
-                enableNoclip(alt.Character)
-                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-                local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-                tween:Play()
-                tween.Completed:Connect(function()
-                    disableNoclip(alt.Character)
-                    pcall(function()
-                        mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
-                    end)
-                end)
-            end
-        end
-    end
-end
-
-local function circleHost()
-    for _, alt in pairs(Players:GetPlayers()) do
-        if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
-            local altHumanoidRootPart = alt.Character.HumanoidRootPart
-            local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if hostRoot then
-                local center = hostRoot.Position
-                local index = getAltIndex(alt.Name)
-                local totalAlts = #Players:GetPlayers() - 1
-                local radius = 12 -- A balanced radius for visibility and spacing
-                local angle = (2 * math.pi * index) / totalAlts
-                local x = center.X + radius * math.cos(angle)
-                local z = center.Z + radius * math.sin(angle)
-                local targetPosition = Vector3.new(x, center.Y, z)
-                enableNoclip(alt.Character)
-                local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-                local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(targetPosition, center)})
-                tween:Play()
-                tween.Completed:Connect(function()
-                    disableNoclip(alt.Character)
-                    pcall(function()
-                        mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
-                    end)
-                end)
-            end
-        end
-    end
 end
 
 Players.PlayerRemoving:Connect(function(leavingPlayer)
@@ -455,21 +407,12 @@ hostPlayer.Chatted:Connect(function(message)
             spin(true)
         elseif cmd == "unspin" then
             spin(false)
-        elseif cmd == "block" then
-            toggleBlock(true)
-        elseif cmd == "unblock" then
-            toggleBlock(false)
         elseif cmd == "airlock" then
             airlockAlt()
         elseif cmd == "unairlock" then
             unairlockAlt()
         elseif cmd == "bring" then
-            if hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local hostCFrame = hostPlayer.Character.HumanoidRootPart.CFrame + Vector3.new(math.random(-5,5), 0, math.random(-5,5))
-                local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Cubic, Enum.EasingDirection.InOut)
-                local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = hostCFrame})
-                tween:Play()
-            end
+            bringAllAlts()
         elseif cmd == "follow host" then
             followAllAlts(hostPlayer)
         elseif cmd:find("^follow ") then
@@ -480,20 +423,14 @@ hostPlayer.Chatted:Connect(function(message)
             end
         elseif cmd == "unfollow" then
             stopFollowAllAlts()
-        elseif cmd == "hide" then
-            hideAlts()
-        elseif cmd == "unhide" then
-            unhideAlts()
+        elseif cmd == "stack host" then
+            stackAllAlts()
         elseif cmd == "reset" then
             resetAlts()
         elseif cmd == "kick" then
             kickAlt()
         elseif cmd == "rejoin" then
             rejoinGame()
-        elseif cmd == "sync host" then
-            syncAllAlts()
-        elseif cmd == "circle host" then
-            circleHost()
         end
     end)
 end)
