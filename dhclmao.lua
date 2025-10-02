@@ -119,7 +119,7 @@ local function getAltIndex(playerName, players)
     local alts = {}
     for _, p in pairs(players) do if p ~= hostPlayer then table.insert(alts, p) end end
     table.sort(alts, function(a, b) return a.Name < b.Name end)
-    for i, p in ipairs(alts) do if p.Name == playerName then return i - 1 end end
+    for i, p in ipairs(alts) do if p.Name == playerName then return i end end
     return 0
 end
 
@@ -160,7 +160,7 @@ local function setup(targetPlayer)
     local index = getAltIndex(player.Name, players)
     local spacing = 1
     local behindDirection = -targetRoot.CFrame.LookVector
-    local offsetPosition = targetRoot.Position + behindDirection * spacing * (index + 1)
+    local offsetPosition = targetRoot.Position + behindDirection * (0.5 + index * spacing)  -- Start at 0.5 studs, 1 stud per alt
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
     humanoidRootPart.CFrame = targetCFrame
     toggleNoclip(character, false)
@@ -239,7 +239,7 @@ local function stack(targetPlayer)
     local heightOffset = 5
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local targetPosition = Vector3.new(basePosition.X, basePosition.Y + (index + 1) * heightOffset, basePosition.Z)
+    local targetPosition = Vector3.new(basePosition.X, basePosition.Y + targetRoot.Size.Y + (index * heightOffset), basePosition.Z)
     local targetCFrame = CFrame.new(targetPosition) * targetRoot.CFrame.Rotation
     humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = targetCFrame
@@ -272,6 +272,27 @@ local function unairlock()
     humanoidRootPart.CFrame = originalCFrame
     toggleNoclip(character, false)
     originalCFrame = nil
+end
+
+-- Bring alts to host
+local function bring()
+    disableCurrentMode()
+    if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+        warn("Bring failed: Invalid host or local character")
+        return
+    end
+    toggleNoclip(character, true)
+    local hostRoot = hostPlayer.Character.HumanoidRootPart
+    local players = getPlayers()
+    local index = getAltIndex(player.Name, players)
+    local angle = index * (2 * math.pi / #players)
+    local radius = 2
+    local x = math.cos(angle) * radius
+    local z = math.sin(angle) * radius
+    local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
+    local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
+    humanoidRootPart.CFrame = targetCFrame
+    toggleNoclip(character, false)
 end
 
 -- Drop cash repeatedly
@@ -392,6 +413,8 @@ hostPlayer.Chatted:Connect(function(message)
         airlock()
     elseif cmd == "unairlock" then
         unairlock()
+    elseif cmd == "bring" then
+        bring()
     elseif cmd == "drop" then
         dropAllCash()
     elseif cmd == "stop" then
