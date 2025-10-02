@@ -1,4 +1,3 @@
-```lua
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -615,4 +614,3 @@ player.AncestryChanged:Connect(function()
 end)
 
 print("dhc.lmao Alt Control Script loaded for " .. player.Name)
-```
