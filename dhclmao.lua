@@ -1,3 +1,4 @@
+```lua
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -9,9 +10,9 @@ local hostPlayer = Players:WaitForChild(hostName)
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
-local isDropping, isSwarming, isSpinning, isAirlocked = false, false, false, false
+local isDropping, isSwarming, isSpinning, isAirlocked, isStacked, isCircled = false, false, false, false, false, false
 local originalHideCFrame = nil
-local connections = {drop = nil, swarm = nil, spin = nil, follow = {}}
+local connections = {drop = nil, swarm = nil, spin = nil, follow = {}, fps = nil}
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
 
@@ -55,7 +56,7 @@ end
 local function limitFPS()
     local targetDeltaTime = 1 / 5
     local lastTime = tick()
-    RunService.RenderStepped:Connect(function(deltaTime)
+    connections.fps = RunService.RenderStepped:Connect(function(deltaTime)
         local currentTime = tick()
         local elapsed = currentTime - lastTime
         if elapsed < targetDeltaTime then task.wait(targetDeltaTime - elapsed) end
@@ -72,20 +73,27 @@ local function getAltIndex(playerName, players)
 end
 
 local function setupAtTarget(targetPlayer, altHumanoidRootPart)
-    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        warn("Setup failed: Invalid target player or HumanoidRootPart")
+        return
+    end
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(Players:GetPlayerFromCharacter(altHumanoidRootPart.Parent).Name, players)
-    local spacing = 3 -- Increased spacing to prevent overlap and clumping
+    local spacing = 3
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * spacing * (index + 1)
-    toggleNoclip(altHumanoidRootPart.Parent, true) -- Enable noclip to avoid collisions
+    toggleNoclip(altHumanoidRootPart.Parent, true)
     local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Cubic)
     local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)})
     tween:Play()
     tween.Completed:Connect(function()
-        toggleNoclip(altHumanoidRootPart.Parent, false) -- Disable noclip after positioning
-        pcall(function() mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position) end)
+        toggleNoclip(altHumanoidRootPart.Parent, false)
+        pcall(function()
+            mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+        end, function(err)
+            warn("Failed to update position in setupAtTarget: " .. tostring(err))
+        end)
     end)
 end
 
@@ -102,7 +110,12 @@ local function dropAllCash()
         if isDropping then
             local currentTime = tick()
             if currentTime - lastDropTime >= dropCooldown then
-                pcall(function() mainEvent:FireServer("DropMoney", 15000); mainEvent:FireServer("Block", true) end)
+                pcall(function()
+                    mainEvent:FireServer("DropMoney", 15000)
+                    mainEvent:FireServer("Block", true)
+                end, function(err)
+                    warn("Failed to drop money or block: " .. tostring(err))
+                end)
                 lastDropTime = currentTime
             end
         end
@@ -112,7 +125,68 @@ end
 local function stopDrop()
     isDropping = false
     if connections.drop then connections.drop:Disconnect(); connections.drop = nil end
-    pcall(function() mainEvent:FireServer("Block", false) end)
+    pcall(function()
+        mainEvent:FireServer("Block", false)
+    end, function(err)
+        warn("Failed to stop block: " .. tostring(err))
+    end)
+end
+
+local function circleFormation()
+    isCircled = true
+    -- Disable conflicting states
+    if isSwarming then swarmPlayer(false) end
+    if isSpinning then spin(false) end
+    if isAirlocked then unairlockAlt() end
+    if isStacked then unstackAllAlts() end
+    stopFollowAllAlts()
+    local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hostRoot then
+        warn("Circle failed: Host player or HumanoidRootPart not found")
+        isCircled = false
+        return
+    end
+    local basePosition = hostRoot.Position
+    local radius = 10 -- Fixed radius for perfect circle
+    local players = getPlayers()
+    local altCount = #players - 1 -- Exclude host
+    for _, alt in pairs(players) do
+        if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
+            local altRoot = alt.Character.HumanoidRootPart
+            local index = getAltIndex(alt.Name, players)
+            local angle = index * (2 * math.pi / math.max(1, altCount))
+            local x, z = math.cos(angle) * radius, math.sin(angle) * radius
+            local position = Vector3.new(basePosition.X + x, basePosition.Y, basePosition.Z + z)
+            local targetCFrame = CFrame.lookAt(position, basePosition)
+            toggleNoclip(alt.Character, true)
+            altRoot.Anchored = false
+            local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+            local tween = TweenService:Create(altRoot, tweenInfo, {CFrame = targetCFrame})
+            task.wait(index * 0.1) -- Stagger tweens
+            tween:Play()
+            local tweenConnection = RunService.Heartbeat:Connect(function()
+                if tween.PlaybackState == Enum.PlaybackState.Playing then
+                    pcall(function()
+                        mainEvent:FireServer("UpdatePosition", altRoot.Position)
+                    end, function(err)
+                        warn("Failed to update position in circleFormation: " .. tostring(err))
+                    end)
+                end
+            end)
+            tween.Completed:Connect(function()
+                altRoot.Anchored = true
+                toggleNoclip(alt.Character, false)
+                pcall(function()
+                    mainEvent:FireServer("UpdatePosition", altRoot.Position)
+                end, function(err)
+                    warn("Failed to update position in circleFormation: " .. tostring(err))
+                end)
+                if tweenConnection then
+                    tweenConnection:Disconnect()
+                end)
+            end
+        end
+    end
 end
 
 local function swarmPlayer(start, target)
@@ -145,7 +219,11 @@ local function swarmPlayer(start, target)
                 local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Smooth, Enum.EasingDirection.InOut)
                 local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = lookAtCFrame})
                 tween:Play()
-                pcall(function() mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position) end)
+                pcall(function()
+                    mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
+                end, function(err)
+                    warn("Failed to update position in swarmPlayer: " .. tostring(err))
+                end)
             end
         end)
     else
@@ -182,7 +260,11 @@ local function airlockAlt()
     humanoidRootPart.CFrame = targetCFrame
     isAirlocked = true
     toggleNoclip(character, false)
-    pcall(function() mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position) end)
+    pcall(function()
+        mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
+    end, function(err)
+        warn("Failed to update position in airlockAlt: " .. tostring(err))
+    end)
 end
 
 local function unairlockAlt()
@@ -192,16 +274,22 @@ local function unairlockAlt()
         isAirlocked = false
         humanoidRootPart.CFrame = originalHideCFrame
         toggleNoclip(character, false)
-        pcall(function() mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position) end)
+        pcall(function()
+            mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position)
+        end, function(err)
+            warn("Failed to update position in unairlockAlt: " .. tostring(err))
+        end)
     end
 end
 
 local function followAllAlts(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        warn("Follow failed: Invalid target player or HumanoidRootPart")
+        return
+    end
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     for _, conn in pairs(connections.follow) do if conn then conn:Disconnect() end end
     connections.follow = {}
-
     local players = getPlayers()
     for _, alt in pairs(players) do
         if alt ~= hostPlayer then
@@ -218,6 +306,7 @@ local function followAllAlts(targetPlayer)
                     local hostPos = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position
                     if hostPos then
                         local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Cubic)
+                        task.wait(index * 0.1)
                         TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(myPos, hostPos)}):Play()
                     end
                 end)
@@ -235,30 +324,43 @@ end
 
 local function bringAllAlts()
     local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hostRoot then return end
+    if not hostRoot then
+        warn("Bring failed: Host player or HumanoidRootPart not found")
+        return
+    end
     local players = getPlayers()
     for _, alt in pairs(players) do
         if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
             local altHumanoidRootPart = alt.Character.HumanoidRootPart
+            local index = getAltIndex(alt.Name, players)
             local targetCFrame = hostRoot.CFrame + Vector3.new(math.random(-5, 5), 0, math.random(-5, 5))
             toggleNoclip(alt.Character, true)
             local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad)
+            task.wait(index * 0.1)
             TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = targetCFrame}):Play()
         end
     end
 end
 
 local function stackAllAlts()
+    isStacked = true
+    -- Disable conflicting states
+    if isSwarming then swarmPlayer(false) end
+    if isSpinning then spin(false) end
+    if isAirlocked then unairlockAlt() end
+    stopFollowAllAlts()
     local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not hostRoot then
         warn("Host player or HumanoidRootPart not found, cannot stack alts")
+        isStacked = false
         return
     end
     local basePosition = hostRoot.Position
-    local heightOffset = 3 -- Increased to prevent clipping
+    local heightOffset = 3
     local players = getPlayers()
-    local altCount = #players - 1 -- Exclude host
-    local spiralRadius = math.min(2, altCount * 0.2) -- Scales with alt count
+    local altCount = #players - 1
+    local spiralRadius = math.min(2, altCount * 0.2)
+    local tweenConnections = {}
     for _, alt in pairs(players) do
         if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
             local altHumanoidRootPart = alt.Character.HumanoidRootPart
@@ -276,20 +378,29 @@ local function stackAllAlts()
             altHumanoidRootPart.Anchored = false
             local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
             local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-            task.wait(index * 0.1) -- Stagger tweens to reduce lag
+            local tweenConnection = RunService.Heartbeat:Connect(function()
+                if tween.PlaybackState == Enum.PlaybackState.Playing then
+                    pcall(function()
+                        mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                    end, function(err)
+                        warn("Failed to update position in stackAllAlts: " .. tostring(err))
+                    end)
+                end
+            end)
+            tweenConnections[alt.Name] = tweenConnection
+            task.wait(index * 0.1)
             tween:Play()
             tween.Completed:Connect(function()
                 altHumanoidRootPart.Anchored = true
                 toggleNoclip(alt.Character, false)
                 pcall(function()
                     mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                end, function(err)
+                    warn("Failed to update position in stackAllAlts: " .. tostring(err))
                 end)
-            end)
-            RunService.Heartbeat:Connect(function()
-                if tween.PlaybackState == Enum.PlaybackState.Playing then
-                    pcall(function()
-                        mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
-                    end)
+                if tweenConnections[alt.Name] then
+                    tweenConnections[alt.Name]:Disconnect()
+                    tweenConnections[alt.Name] = nil
                 end
             end)
         end
@@ -297,8 +408,12 @@ local function stackAllAlts()
 end
 
 local function unstackAllAlts()
+    isStacked = false
     local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hostRoot then return end
+    if not hostRoot then
+        warn("Unstack failed: Host player or HumanoidRootPart not found")
+        return
+    end
     local basePosition = hostRoot.Position
     local players = getPlayers()
     for _, alt in pairs(players) do
@@ -312,27 +427,48 @@ local function unstackAllAlts()
             toggleNoclip(alt.Character, true)
             local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad)
             local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(targetPosition, basePosition)})
+            task.wait(index * 0.1)
             tween:Play()
             tween.Completed:Connect(function()
                 toggleNoclip(alt.Character, false)
-                pcall(function() mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position) end)
+                pcall(function()
+                    mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                end, function(err)
+                    warn("Failed to update position in unstackAllAlts: " .. tostring(err))
+                end)
             end)
         end
     end
 end
 
 local function resetAlts()
+    isStacked = false
+    isCircled = false
+    if isSwarming then swarmPlayer(false) end
+    if isSpinning then spin(false) end
+    if isAirlocked then unairlockAlt() end
+    stopFollowAllAlts()
     setupAtTarget(hostPlayer, humanoidRootPart)
 end
 
 local function kickAlt()
-    pcall(function() player:Kick("Kicked by host.") end)
+    pcall(function()
+        player:Kick("Kicked by host.")
+    end, function(err)
+        warn("Failed to kick alt: " .. tostring(err))
+    end)
 end
 
 local function rejoinGame()
     pcall(function()
         local placeId, jobId = game.PlaceId, game.JobId
-        if placeId and jobId then TeleportService:TeleportToPlaceInstance(placeId, jobId, player) end
+        if placeId and jobId then
+            TeleportService:TeleportToPlaceInstance(placeId, jobId, player)
+        else
+            warn("Failed to rejoin: Invalid PlaceId or JobId")
+        end
+    end, function(err)
+        warn("Failed to rejoin game: " .. tostring(err))
     end)
 end
 
@@ -355,19 +491,39 @@ hostPlayer.Chatted:Connect(function(message)
         elseif cmd:find("^setup ") then
             local targetName = string.sub(cmd, 7)
             local target = Players:FindFirstChild(targetName)
-            if target then setupAtTarget(target, humanoidRootPart) end
+            if target then
+                setupAtTarget(target, humanoidRootPart)
+            else
+                warn("Setup failed: Player " .. targetName .. " not found")
+            end
         elseif cmd == "drop" then
             dropAllCash()
         elseif cmd == "stop" then
             stopDrop()
+        elseif cmd == "circle host" then
+            circleFormation()
         elseif cmd == "swarm host" then
+            isStacked = false
+            isCircled = false
+            if isSpinning then spin(false) end
+            if isAirlocked then unairlockAlt() end
+            stopFollowAllAlts()
             swarmPlayer(true, hostPlayer)
         elseif cmd == "unswarm host" then
             swarmPlayer(false)
         elseif cmd:find("^swarm ") then
             local targetName = string.sub(cmd, 7)
             local target = Players:FindFirstChild(targetName)
-            if target then swarmPlayer(true, target) end
+            if target then
+                isStacked = false
+                isCircled = false
+                if isSpinning then spin(false) end
+                if isAirlocked then unairlockAlt() end
+                stopFollowAllAlts()
+                swarmPlayer(true, target)
+            else
+                warn("Swarm failed: Player " .. targetName .. " not found")
+            end
         elseif cmd == "unswarm" then
             swarmPlayer(false)
         elseif cmd == "spin" then
@@ -375,20 +531,46 @@ hostPlayer.Chatted:Connect(function(message)
         elseif cmd == "unspin" then
             spin(false)
         elseif cmd == "airlock" then
+            isStacked = false
+            isCircled = false
+            if isSwarming then swarmPlayer(false) end
+            if isSpinning then spin(false) end
+            stopFollowAllAlts()
             airlockAlt()
         elseif cmd == "unairlock" then
             unairlockAlt()
         elseif cmd == "bring" then
+            isStacked = false
+            isCircled = false
+            if isSwarming then swarmPlayer(false) end
+            if isSpinning then spin(false) end
+            if isAirlocked then unairlockAlt() end
+            stopFollowAllAlts()
             bringAllAlts()
         elseif cmd == "follow host" then
+            isStacked = false
+            isCircled = false
+            if isSwarming then swarmPlayer(false) end
+            if isSpinning then spin(false) end
+            if isAirlocked then unairlockAlt() end
             followAllAlts(hostPlayer)
         elseif cmd:find("^follow ") then
             local targetName = string.sub(cmd, 7)
             local target = Players:FindFirstChild(targetName)
-            if target then followAllAlts(target) end
+            if target then
+                isStacked = false
+                isCircled = false
+                if isSwarming then swarmPlayer(false) end
+                if isSpinning then spin(false) end
+                if isAirlocked then unairlockAlt() end
+                followAllAlts(target)
+            else
+                warn("Follow failed: Player " .. targetName .. " not found")
+            end
         elseif cmd == "unfollow" then
             stopFollowAllAlts()
         elseif cmd == "stack host" then
+            isCircled = false
             stackAllAlts()
         elseif cmd == "unstack" then
             unstackAllAlts()
@@ -398,7 +580,11 @@ hostPlayer.Chatted:Connect(function(message)
             kickAlt()
         elseif cmd == "rejoin" then
             rejoinGame()
+        else
+            warn("Unknown command: " .. cmd)
         end
+    end, function(err)
+        warn("Error processing command: " .. tostring(err))
     end)
 end)
 
@@ -409,6 +595,24 @@ player.CharacterAdded:Connect(function(newChar)
     if isSwarming then swarmPlayer(true, swarmTarget) end
     if isSpinning then spin(true) end
     if isAirlocked then airlockAlt() end
+    if isStacked then stackAllAlts() end
+    if isCircled then circleFormation() end
+end)
+
+-- Cleanup connections when player leaves
+player.AncestryChanged:Connect(function()
+    if not player:IsDescendantOf(game) then
+        for _, conn in pairs(connections) do
+            if type(conn) == "table" then
+                for _, subConn in pairs(conn) do
+                    if subConn then subConn:Disconnect() end
+                end
+            elseif conn then
+                conn:Disconnect()
+            end
+        end
+    end
 end)
 
 print("dhc.lmao Alt Control Script loaded for " .. player.Name)
+```
