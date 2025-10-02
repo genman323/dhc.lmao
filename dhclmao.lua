@@ -76,11 +76,17 @@ local function setupAtTarget(targetPlayer, altHumanoidRootPart)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(Players:GetPlayerFromCharacter(altHumanoidRootPart.Parent).Name, players)
-    local spacing = 1
+    local spacing = 3 -- Increased spacing to prevent overlap and clumping
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * spacing * (index + 1)
+    toggleNoclip(altHumanoidRootPart.Parent, true) -- Enable noclip to avoid collisions
     local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Cubic)
-    TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)}):Play()
+    local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)})
+    tween:Play()
+    tween.Completed:Connect(function()
+        toggleNoclip(altHumanoidRootPart.Parent, false) -- Disable noclip after positioning
+        pcall(function() mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position) end)
+    end)
 end
 
 local function toggleNoclip(char, enable)
@@ -113,25 +119,40 @@ local function swarmPlayer(start, target)
     isSwarming = start
     if start then
         swarmTarget = target or hostPlayer
+        if not swarmTarget or not swarmTarget.Character or not swarmTarget.Character:FindFirstChild("HumanoidRootPart") then
+            warn("Swarm target is invalid or not ready")
+            isSwarming = false
+            return
+        end
         if connections.swarm then connections.swarm:Disconnect() end
         toggleNoclip(character, true)
-        connections.swarm = RunService.RenderStepped:Connect(function()
+        connections.swarm = RunService.RenderStepped:Connect(function(deltaTime)
             if isSwarming then
                 local targetChar = swarmTarget.Character
-                if not targetChar or not targetChar:FindFirstChild("HumanoidRootPart") then return end
+                if not targetChar or not targetChar:FindFirstChild("HumanoidRootPart") then
+                    warn("Swarm target lost, stopping swarm")
+                    swarmPlayer(false)
+                    return
+                end
                 local center = targetChar.HumanoidRootPart.Position
-                local hash = 0
-                for i = 1, #player.Name do hash = hash + string.byte(player.Name, i) end
-                local angle = (hash % 360) / 180 * math.pi + os.clock()
-                local radius, x, z = 10, math.cos(angle) * radius, math.sin(angle) * radius
+                local radius = 10
+                local players = getPlayers()
+                local index = getAltIndex(player.Name, players)
+                local angle = (index * math.pi / 2) + (os.clock() * 2)
+                local x, z = math.cos(angle) * radius, math.sin(angle) * radius
                 local position = center + Vector3.new(x, 0, z)
-                local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Cubic)
-                TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(position, center)}):Play()
+                local lookAtCFrame = CFrame.lookAt(position, center)
+                local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Smooth, Enum.EasingDirection.InOut)
+                local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = lookAtCFrame})
+                tween:Play()
+                pcall(function() mainEvent:FireServer("UpdatePosition", humanoidRootPart.Position) end)
             end
         end)
     else
+        isSwarming = false
         toggleNoclip(character, false)
         if connections.swarm then connections.swarm:Disconnect(); connections.swarm = nil end
+        setupAtTarget(hostPlayer, humanoidRootPart)
     end
 end
 
@@ -229,23 +250,47 @@ end
 
 local function stackAllAlts()
     local hostRoot = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hostRoot then return end
+    if not hostRoot then
+        warn("Host player or HumanoidRootPart not found, cannot stack alts")
+        return
+    end
     local basePosition = hostRoot.Position
-    local heightOffset = 2
+    local heightOffset = 3 -- Increased to prevent clipping
     local players = getPlayers()
+    local altCount = #players - 1 -- Exclude host
+    local spiralRadius = math.min(2, altCount * 0.2) -- Scales with alt count
     for _, alt in pairs(players) do
         if alt ~= hostPlayer and alt.Character and alt.Character:FindFirstChild("HumanoidRootPart") then
             local altHumanoidRootPart = alt.Character.HumanoidRootPart
             local index = getAltIndex(alt.Name, players)
-            local targetPosition = Vector3.new(basePosition.X, basePosition.Y + (index * heightOffset) + hostRoot.Size.Y, basePosition.Z)
+            local angle = index * (2 * math.pi / math.max(1, altCount))
+            local xOffset = math.cos(angle) * spiralRadius
+            local zOffset = math.sin(angle) * spiralRadius
+            local targetPosition = Vector3.new(
+                basePosition.X + xOffset,
+                basePosition.Y + (index * heightOffset) + hostRoot.Size.Y + 1,
+                basePosition.Z + zOffset
+            )
+            local targetCFrame = CFrame.new(targetPosition) * hostRoot.CFrame.Rotation
             toggleNoclip(alt.Character, true)
-            local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad)
-            local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = CFrame.new(targetPosition)})
+            altHumanoidRootPart.Anchored = false
+            local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+            local tween = TweenService:Create(altHumanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+            task.wait(index * 0.1) -- Stagger tweens to reduce lag
             tween:Play()
             tween.Completed:Connect(function()
                 altHumanoidRootPart.Anchored = true
                 toggleNoclip(alt.Character, false)
-                pcall(function() mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position) end)
+                pcall(function()
+                    mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                end)
+            end)
+            RunService.Heartbeat:Connect(function()
+                if tween.PlaybackState == Enum.PlaybackState.Playing then
+                    pcall(function()
+                        mainEvent:FireServer("UpdatePosition", altHumanoidRootPart.Position)
+                    end)
+                end
             end)
         end
     end
