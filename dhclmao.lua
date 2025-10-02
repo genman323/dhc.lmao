@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local TeleportService = game:GetService("TeleportService")
 local player = Players.LocalPlayer
 local hostName = "Sab3r_PRO2003"
@@ -16,6 +15,8 @@ local originalCFrame = nil
 local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil}
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
+local floatingAnimId = "rbxassetid://117134539591727"
+local animTrack = nil
 
 -- Anti-cheat bypass hook
 local detectionFlags = {
@@ -106,7 +107,7 @@ end
 -- Prevent AFK kicking
 local function preventAFK()
     connections.afk = RunService.Heartbeat:Connect(function()
-        if humanoid then
+        if humanoid and currentMode ~= "stack" and currentMode ~= "airlock" then
             humanoid.Jump = true
             task.wait(0.1)
             humanoid.Jump = false
@@ -119,7 +120,7 @@ local function getAltIndex(playerName, players)
     local alts = {}
     for _, p in pairs(players) do if p ~= hostPlayer then table.insert(alts, p) end end
     table.sort(alts, function(a, b) return a.Name < b.Name end)
-    for i, p in ipairs(alts) do if p.Name == playerName then return i end end
+    for i, p in ipairs(alts) do if p.Name == playerName then return i - 1 end end
     return 0
 end
 
@@ -133,8 +134,28 @@ local function toggleNoclip(char, enable)
     end
 end
 
+-- Play floating animation
+local function playFloatingAnim()
+    if animTrack then animTrack:Stop() animTrack = nil end
+    local anim = Instance.new("Animation")
+    anim.AnimationId = floatingAnimId
+    animTrack = humanoid:LoadAnimation(anim)
+    animTrack.Priority = Enum.AnimationPriority.Idle
+    animTrack.Looped = true
+    animTrack:Play()
+end
+
+-- Stop floating animation
+local function stopFloatingAnim()
+    if animTrack then
+        animTrack:Stop()
+        animTrack = nil
+    end
+end
+
 -- Disable current mode
 local function disableCurrentMode()
+    stopFloatingAnim()
     if currentMode == "swarm" then
         if connections.swarm then connections.swarm:Disconnect(); connections.swarm = nil end
     elseif currentMode == "follow" then
@@ -160,7 +181,7 @@ local function setup(targetPlayer)
     local index = getAltIndex(player.Name, players)
     local spacing = 1
     local behindDirection = -targetRoot.CFrame.LookVector
-    local offsetPosition = targetRoot.Position + behindDirection * (0.5 + index * spacing)  -- Start at 0.5 studs, 1 stud per alt
+    local offsetPosition = targetRoot.Position + behindDirection * (spacing * index)  -- Closer, first at 0, then 1, 2, etc.
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
     humanoidRootPart.CFrame = targetCFrame
     toggleNoclip(character, false)
@@ -178,6 +199,7 @@ local function swarm(targetPlayer)
         return
     end
     toggleNoclip(character, true)
+    playFloatingAnim()
     connections.swarm = RunService.RenderStepped:Connect(function()
         if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then return end
         local center = currentTarget.Character.HumanoidRootPart.Position
@@ -217,8 +239,10 @@ local function follow(targetPlayer)
         local behindOffset = -targetRoot.CFrame.LookVector * offsetDistance
         local myPos = targetPos + behindOffset
         local lookPos = targetPos
-        humanoidRootPart.CFrame = CFrame.lookAt(myPos, lookPos)
-        task.wait(0.05)
+        local currentCFrame = humanoidRootPart.CFrame
+        local targetCFrame = CFrame.lookAt(myPos, lookPos)
+        humanoidRootPart.CFrame = currentCFrame:Lerp(targetCFrame, 0.5)  -- Lerp for smoothness
+        task.wait(0.01)  -- Reduced delay for smoother movement
     end)
 end
 
@@ -234,12 +258,13 @@ local function stack(targetPlayer)
         return
     end
     toggleNoclip(character, true)
+    playFloatingAnim()
     local targetRoot = currentTarget.Character.HumanoidRootPart
     local basePosition = targetRoot.Position
     local heightOffset = 5
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local targetPosition = Vector3.new(basePosition.X, basePosition.Y + targetRoot.Size.Y + (index * heightOffset), basePosition.Z)
+    local targetPosition = Vector3.new(basePosition.X, basePosition.Y + targetRoot.Size.Y + 2 + (index * heightOffset), basePosition.Z)
     local targetCFrame = CFrame.new(targetPosition) * targetRoot.CFrame.Rotation
     humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = targetCFrame
@@ -255,9 +280,10 @@ local function airlock()
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local commonY = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
-    local targetHeight = commonY + 10
+    local targetHeight = commonY + 15  -- Higher, 15 studs
     local targetCFrame = CFrame.new(originalCFrame.Position.X, targetHeight, originalCFrame.Position.Z) * originalCFrame.Rotation
     toggleNoclip(character, true)
+    playFloatingAnim()
     humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = targetCFrame
     humanoidRootPart.Anchored = true
@@ -266,12 +292,19 @@ end
 
 -- Unairlock alts
 local function unairlock()
+    stopFloatingAnim()
     if not humanoidRootPart or not originalCFrame then return end
     toggleNoclip(character, true)
     humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = originalCFrame
     toggleNoclip(character, false)
     originalCFrame = nil
+end
+
+-- Unstack
+local function unstack()
+    disableCurrentMode()
+    setup(hostPlayer)
 end
 
 -- Bring alts to host
@@ -409,6 +442,8 @@ hostPlayer.Chatted:Connect(function(message)
         else
             warn("Stack failed: Player " .. targetName .. " not found")
         end
+    elseif cmd == "unstack" then
+        unstack()
     elseif cmd == "airlock" then
         airlock()
     elseif cmd == "unairlock" then
