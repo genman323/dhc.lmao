@@ -6,9 +6,9 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local hostName = "Sab3r_PRO2003"
 local hostPlayer = nil
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:WaitForChild("Humanoid")
+local character = nil
+local humanoidRootPart = nil
+local humanoid = nil
 local isDropping = false
 local currentMode = nil -- "swarm", "follow", "airlock", "setup", nil
 local currentTarget = nil
@@ -20,17 +20,22 @@ local airlockPlatform = nil
 local airlockPosition = nil
 local isHost = false -- Role flag
 
--- Anti-cheat bypass
+-- Anti-cheat bypass with safety
 local detectionFlags = {"CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK", "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"}
 local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local args = {...}
-    local method = getnamecallmethod()
-    if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
-        return wait(9e9)
-    end
-    return oldNamecall(self, ...)
+local success, err = pcall(function()
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local args = {...}
+        local method = getnamecallmethod()
+        if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
+            return wait(9e9)
+        end
+        return oldNamecall(self, ...)
+    end)
 end)
+if not success then
+    warn("Failed to set up anti-cheat bypass: " .. tostring(err))
+end
 
 if not mainEvent then
     warn("MainEvent not found. Some features like dropping cash may not work.")
@@ -55,7 +60,7 @@ if not hostPlayer then
     return
 end
 
--- Utility functions (unchanged from original)
+-- Utility functions
 local function getPlayers()
     return Players:GetPlayers()
 end
@@ -137,10 +142,10 @@ local function disableCurrentMode()
     currentMode = nil
     currentTarget = nil
     airlockPosition = nil
-    toggleNoclip(character, false)
+    if character then toggleNoclip(character, false) end
 end
 
--- Movement functions (unchanged)
+-- Movement functions
 local function setup(targetPlayer)
     disableCurrentMode()
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
@@ -162,7 +167,7 @@ local function setup(targetPlayer)
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
-            connections.setupMove:Disconnect()
+            if connections.setupMove then connections.setupMove:Disconnect() end
             connections.setupMove = nil
             return
         end
@@ -170,7 +175,7 @@ local function setup(targetPlayer)
         local t = math.min(elapsed / duration, 1)
         humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
         if t >= 1 then
-            connections.setupMove:Disconnect()
+            if connections.setupMove then connections.setupMove:Disconnect() end
             connections.setupMove = nil
         end
     end)
@@ -208,7 +213,7 @@ local function setupClub()
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
-            connections.setupMove:Disconnect()
+            if connections.setupMove then connections.setupMove:Disconnect() end
             connections.setupMove = nil
             return
         end
@@ -216,7 +221,7 @@ local function setupClub()
         local t = math.min(elapsed / duration, 1)
         humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
         if t >= 1 then
-            connections.setupMove:Disconnect()
+            if connections.setupMove then connections.setupMove:Disconnect() end
             connections.setupMove = nil
         end
     end)
@@ -254,7 +259,7 @@ local function setupBank()
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
-            connections.setupMove:Disconnect()
+            if connections.setupMove then connections.setupMove:Disconnect() end
             connections.setupMove = nil
             return
         end
@@ -262,7 +267,7 @@ local function setupBank()
         local t = math.min(elapsed / duration, 1)
         humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
         if t >= 1 then
-            connections.setupMove:Disconnect()
+            if connections.setupMove then connections.setupMove:Disconnect() end
             connections.setupMove = nil
         end
     end)
@@ -442,11 +447,15 @@ end
 
 -- GUI creation
 local function createRoleSelectionGUI()
+    if not player:FindFirstChild("PlayerGui") then
+        warn("PlayerGui not found.")
+        return
+    end
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "RoleSelectionGUI"
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
-    screenGui.Parent = player:WaitForChild("PlayerGui")
+    screenGui.Parent = player.PlayerGui
 
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0, 300, 0, 200)
@@ -516,7 +525,7 @@ local function createMainGUI()
     screenGui.Name = "DhcControlGUI"
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
-    screenGui.Parent = player:WaitForChild("PlayerGui")
+    screenGui.Parent = player.PlayerGui
 
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0, 300, 0, 400)
@@ -785,10 +794,14 @@ hostPlayer.CharacterAdded:Connect(function(newChar)
     end
 end)
 
-player.CharacterAdded:Connect(function(newChar)
+local function onCharacterAdded(newChar)
     character = newChar
-    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
-    humanoid = newChar:WaitForChild("Humanoid")
+    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart", 10)
+    humanoid = newChar:WaitForChild("Humanoid", 10)
+    if not humanoidRootPart or not humanoid then
+        warn("Failed to find HumanoidRootPart or Humanoid in character.")
+        return
+    end
     if currentMode and currentTarget then
         if currentMode == "swarm" then swarm(currentTarget) end
         if currentMode == "follow" then follow(currentTarget) end
@@ -797,7 +810,9 @@ player.CharacterAdded:Connect(function(newChar)
             if currentTarget == nil and setupClub then setupClub() end
         end
     end
-end)
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
 
 player.AncestryChanged:Connect(function()
     if not player:IsDescendantOf(game) then
@@ -814,8 +829,19 @@ player.AncestryChanged:Connect(function()
 end)
 
 -- Initialize
-disableAllSeats()
-limitFPS()
-preventAFK()
-createRoleSelectionGUI()
-print("dhc.lmao Alt Control Script with GUI loaded for " .. player.Name .. " in Da Hood")
+local function initializeScript()
+    disableAllSeats()
+    limitFPS()
+    preventAFK()
+    createRoleSelectionGUI()
+    print("dhc.lmao Alt Control Script with GUI loaded for " .. player.Name .. " in Da Hood")
+end
+
+if player.Character then
+    onCharacterAdded(player.Character)
+    initializeScript()
+else
+    player.CharacterAdded:Wait()
+    onCharacterAdded(player.Character)
+    initializeScript()
+end
