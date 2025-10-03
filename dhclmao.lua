@@ -9,13 +9,14 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 local isDropping = false
-local currentMode = nil  -- "swarm", "follow", "stack", "airlock", nil
+local currentMode = nil  -- "swarm", "follow", "airlock", "setup", nil
 local currentTarget = nil
 local originalCFrame = nil
 local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil, airlockFreeze = nil, setupMove = nil}
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
 local airlockPlatform = nil
+local airlockPosition = nil  -- Store airlock target position
 
 -- Anti-cheat bypass hook
 local detectionFlags = {
@@ -138,7 +139,7 @@ end
 local function createAirlockPlatform(position)
     if airlockPlatform then airlockPlatform:Destroy() end
     airlockPlatform = Instance.new("Part")
-    airlockPlatform.Size = Vector3.new(10, 0.5, 10)  -- Adjusted thickness for stability
+    airlockPlatform.Size = Vector3.new(20, 0.5, 20)  -- Larger platform for stability
     airlockPlatform.Position = position
     airlockPlatform.Anchored = true
     airlockPlatform.CanCollide = true
@@ -154,8 +155,6 @@ local function disableCurrentMode()
         if connections.swarm then connections.swarm:Disconnect(); connections.swarm = nil end
     elseif currentMode == "follow" then
         if connections.follow then connections.follow:Disconnect(); connections.follow = nil end
-    elseif currentMode == "stack" then
-        if humanoidRootPart then humanoidRootPart.Anchored = false end
     elseif currentMode == "airlock" then
         if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
     elseif currentMode == "setup" then
@@ -164,10 +163,11 @@ local function disableCurrentMode()
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     currentMode = nil
     currentTarget = nil
+    airlockPosition = nil
     toggleNoclip(character, false)
 end
 
--- Setup line behind target
+-- Setup line behind target player
 local function setup(targetPlayer)
     disableCurrentMode()
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
@@ -180,7 +180,7 @@ local function setup(targetPlayer)
     local index = getAltIndex(player.Name, players)
     local spacing = 1  -- 1 stud spacing for single-file line
     local behindDirection = -targetRoot.CFrame.LookVector
-    local offsetPosition = targetRoot.Position + behindDirection * (spacing * index)
+    local offsetPosition = targetRoot.Position + behindDirection * (spacing * (index + 1))
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
     
     local startTime = tick()
@@ -199,6 +199,47 @@ local function setup(targetPlayer)
         local t = math.min(elapsed / duration, 1)
         humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
         if t >= 1 then
+            humanoidRootPart.Anchored = true
+            connections.setupMove:Disconnect()
+            connections.setupMove = nil
+        end
+    end)
+    toggleNoclip(character, false)
+end
+
+-- Setup line in middle of club
+local function setupClub()
+    disableCurrentMode()
+    if not humanoidRootPart then
+        warn("Setup club failed: Local character not found")
+        return
+    end
+    toggleNoclip(character, true)
+    local clubPos = Vector3.new(-265, 49, -457)  -- Middle position in Kool Klub
+    local players = getPlayers()
+    local index = getAltIndex(player.Name, players)
+    local spacing = 1  -- 1 stud spacing for single-file line
+    local behindDirection = Vector3.new(0, 0, -1)  -- Fixed direction for line (along -Z)
+    local offsetPosition = clubPos + behindDirection * (spacing * (index + 1))
+    local targetCFrame = CFrame.lookAt(offsetPosition, clubPos)
+    
+    local startTime = tick()
+    local duration = 0.5  -- Smooth transition over 0.5 seconds
+    local startCFrame = humanoidRootPart.CFrame
+    currentMode = "setup"
+    
+    if connections.setupMove then connections.setupMove:Disconnect() end
+    connections.setupMove = RunService.RenderStepped:Connect(function()
+        if currentMode ~= "setup" or not humanoidRootPart then
+            connections.setupMove:Disconnect()
+            connections.setupMove = nil
+            return
+        end
+        local elapsed = tick() - startTime
+        local t = math.min(elapsed / duration, 1)
+        humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
+        if t >= 1 then
+            humanoidRootPart.Anchored = true
             connections.setupMove:Disconnect()
             connections.setupMove = nil
         end
@@ -264,30 +305,6 @@ local function follow(targetPlayer)
     end)
 end
 
--- Stack on target
-local function stack(targetPlayer)
-    disableCurrentMode()
-    currentMode = "stack"
-    currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Stack failed: Invalid target or local character")
-        currentMode = nil
-        currentTarget = nil
-        return
-    end
-    toggleNoclip(character, true)
-    local targetRoot = currentTarget.Character.HumanoidRootPart
-    local players = getPlayers()
-    local index = getAltIndex(player.Name, players)
-    local basePosition = targetRoot.Position
-    local heightOffset = 5
-    local targetPosition = Vector3.new(basePosition.X, basePosition.Y + 15 + (index * heightOffset), basePosition.Z)  -- Start at 15 studs, stack vertically
-    local targetCFrame = CFrame.new(targetPosition) * CFrame.Angles(0, targetRoot.Orientation.Y * math.pi / 180, 0)
-    humanoidRootPart.Anchored = true
-    humanoidRootPart.CFrame = targetCFrame
-    toggleNoclip(character, false)
-end
-
 -- Airlock alts
 local function airlock()
     disableCurrentMode()
@@ -302,17 +319,19 @@ local function airlock()
     local targetHeight = commonY + 13  -- Move 13 studs up
     local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight - 0.5, originalCFrame.Position.Z)  -- Platform just below character
     airlockPlatform = createAirlockPlatform(platformPosition)
+    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0))  -- Store target position
     toggleNoclip(character, true)
-    humanoidRootPart.CFrame = CFrame.new(platformPosition + Vector3.new(0, 1, 0))  -- Position character just above platform
+    humanoidRootPart.CFrame = airlockPosition
+    humanoidRootPart.Anchored = true  -- Anchor to prevent falling
     toggleNoclip(character, false)
     task.wait(0.1)  -- Brief delay to ensure position sets
-    -- Use a custom loop to freeze position
+    -- Use a custom loop to enforce position
     if not connections.airlockFreeze then
         connections.airlockFreeze = RunService.RenderStepped:Connect(function()
-            if currentMode == "airlock" and humanoidRootPart then
-                humanoidRootPart.CFrame = humanoidRootPart.CFrame  -- Maintain current position
-                humanoidRootPart.Velocity = Vector3.new(0, 0, 0)  -- Prevent physics movement
-                humanoidRootPart.RotVelocity = Vector3.new(0, 0, 0)  -- Prevent rotation
+            if currentMode == "airlock" and humanoidRootPart and airlockPosition then
+                humanoidRootPart.CFrame = airlockPosition
+                humanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.RotVelocity = Vector3.new(0, 0, 0)
             end
         end)
     end
@@ -328,20 +347,16 @@ local function unairlock()
         return
     end
     toggleNoclip(character, true)
+    humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = originalCFrame
     toggleNoclip(character, false)
     originalCFrame = nil
+    airlockPosition = nil
     currentMode = nil
 end
 
 -- Unswarm
 local function unswarm()
-    disableCurrentMode()
-    setup(hostPlayer)
-end
-
--- Unstack
-local function unstack()
     disableCurrentMode()
     setup(hostPlayer)
 end
@@ -424,7 +439,6 @@ hostPlayer.CharacterAdded:Connect(function(newChar)
     if currentTarget == hostPlayer then
         if currentMode == "swarm" then swarm(hostPlayer) end
         if currentMode == "follow" then follow(hostPlayer) end
-        if currentMode == "stack" then stack(hostPlayer) end
     end
 end)
 
@@ -439,11 +453,15 @@ hostPlayer.Chatted:Connect(function(message)
         setup(hostPlayer)
     elseif cmd:match("^setup%s+(.+)$") then
         local targetName = cmd:match("^setup%s+(.+)$")
-        local target = Players:FindFirstChild(targetName)
-        if target then
-            setup(target)
+        if targetName == "club" then
+            setupClub()
         else
-            warn("Setup failed: Player " .. targetName .. " not found")
+            local target = Players:FindFirstChild(targetName)
+            if target then
+                setup(target)
+            else
+                warn("Setup failed: Player " .. targetName .. " not found")
+            end
         end
     elseif cmd == "swarm host" then
         swarm(hostPlayer)
@@ -470,18 +488,6 @@ hostPlayer.Chatted:Connect(function(message)
     elseif cmd == "unfollow" then
         disableCurrentMode()
         setup(hostPlayer)
-    elseif cmd == "stack host" then
-        stack(hostPlayer)
-    elseif cmd:match("^stack%s+(.+)$") then
-        local targetName = cmd:match("^stack%s+(.+)$")
-        local target = Players:FindFirstChild(targetName)
-        if target then
-            stack(target)
-        else
-            warn("Stack failed: Player " .. targetName .. " not found")
-        end
-    elseif cmd == "unstack" then
-        unstack()
     elseif cmd == "airlock" then
         airlock()
     elseif cmd == "unairlock" then
@@ -509,8 +515,8 @@ player.CharacterAdded:Connect(function(newChar)
     if currentMode and currentTarget then
         if currentMode == "swarm" then swarm(currentTarget) end
         if currentMode == "follow" then follow(currentTarget) end
-        if currentMode == "stack" then stack(currentTarget) end
-        if currentMode == "airlock" then airlock() end
+        if currentMode == "airlock" and airlockPosition then airlock() end
+        if currentMode == "setup" and currentTarget == nil then setupClub() end  -- Reapply club setup if targeted nil
     end
 end)
 
@@ -524,6 +530,7 @@ player.AncestryChanged:Connect(function()
         isDropping = false
         currentMode = nil
         currentTarget = nil
+        airlockPosition = nil
         if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     end
 end)
