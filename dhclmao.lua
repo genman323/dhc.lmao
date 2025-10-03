@@ -94,6 +94,8 @@ if isHost then
         targetBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
         targetBox.TextColor3 = Color3.fromRGB(255, 255, 255)
         targetBox.BorderSizePixel = 0
+        targetBox.Font = Enum.Font.Gotham
+        targetBox.TextSize = 14
         targetBox.Parent = scrollingFrame
 
         local targetCorner = Instance.new("UICorner")
@@ -133,20 +135,20 @@ if isHost then
         addButton("Setup Bank", function() return "setup bank" end)
         addButton("Setup Target", function()
             local target = targetBox.Text
-            if target == "" then return end
+            if target == "" then return nil end
             return "setup " .. target
         end)
         addButton("Swarm Host", function() return "swarm host" end)
         addButton("Swarm Target", function()
             local target = targetBox.Text
-            if target == "" then return end
+            if target == "" then return nil end
             return "swarm " .. target
         end)
         addButton("Unswarm", function() return "unswarm" end)
         addButton("Follow Host", function() return "follow host" end)
         addButton("Follow Target", function()
             local target = targetBox.Text
-            if target == "" then return end
+            if target == "" then return nil end
             return "follow " .. target
         end)
         addButton("Unfollow", function() return "unfollow" end)
@@ -202,7 +204,7 @@ if isHost then
     return -- Host doesn't need alt logic
 end
 
--- Below is alt-only logic
+-- Below is alt-only logic (rest of the script remains the same as before, with chat-based command listening)
 local hostPlayer = nil
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
@@ -246,11 +248,12 @@ local function waitForHost(timeout)
     warn("Host player not found within " .. timeout .. " seconds.")
     return nil
 end
-hostPlayer = waitForHost(30) -- Increased timeout
+hostPlayer = waitForHost(30) -- Increased timeout for better reliability
 if not hostPlayer then
     warn("Script cannot proceed without host player. Shutting down.")
     return
 end
+print("Host found: " .. hostPlayer.Name) -- Debug print for alt
 -- Cache player list once per function call
 local function getPlayers()
     return Players:GetPlayers()
@@ -314,7 +317,7 @@ local function getAltIndex(playerName, players)
     local maxAlts = 20
     if #alts > maxAlts then
         warn("Limiting to " .. maxAlts .. " alts due to maximum capacity.")
-        alts = table.move(alts, 1, maxAlts, 1, {})
+        alts = {table.unpack(alts, 1, maxAlts)} -- Fixed table.move for compatibility
     end
     for i, p in ipairs(alts) do if p.Name == playerName then return i - 1 end end
     return 0
@@ -686,6 +689,7 @@ hostPlayer.Chatted:Connect(function(message)
     if string.sub(lowerMsg, 1, 1) ~= "?" then return end
     local cmd = string.sub(lowerMsg, 2):match("^%s*(.-)%s*$")
     if cmd == "" then return end
+    print("Received command: " .. cmd) -- Debug print for alt
     if cmd == "setup host" then
         setup(hostPlayer)
     elseif cmd:match("^setup%s+(.+)$") then
@@ -754,8 +758,9 @@ player.CharacterAdded:Connect(function(newChar)
         if currentMode == "swarm" then swarm(currentTarget) end
         if currentMode == "follow" then follow(currentTarget) end
         if currentMode == "airlock" and airlockPosition then airlock() end
-        if currentMode == "setup" and currentTarget == nil then
-            if currentTarget == nil and setupClub then setupClub() end -- Reapply club setup if targeted nil
+        if currentMode == "setup" then
+            -- Reapply last setup if possible
+            if currentTarget then setup(currentTarget) else setupClub() end
         end
     end
 end)
