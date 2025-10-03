@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local isHost = player.UserId == config.HostUserId
 local isAlt = table.find(config.AltUserIds, player.UserId) ~= nil
@@ -24,15 +25,60 @@ if isHost then
         screenGui.Parent = player:WaitForChild("PlayerGui")
 
         local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(0, 200, 0, 400)
-        frame.Position = UDim2.new(0, 10, 0, 10)
-        frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        frame.Size = UDim2.new(0, 250, 0, 400)
+        frame.Position = UDim2.new(0.5, -125, 0.5, -200)
+        frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         frame.BorderSizePixel = 0
         frame.Parent = screenGui
 
+        local uiCorner = Instance.new("UICorner")
+        uiCorner.CornerRadius = UDim.new(0, 8)
+        uiCorner.Parent = frame
+
+        local uiStroke = Instance.new("UIStroke")
+        uiStroke.Color = Color3.fromRGB(100, 100, 100)
+        uiStroke.Transparency = 0.5
+        uiStroke.Parent = frame
+
+        local titleFrame = Instance.new("Frame")
+        titleFrame.Size = UDim2.new(1, 0, 0, 30)
+        titleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        titleFrame.BorderSizePixel = 0
+        titleFrame.Parent = frame
+
+        local titleCorner = Instance.new("UICorner")
+        titleCorner.CornerRadius = UDim.new(0, 8)
+        titleCorner.Parent = titleFrame
+
+        local titleLabel = Instance.new("TextLabel")
+        titleLabel.Size = UDim2.new(1, -30, 1, 0)
+        titleLabel.Position = UDim2.new(0, 10, 0, 0)
+        titleLabel.BackgroundTransparency = 1
+        titleLabel.Text = "Alt Control"
+        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        titleLabel.TextSize = 18
+        titleLabel.Font = Enum.Font.GothamBold
+        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+        titleLabel.Parent = titleFrame
+
+        local closeButton = Instance.new("TextButton")
+        closeButton.Size = UDim2.new(0, 30, 0, 30)
+        closeButton.Position = UDim2.new(1, -30, 0, 0)
+        closeButton.BackgroundTransparency = 1
+        closeButton.Text = "X"
+        closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        closeButton.TextSize = 18
+        closeButton.Font = Enum.Font.Gotham
+        closeButton.Parent = titleFrame
+        closeButton.MouseButton1Click:Connect(function()
+            screenGui:Destroy()
+        end)
+
         local scrollingFrame = Instance.new("ScrollingFrame")
-        scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+        scrollingFrame.Size = UDim2.new(1, 0, 1, -30)
+        scrollingFrame.Position = UDim2.new(0, 0, 0, 30)
         scrollingFrame.BackgroundTransparency = 1
+        scrollingFrame.ScrollBarThickness = 4
         scrollingFrame.Parent = frame
 
         local uiListLayout = Instance.new("UIListLayout")
@@ -41,95 +87,113 @@ if isHost then
         uiListLayout.Parent = scrollingFrame
 
         local targetBox = Instance.new("TextBox")
-        targetBox.Size = UDim2.new(1, 0, 0, 30)
+        targetBox.Size = UDim2.new(1, -10, 0, 30)
+        targetBox.Position = UDim2.new(0, 5, 0, 0)
         targetBox.PlaceholderText = "Target Player Name"
         targetBox.Text = ""
-        targetBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        targetBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
         targetBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        targetBox.BorderSizePixel = 0
         targetBox.Parent = scrollingFrame
 
-        local function addButton(text, onClick)
+        local targetCorner = Instance.new("UICorner")
+        targetCorner.CornerRadius = UDim.new(0, 4)
+        targetCorner.Parent = targetBox
+
+        local targetStroke = Instance.new("UIStroke")
+        targetStroke.Color = Color3.fromRGB(80, 80, 80)
+        targetStroke.Parent = targetBox
+
+        local function addButton(text, cmdFunc)
             local button = Instance.new("TextButton")
-            button.Size = UDim2.new(1, 0, 0, 30)
+            button.Size = UDim2.new(1, -10, 0, 30)
             button.Text = text
-            button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+            button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
             button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            button.BorderSizePixel = 0
+            button.Font = Enum.Font.Gotham
+            button.TextSize = 14
             button.Parent = scrollingFrame
-            button.MouseButton1Click:Connect(onClick)
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 4)
+            btnCorner.Parent = button
+            local btnStroke = Instance.new("UIStroke")
+            btnStroke.Color = Color3.fromRGB(80, 80, 80)
+            btnStroke.Parent = button
+            button.MouseButton1Click:Connect(function()
+                local cmd = cmdFunc()
+                if cmd then
+                    player:Chat("?" .. cmd)
+                end
+            end)
         end
 
-        addButton("Setup Host", function()
-            player:SetAttribute("AltCommand", "setup host")
-        end)
-
-        addButton("Setup Club", function()
-            player:SetAttribute("AltCommand", "setup club")
-        end)
-
-        addButton("Setup Bank", function()
-            player:SetAttribute("AltCommand", "setup bank")
-        end)
-
+        addButton("Setup Host", function() return "setup host" end)
+        addButton("Setup Club", function() return "setup club" end)
+        addButton("Setup Bank", function() return "setup bank" end)
         addButton("Setup Target", function()
             local target = targetBox.Text
             if target == "" then return end
-            player:SetAttribute("AltCommand", "setup " .. target)
+            return "setup " .. target
         end)
-
-        addButton("Swarm Host", function()
-            player:SetAttribute("AltCommand", "swarm host")
-        end)
-
+        addButton("Swarm Host", function() return "swarm host" end)
         addButton("Swarm Target", function()
             local target = targetBox.Text
             if target == "" then return end
-            player:SetAttribute("AltCommand", "swarm " .. target)
+            return "swarm " .. target
         end)
-
-        addButton("Unswarm", function()
-            player:SetAttribute("AltCommand", "unswarm")
-        end)
-
-        addButton("Follow Host", function()
-            player:SetAttribute("AltCommand", "follow host")
-        end)
-
+        addButton("Unswarm", function() return "unswarm" end)
+        addButton("Follow Host", function() return "follow host" end)
         addButton("Follow Target", function()
             local target = targetBox.Text
             if target == "" then return end
-            player:SetAttribute("AltCommand", "follow " .. target)
+            return "follow " .. target
+        end)
+        addButton("Unfollow", function() return "unfollow" end)
+        addButton("Airlock", function() return "airlock" end)
+        addButton("Unairlock", function() return "unairlock" end)
+        addButton("Bring", function() return "bring" end)
+        addButton("Drop", function() return "drop" end)
+        addButton("Stop Drop", function() return "stop" end)
+        addButton("Kick Alts", function() return "kick" end)
+        addButton("Rejoin Alts", function() return "rejoin" end)
+
+        -- Draggable logic
+        local dragging = false
+        local dragInput
+        local dragStart
+        local startPos
+
+        local function updateInput(input)
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+
+        titleFrame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                dragStart = input.Position
+                startPos = frame.Position
+                local conn
+                conn = input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                        conn:Disconnect()
+                    end
+                end)
+            end
         end)
 
-        addButton("Unfollow", function()
-            player:SetAttribute("AltCommand", "unfollow")
+        titleFrame.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                dragInput = input
+            end
         end)
 
-        addButton("Airlock", function()
-            player:SetAttribute("AltCommand", "airlock")
-        end)
-
-        addButton("Unairlock", function()
-            player:SetAttribute("AltCommand", "unairlock")
-        end)
-
-        addButton("Bring", function()
-            player:SetAttribute("AltCommand", "bring")
-        end)
-
-        addButton("Drop", function()
-            player:SetAttribute("AltCommand", "drop")
-        end)
-
-        addButton("Stop Drop", function()
-            player:SetAttribute("AltCommand", "stop")
-        end)
-
-        addButton("Kick Alts", function()
-            player:SetAttribute("AltCommand", "kick")
-        end)
-
-        addButton("Rejoin Alts", function()
-            player:SetAttribute("AltCommand", "rejoin")
+        UserInputService.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
+                updateInput(input)
+            end
         end)
     end
 
@@ -182,7 +246,7 @@ local function waitForHost(timeout)
     warn("Host player not found within " .. timeout .. " seconds.")
     return nil
 end
-hostPlayer = waitForHost(10)
+hostPlayer = waitForHost(30) -- Increased timeout
 if not hostPlayer then
     warn("Script cannot proceed without host player. Shutting down.")
     return
@@ -616,12 +680,11 @@ hostPlayer.CharacterAdded:Connect(function(newChar)
         if currentMode == "follow" then follow(hostPlayer) end
     end
 end)
--- Handle commands from host via attributes
-hostPlayer:GetAttributeChangedSignal("AltCommand"):Connect(function()
-    local message = hostPlayer:GetAttribute("AltCommand")
-    if not message then return end
+-- Handle commands from host via chat
+hostPlayer.Chatted:Connect(function(message)
     local lowerMsg = string.lower(message)
-    local cmd = lowerMsg:match("^%s*(.-)%s*$")
+    if string.sub(lowerMsg, 1, 1) ~= "?" then return end
+    local cmd = string.sub(lowerMsg, 2):match("^%s*(.-)%s*$")
     if cmd == "" then return end
     if cmd == "setup host" then
         setup(hostPlayer)
@@ -715,4 +778,4 @@ createOverlay()
 limitFPS()
 preventAFK()
 disableAllSeats()
-print("dhc.lmao made by jj lxd")
+print("dhc.lmao Alt Control Script loaded for " .. player.Name .. " in Da Hood")
