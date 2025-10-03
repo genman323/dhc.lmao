@@ -142,6 +142,14 @@ local function playLevitationAnim()
         warn("Cannot play levitation animation: Humanoid not found")
         return nil
     end
+    if humanoid.RigType ~= Enum.HumanoidRigType.R15 then
+        warn("Cannot play levitation animation: R15 rig required, but character is " .. tostring(humanoid.RigType))
+        return nil
+    end
+    if humanoid:GetState() == Enum.HumanoidStateType.Dead then
+        warn("Cannot play levitation animation: Humanoid is dead")
+        return nil
+    end
     local success, animTrack = pcall(function()
         local anim = Instance.new("Animation")
         anim.AnimationId = levitationAnimId
@@ -152,7 +160,7 @@ local function playLevitationAnim()
         return track
     end)
     if not success then
-        warn("Failed to load levitation animation: " .. tostring(animTrack))
+        warn("Failed to load or play levitation animation: " .. tostring(animTrack))
         return nil
     end
     return animTrack
@@ -181,7 +189,7 @@ end
 -- Disable current mode
 local function disableCurrentMode()
     if animTrack then stopAnim(animTrack) animTrack = nil end
-    if humanoid then humanoid.PlatformStand = false end
+    if humanoidRootPart then humanoidRootPart.Anchored = false end
     if currentMode == "swarm" then
         if connections.swarm then connections.swarm:Disconnect(); connections.swarm = nil end
     elseif currentMode == "follow" then
@@ -236,7 +244,7 @@ local function swarm(targetPlayer)
         local angle = (hash % 360) / 180 * math.pi + os.clock() * 2
         local radius = 10
         local x = math.cos(angle) * radius
-        local z = math.sin(angle) * radius
+        z = math.sin(angle) * radius
         local position = center + Vector3.new(x, 0, z)
         humanoidRootPart.CFrame = CFrame.lookAt(position, center)
         task.wait(0.05)
@@ -312,9 +320,12 @@ local function airlock()
     airlockPlatform = createAirlockPlatform(platformPosition)
     toggleNoclip(character, true)
     humanoidRootPart.CFrame = CFrame.new(platformPosition + Vector3.new(0, 1, 0))  -- Position character just above platform
-    humanoid.PlatformStand = true  -- Freeze character
     toggleNoclip(character, false)
-    animTrack = playLevitationAnim()  -- Play animation after positioning
+    animTrack = playLevitationAnim()  -- Play animation before anchoring
+    task.wait(0.1)  -- Brief delay to ensure animation starts
+    if humanoidRootPart then
+        humanoidRootPart.Anchored = true  -- Freeze character completely
+    end
     if not animTrack then
         warn("Airlock: Animation could not be played, continuing without animation")
     end
@@ -331,7 +342,7 @@ local function unairlock()
         return
     end
     toggleNoclip(character, true)
-    humanoid.PlatformStand = false  -- Unfreeze character
+    humanoidRootPart.Anchored = false  -- Unfreeze character
     humanoidRootPart.CFrame = originalCFrame
     toggleNoclip(character, false)
     originalCFrame = nil
