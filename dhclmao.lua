@@ -15,7 +15,7 @@ local originalCFrame = nil
 local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil}
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
-local floatingAnimId = "rbxassetid://117134539591727"
+local floatingAnimId = "rbxassetid://619542203"
 local animTrack = nil
 
 -- Anti-cheat bypass hook
@@ -107,7 +107,7 @@ end
 -- Prevent AFK kicking
 local function preventAFK()
     connections.afk = RunService.Heartbeat:Connect(function()
-        if humanoid and currentMode ~= "stack" and currentMode ~= "airlock" then
+        if humanoid then
             humanoid.Jump = true
             task.wait(0.1)
             humanoid.Jump = false
@@ -156,6 +156,7 @@ end
 -- Disable current mode
 local function disableCurrentMode()
     stopFloatingAnim()
+    humanoid.PlatformStand = false
     if currentMode == "swarm" then
         if connections.swarm then connections.swarm:Disconnect(); connections.swarm = nil end
     elseif currentMode == "follow" then
@@ -199,6 +200,7 @@ local function swarm(targetPlayer)
         return
     end
     toggleNoclip(character, true)
+    humanoid.PlatformStand = true
     playFloatingAnim()
     connections.swarm = RunService.RenderStepped:Connect(function()
         if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then return end
@@ -258,6 +260,7 @@ local function stack(targetPlayer)
         return
     end
     toggleNoclip(character, true)
+    humanoid.PlatformStand = true
     playFloatingAnim()
     local targetRoot = currentTarget.Character.HumanoidRootPart
     local basePosition = targetRoot.Position
@@ -283,6 +286,7 @@ local function airlock()
     local targetHeight = commonY + 15  -- Higher, 15 studs
     local targetCFrame = CFrame.new(originalCFrame.Position.X, targetHeight, originalCFrame.Position.Z) * originalCFrame.Rotation
     toggleNoclip(character, true)
+    humanoid.PlatformStand = true
     playFloatingAnim()
     humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = targetCFrame
@@ -293,6 +297,7 @@ end
 -- Unairlock alts
 local function unairlock()
     stopFloatingAnim()
+    humanoid.PlatformStand = false
     if not humanoidRootPart or not originalCFrame then return end
     toggleNoclip(character, true)
     humanoidRootPart.Anchored = false
@@ -301,8 +306,18 @@ local function unairlock()
     originalCFrame = nil
 end
 
+-- Unswarm
+local function unswarm()
+    stopFloatingAnim()
+    humanoid.PlatformStand = false
+    disableCurrentMode()
+    setup(hostPlayer)
+end
+
 -- Unstack
 local function unstack()
+    stopFloatingAnim()
+    humanoid.PlatformStand = false
     disableCurrentMode()
     setup(hostPlayer)
 end
@@ -417,8 +432,7 @@ hostPlayer.Chatted:Connect(function(message)
             warn("Swarm failed: Player " .. targetName .. " not found")
         end
     elseif cmd == "unswarm" then
-        disableCurrentMode()
-        setup(hostPlayer)
+        unswarm()
     elseif cmd == "follow host" then
         follow(hostPlayer)
     elseif cmd:match("^follow%s+(.+)$") then
