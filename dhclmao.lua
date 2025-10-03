@@ -34,6 +34,38 @@ end
 
 print("Script started for " .. player.Name .. " (Host: " .. tostring(isHost) .. ", Alt: " .. tostring(isAlt) .. ")")
 
+-- Overlay function
+local function createOverlay()
+    local success, err = pcall(function()
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Parent = player:WaitForChild("PlayerGui")
+        screenGui.Name = "DhcOverlay"
+        screenGui.ResetOnSpawn = false
+        screenGui.IgnoreGuiInset = true
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        frame.Position = UDim2.new(0, 0, 0, 0)
+        frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        frame.BackgroundTransparency = 0
+        frame.BorderSizePixel = 0
+        frame.Parent = screenGui
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(0, 200, 0, 50)
+        textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = "dhc.lmao"
+        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        textLabel.TextSize = 24
+        textLabel.Font = Enum.Font.SourceSansBold
+        textLabel.Parent = frame
+    end)
+    if success then
+        print("Overlay created successfully for " .. player.Name)
+    else
+        warn("Overlay creation failed: " .. err)
+    end
+end
+
 -- Host GUI
 if isHost then
     print("Executing host logic for " .. player.Name)
@@ -144,8 +176,12 @@ if isHost then
             button.MouseButton1Click:Connect(function()
                 local cmd = cmdFunc()
                 if cmd then
-                    player:Chat("?" .. cmd)
-                    print("Host sent command: ?" .. cmd)
+                    local success, err = pcall(function() player:Chat("?" .. cmd) end)
+                    if success then
+                        print("Host sent command: ?" .. cmd)
+                    else
+                        warn("Chat failed: " .. err)
+                    end
                 end
             end)
         end
@@ -457,27 +493,30 @@ if isAlt then
                 local cmd = string.sub(lower, 2):match("^%s*(.-)%s*$")
                 if cmd == "" then return end
                 print("Alt received command: " .. cmd)
-                if cmd == "setup host" then setup(hostPlayer)
-                elseif cmd:match("^setup%s+(.+)$") then
-                    local targetName = cmd:match("^setup%s+(.+)$")
-                    if targetName == "club" then setupClub()
-                    elseif targetName == "bank" then setupBank()
-                    else local target = Players:FindFirstChild(targetName); if target then setup(target) end
-                    end
-                elseif cmd == "swarm host" then swarm(hostPlayer)
-                elseif cmd:match("^swarm%s+(.+)$") then local targetName = cmd:match("^swarm%s+(.+)$"); local target = Players:FindFirstChild(targetName); if target then swarm(target) end
-                elseif cmd == "unswarm" then disableCurrentMode(); setup(hostPlayer)
-                elseif cmd == "follow host" then follow(hostPlayer)
-                elseif cmd:match("^follow%s+(.+)$") then local targetName = cmd:match("^follow%s+(.+)$"); local target = Players:FindFirstChild(targetName); if target then follow(target) end
-                elseif cmd == "unfollow" then disableCurrentMode(); setup(hostPlayer)
-                elseif cmd == "airlock" then airlock()
-                elseif cmd == "unairlock" then unairlock()
-                elseif cmd == "bring" then bring()
-                elseif cmd == "drop" then dropAllCash()
-                elseif cmd == "stop" then stopDrop()
-                elseif cmd == "kick" then kickAlt()
-                elseif cmd == "rejoin" then rejoinGame()
-                else warn("Unknown command: " .. cmd) end
+                local success, err = pcall(function()
+                    if cmd == "setup host" then setup(hostPlayer)
+                    elseif cmd:match("^setup%s+(.+)$") then
+                        local targetName = cmd:match("^setup%s+(.+)$")
+                        if targetName == "club" then setupClub()
+                        elseif targetName == "bank" then setupBank()
+                        else local target = Players:FindFirstChild(targetName); if target then setup(target) end
+                        end
+                    elseif cmd == "swarm host" then swarm(hostPlayer)
+                    elseif cmd:match("^swarm%s+(.+)$") then local targetName = cmd:match("^swarm%s+(.+)$"); local target = Players:FindFirstChild(targetName); if target then swarm(target) end
+                    elseif cmd == "unswarm" then disableCurrentMode(); setup(hostPlayer)
+                    elseif cmd == "follow host" then follow(hostPlayer)
+                    elseif cmd:match("^follow%s+(.+)$") then local targetName = cmd:match("^follow%s+(.+)$"); local target = Players:FindFirstChild(targetName); if target then follow(target) end
+                    elseif cmd == "unfollow" then disableCurrentMode(); setup(hostPlayer)
+                    elseif cmd == "airlock" then airlock()
+                    elseif cmd == "unairlock" then unairlock()
+                    elseif cmd == "bring" then bring()
+                    elseif cmd == "drop" then dropAllCash()
+                    elseif cmd == "stop" then stopDrop()
+                    elseif cmd == "kick" then kickAlt()
+                    elseif cmd == "rejoin" then rejoinGame()
+                    else warn("Unknown command: " .. cmd) end
+                end)
+                if not success then warn("Command execution failed: " .. err) end
             end)
         end
     end)
@@ -489,9 +528,8 @@ if isAlt then
         humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
         humanoid = newChar:WaitForChild("Humanoid")
         if currentMode == "airlock" then airlock() end
-        print("Creating overlay for alt " .. player.Name)
-        local success, err = pcall(createOverlay)
-        if not success then warn("Overlay creation failed: " .. err) else print("Overlay created for alt " .. player.Name) end
+        print("Attempting to create overlay for " .. player.Name)
+        createOverlay()
     end)
 
     -- Init for alt
@@ -509,28 +547,3 @@ if isAlt then
 end
 
 print("dhc.lmao Script loaded for " .. player.Name)
-
--- Overlay function (defined at the end to avoid scoping issues)
-local function createOverlay()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = player:WaitForChild("PlayerGui")
-    screenGui.Name = "DhcOverlay"
-    screenGui.ResetOnSpawn = false
-    screenGui.IgnoreGuiInset = true
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.Position = UDim2.new(0, 0, 0, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0, 200, 0, 50)
-    textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextSize = 24
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.Parent = frame
-end
