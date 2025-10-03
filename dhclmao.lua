@@ -150,6 +150,7 @@ local function disableCurrentMode()
         if connections.follow then connections.follow:Disconnect(); connections.follow = nil end
     elseif currentMode == "airlock" then
         if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
+        if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
     elseif currentMode == "setup" then
         if connections.setupMove then connections.setupMove:Disconnect(); connections.setupMove = nil end
     end
@@ -353,7 +354,7 @@ local function follow(targetPlayer)
         task.wait(0.01)
     end)
 end
--- Airlock alts
+-- Airlock alts with idle animation
 local function airlock()
     disableCurrentMode()
     if not humanoidRootPart or not humanoid then
@@ -373,6 +374,12 @@ local function airlock()
     humanoidRootPart.Anchored = true -- Anchor to prevent falling
     toggleNoclip(character, false)
     task.wait(0.1) -- Brief delay to ensure position sets
+    -- Load and play idle animation
+    local idleAnimation = Instance.new("Animation")
+    idleAnimation.AnimationId = "rbxassetid://97171309"
+    airlockAnimationTrack = humanoid:LoadAnimation(idleAnimation)
+    airlockAnimationTrack.Looped = true
+    airlockAnimationTrack:Play()
     -- Use a custom loop to enforce position
     if not connections.airlockFreeze then
         connections.airlockFreeze = RunService.RenderStepped:Connect(function()
@@ -393,6 +400,7 @@ local function unairlock()
         warn("Unairlock failed: Missing required components")
         return
     end
+    if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
     toggleNoclip(character, true)
     humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = originalCFrame
@@ -571,6 +579,7 @@ player.AncestryChanged:Connect(function()
         currentTarget = nil
         airlockPosition = nil
         if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
+        if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
     end
 end)
 -- Initialize script
@@ -578,4 +587,4 @@ createOverlay()
 limitFPS()
 preventAFK()
 disableAllSeats()
-print("loaded dhc.lmao for " .. player.Name .. " in Da Hood")
+print("dhc.lmao Alt Control Script loaded for " .. player.Name .. " in Da Hood")
