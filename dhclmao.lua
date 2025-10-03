@@ -17,32 +17,6 @@ if not isHost and not isAlt then
     return
 end
 
--- Create overlay for everyone
-local function createOverlay()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = player:WaitForChild("PlayerGui")
-    screenGui.Name = "DhcOverlay"
-    screenGui.ResetOnSpawn = false
-    screenGui.IgnoreGuiInset = true
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.Position = UDim2.new(0, 0, 0, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0, 200, 0, 50)
-    textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextSize = 24
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.Parent = frame
-    print("Overlay created for " .. player.Name)
-end
-
 -- Host GUI
 if isHost then
     local function createGUI()
@@ -489,7 +463,7 @@ if isAlt then
         if currentMode == "airlock" then airlock() end
     end)
 
-    -- Init for alt
+    -- Init for alt (including overlay)
     disableAllSeats()
     connections.fps = RunService.RenderStepped:Connect(function()
         local targetDelta = 1 / 5
@@ -500,9 +474,8 @@ if isAlt then
     connections.afk = RunService.Heartbeat:Connect(function()
         if humanoid then humanoid.Jump = true; task.wait(0.1); humanoid.Jump = false end
     end)
+    createOverlay() -- Overlay only for alt
     print("Alt initialized for " .. player.Name)
 end
 
--- Always create overlay last
-createOverlay()
 print("dhc.lmao Script loaded for " .. player.Name)
