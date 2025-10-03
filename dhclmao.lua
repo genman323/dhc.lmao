@@ -134,67 +134,6 @@ local function toggleNoclip(char, enable)
     end
 end
 
--- Apply levitation pose by adjusting Motor6D transforms
-local function applyLevitationPose()
-    if not character or not humanoidRootPart then
-        warn("Cannot apply levitation pose: Character or HumanoidRootPart not found")
-        return
-    end
-    if humanoid.RigType ~= Enum.HumanoidRigType.R15 then
-        warn("Cannot apply levitation pose: R15 rig required, but character is " .. tostring(humanoid.RigType))
-        return
-    end
-    local upperTorso = character:FindFirstChild("UpperTorso")
-    local leftUpperArm = character:FindFirstChild("LeftUpperArm")
-    local rightUpperArm = character:FindFirstChild("RightUpperArm")
-    local leftUpperLeg = character:FindFirstChild("LeftUpperLeg")
-    local rightUpperLeg = character:FindFirstChild("RightUpperLeg")
-    if not upperTorso or not leftUpperArm or not rightUpperArm or not leftUpperLeg or not rightUpperLeg then
-        warn("Cannot apply levitation pose: Required body parts not found")
-        return
-    end
-    local rootJoint = upperTorso:FindFirstChild("RootJoint")
-    local leftShoulder = leftUpperArm:FindFirstChild("LeftShoulder")
-    local rightShoulder = rightUpperArm:FindFirstChild("RightShoulder")
-    local leftHip = leftUpperLeg:FindFirstChild("LeftHip")
-    local rightHip = rightUpperLeg:FindFirstChild("RightHip")
-    if not rootJoint or not leftShoulder or not rightShoulder or not leftHip or not rightHip then
-        warn("Cannot apply levitation pose: Motor6D joints not found")
-        return
-    end
-    -- Enhanced levitation pose: lift higher, raise arms, bend legs, add slight tilt
-    rootJoint.Transform = CFrame.new(0, 2, 0) * CFrame.Angles(math.rad(10), 0, 0)  -- Lift 2 studs, slight forward tilt
-    leftShoulder.Transform = CFrame.new(0, 0.7, -0.2) * CFrame.Angles(math.rad(-45), math.rad(15), 0)  -- Raise left arm, slight outward twist
-    rightShoulder.Transform = CFrame.new(0, 0.7, -0.2) * CFrame.Angles(math.rad(-45), math.rad(-15), 0)  -- Raise right arm, slight outward twist
-    leftHip.Transform = CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(30), 0, math.rad(10))  -- Bend left leg, slight outward
-    rightHip.Transform = CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(30), 0, math.rad(-10))  -- Bend right leg, slight outward
-    print("Levitation pose applied to character")
-end
-
--- Remove levitation pose
-local function removeLevitationPose()
-    if not character or not humanoidRootPart then return end
-    local upperTorso = character:FindFirstChild("UpperTorso")
-    local leftUpperArm = character:FindFirstChild("LeftUpperArm")
-    local rightUpperArm = character:FindFirstChild("RightUpperArm")
-    local leftUpperLeg = character:FindFirstChild("LeftUpperLeg")
-    local rightUpperLeg = character:FindFirstChild("RightUpperLeg")
-    if not upperTorso or not leftUpperArm or not rightUpperArm or not leftUpperLeg or not rightUpperLeg then return end
-    local rootJoint = upperTorso:FindFirstChild("RootJoint")
-    local leftShoulder = leftUpperArm:FindFirstChild("LeftShoulder")
-    local rightShoulder = rightUpperArm:FindFirstChild("RightShoulder")
-    local leftHip = leftUpperLeg:FindFirstChild("LeftHip")
-    local rightHip = rightUpperLeg:FindFirstChild("RightHip")
-    if not rootJoint or not leftShoulder or not rightShoulder or not leftHip or not rightHip then return end
-    -- Reset to default transforms
-    rootJoint.Transform = CFrame.new()
-    leftShoulder.Transform = CFrame.new()
-    rightShoulder.Transform = CFrame.new()
-    leftHip.Transform = CFrame.new()
-    rightHip.Transform = CFrame.new()
-    print("Levitation pose removed from character")
-end
-
 -- Create airlock platform
 local function createAirlockPlatform(position)
     if airlockPlatform then airlockPlatform:Destroy() end
@@ -210,7 +149,6 @@ end
 
 -- Disable current mode
 local function disableCurrentMode()
-    removeLevitationPose()
     if humanoidRootPart then humanoidRootPart.Anchored = false end
     if currentMode == "swarm" then
         if connections.swarm then connections.swarm:Disconnect(); connections.swarm = nil end
@@ -238,7 +176,7 @@ local function setup(targetPlayer)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local spacing = 1
+    local spacing = 0  -- Set to 0 for direct placement behind host
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * (spacing * index)
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
@@ -345,9 +283,8 @@ local function airlock()
     toggleNoclip(character, true)
     humanoidRootPart.CFrame = CFrame.new(platformPosition + Vector3.new(0, 1, 0))  -- Position character just above platform
     toggleNoclip(character, false)
-    applyLevitationPose()  -- Apply enhanced levitation pose
-    task.wait(0.1)  -- Brief delay to ensure pose applies
-    -- Use a custom loop to freeze position instead of Anchored
+    task.wait(0.1)  -- Brief delay to ensure position sets
+    -- Use a custom loop to freeze position
     if not connections.airlockFreeze then
         connections.airlockFreeze = RunService.RenderStepped:Connect(function()
             if currentMode == "airlock" and humanoidRootPart then
@@ -362,7 +299,6 @@ end
 
 -- Unairlock alts
 local function unairlock()
-    removeLevitationPose()
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
     if not humanoidRootPart or not humanoid or not originalCFrame then
