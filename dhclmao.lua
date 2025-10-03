@@ -1,9 +1,144 @@
+local config = getgenv().AltControlConfig
+if not config then
+    warn("AltControlConfig not found. Script cannot proceed.")
+    return
+end
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local player = Players.LocalPlayer
-local hostName = "Sab3r_PRO2003"
+local isHost = player.UserId == config.HostUserId
+local isAlt = table.find(config.AltUserIds, player.UserId) ~= nil
+if not isHost and not isAlt then
+    warn("This script is only for the configured host or alts. Shutting down.")
+    return
+end
+
+if isHost then
+    local function createGUI()
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "AltControlGUI"
+        screenGui.ResetOnSpawn = false
+        screenGui.Parent = player:WaitForChild("PlayerGui")
+
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0, 200, 0, 400)
+        frame.Position = UDim2.new(0, 10, 0, 10)
+        frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        frame.BorderSizePixel = 0
+        frame.Parent = screenGui
+
+        local scrollingFrame = Instance.new("ScrollingFrame")
+        scrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+        scrollingFrame.BackgroundTransparency = 1
+        scrollingFrame.Parent = frame
+
+        local uiListLayout = Instance.new("UIListLayout")
+        uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        uiListLayout.Padding = UDim.new(0, 5)
+        uiListLayout.Parent = scrollingFrame
+
+        local targetBox = Instance.new("TextBox")
+        targetBox.Size = UDim2.new(1, 0, 0, 30)
+        targetBox.PlaceholderText = "Target Player Name"
+        targetBox.Text = ""
+        targetBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        targetBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        targetBox.Parent = scrollingFrame
+
+        local function addButton(text, onClick)
+            local button = Instance.new("TextButton")
+            button.Size = UDim2.new(1, 0, 0, 30)
+            button.Text = text
+            button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+            button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            button.Parent = scrollingFrame
+            button.MouseButton1Click:Connect(onClick)
+        end
+
+        addButton("Setup Host", function()
+            player:SetAttribute("AltCommand", "setup host")
+        end)
+
+        addButton("Setup Club", function()
+            player:SetAttribute("AltCommand", "setup club")
+        end)
+
+        addButton("Setup Bank", function()
+            player:SetAttribute("AltCommand", "setup bank")
+        end)
+
+        addButton("Setup Target", function()
+            local target = targetBox.Text
+            if target == "" then return end
+            player:SetAttribute("AltCommand", "setup " .. target)
+        end)
+
+        addButton("Swarm Host", function()
+            player:SetAttribute("AltCommand", "swarm host")
+        end)
+
+        addButton("Swarm Target", function()
+            local target = targetBox.Text
+            if target == "" then return end
+            player:SetAttribute("AltCommand", "swarm " .. target)
+        end)
+
+        addButton("Unswarm", function()
+            player:SetAttribute("AltCommand", "unswarm")
+        end)
+
+        addButton("Follow Host", function()
+            player:SetAttribute("AltCommand", "follow host")
+        end)
+
+        addButton("Follow Target", function()
+            local target = targetBox.Text
+            if target == "" then return end
+            player:SetAttribute("AltCommand", "follow " .. target)
+        end)
+
+        addButton("Unfollow", function()
+            player:SetAttribute("AltCommand", "unfollow")
+        end)
+
+        addButton("Airlock", function()
+            player:SetAttribute("AltCommand", "airlock")
+        end)
+
+        addButton("Unairlock", function()
+            player:SetAttribute("AltCommand", "unairlock")
+        end)
+
+        addButton("Bring", function()
+            player:SetAttribute("AltCommand", "bring")
+        end)
+
+        addButton("Drop", function()
+            player:SetAttribute("AltCommand", "drop")
+        end)
+
+        addButton("Stop Drop", function()
+            player:SetAttribute("AltCommand", "stop")
+        end)
+
+        addButton("Kick Alts", function()
+            player:SetAttribute("AltCommand", "kick")
+        end)
+
+        addButton("Rejoin Alts", function()
+            player:SetAttribute("AltCommand", "rejoin")
+        end)
+    end
+
+    createGUI()
+    print("Alt Control GUI loaded for host.")
+    return -- Host doesn't need alt logic
+end
+
+-- Below is alt-only logic
 local hostPlayer = nil
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
@@ -36,15 +171,16 @@ if not mainEvent then
 end
 -- Wait for host with timeout
 local function waitForHost(timeout)
-    local success, result = pcall(function()
-        return Players:WaitForChild(hostName, timeout)
-    end)
-    if success and result then
-        return result
-    else
-        warn("Host player " .. hostName .. " not found within " .. timeout .. " seconds.")
-        return nil
+    local startTime = tick()
+    while tick() - startTime < timeout do
+        local hp = Players:GetPlayerByUserId(config.HostUserId)
+        if hp then
+            return hp
+        end
+        task.wait(0.1)
     end
+    warn("Host player not found within " .. timeout .. " seconds.")
+    return nil
 end
 hostPlayer = waitForHost(10)
 if not hostPlayer then
@@ -174,12 +310,12 @@ local function setup(targetPlayer)
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * (spacing * (index + 1))
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
-  
+ 
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
-  
+ 
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -224,12 +360,12 @@ local function setupClub()
     local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
     local offsetPosition = clubPos + Vector3.new(offsetX, 0, offsetZ)
     local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
-  
+ 
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
-  
+ 
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -274,12 +410,12 @@ local function setupBank()
     local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
     local offsetPosition = bankPos + Vector3.new(offsetX, 0, offsetZ)
     local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
-  
+ 
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
-  
+ 
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -460,7 +596,7 @@ end
 -- Kick alt
 local function kickAlt()
     pcall(function()
-        player:Kick("Kicked by you're host.")
+        player:Kick("Kicked by your host.")
     end)
 end
 -- Rejoin game
@@ -480,11 +616,12 @@ hostPlayer.CharacterAdded:Connect(function(newChar)
         if currentMode == "follow" then follow(hostPlayer) end
     end
 end)
--- Handle commands from host
-hostPlayer.Chatted:Connect(function(message)
+-- Handle commands from host via attributes
+hostPlayer:GetAttributeChangedSignal("AltCommand"):Connect(function()
+    local message = hostPlayer:GetAttribute("AltCommand")
+    if not message then return end
     local lowerMsg = string.lower(message)
-    if string.sub(lowerMsg, 1, 1) ~= "?" then return end
-    local cmd = string.sub(lowerMsg, 2):match("^%s*(.-)%s*$")
+    local cmd = lowerMsg:match("^%s*(.-)%s*$")
     if cmd == "" then return end
     if cmd == "setup host" then
         setup(hostPlayer)
@@ -573,9 +710,9 @@ player.AncestryChanged:Connect(function()
         if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     end
 end)
--- Initialize script
+-- Initialize script for alt
 createOverlay()
 limitFPS()
 preventAFK()
 disableAllSeats()
-print("dhc.lmao Alt Control Script loaded for " .. player.Name .. " in Da Hood")
+print("dhc.lmao made by jj lxd")
