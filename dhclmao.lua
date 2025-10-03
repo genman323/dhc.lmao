@@ -200,11 +200,12 @@ if isHost then
     end
 
     createGUI()
+    createOverlay() -- Add overlay for host
     print("Alt Control GUI loaded for host.")
     return -- Host doesn't need alt logic
 end
 
--- Below is alt-only logic (rest of the script remains the same as before, with chat-based command listening)
+-- Below is alt-only logic
 local hostPlayer = nil
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
@@ -778,8 +779,8 @@ player.AncestryChanged:Connect(function()
         if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     end
 end)
--- Initialize script for alt
-createOverlay()
+-- Initialize script for alt (including overlay)
+createOverlay() -- Moved outside if block to apply to both host and alt
 limitFPS()
 preventAFK()
 disableAllSeats()
