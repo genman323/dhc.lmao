@@ -17,7 +17,7 @@ local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
 local airlockPlatform = nil
 local airlockPosition = nil -- Store airlock target position
--- Anti-cheat bypass hook
+local airlockAnimationTrack = nil -- Track the animation
 local detectionFlags = {
     "CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK",
     "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"
@@ -34,7 +34,6 @@ end)
 if not mainEvent then
     warn("MainEvent not found. Some features like dropping cash may not work.")
 end
--- Wait for host with timeout
 local function waitForHost(timeout)
     local success, result = pcall(function()
         return Players:WaitForChild(hostName, timeout)
@@ -51,17 +50,14 @@ if not hostPlayer then
     warn("Script cannot proceed without host player. Shutting down.")
     return
 end
--- Cache player list once per function call
 local function getPlayers()
     return Players:GetPlayers()
 end
--- Disable all seats
 local function disableAllSeats()
     for _, seat in pairs(game.Workspace:GetDescendants()) do
         if seat:IsA("Seat") then seat.Disabled = true end
     end
 end
--- Create overlay UI
 local function createOverlay()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Parent = player:WaitForChild("PlayerGui")
@@ -85,7 +81,6 @@ local function createOverlay()
     textLabel.Font = Enum.Font.SourceSansBold
     textLabel.Parent = frame
 end
--- Limit FPS to reduce client load
 local function limitFPS()
     local targetDeltaTime = 1 / 5
     local lastTime = tick()
@@ -96,7 +91,6 @@ local function limitFPS()
         lastTime = currentTime
     end)
 end
--- Prevent AFK kicking
 local function preventAFK()
     connections.afk = RunService.Heartbeat:Connect(function()
         if humanoid then
@@ -106,7 +100,6 @@ local function preventAFK()
         end
     end)
 end
--- Get alt index for positioning, supporting up to 20 alts
 local function getAltIndex(playerName, players)
     local alts = {}
     for _, p in pairs(players) do if p ~= hostPlayer then table.insert(alts, p) end end
@@ -119,29 +112,26 @@ local function getAltIndex(playerName, players)
     for i, p in ipairs(alts) do if p.Name == playerName then return i - 1 end end
     return 0
 end
--- Toggle noclip for character
 local function toggleNoclip(char, enable)
     if not char then return end
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") and not part:IsA("Accessory") then
             part.CanCollide = not enable
-            part.Velocity = Vector3.new(0, 0, 0) -- Reset velocity to reduce glitching
+            part.Velocity = Vector3.new(0, 0, 0)
         end
     end
 end
--- Create airlock platform
 local function createAirlockPlatform(position)
     if airlockPlatform then airlockPlatform:Destroy() end
     airlockPlatform = Instance.new("Part")
-    airlockPlatform.Size = Vector3.new(20, 0.5, 20) -- Larger platform for stability
+    airlockPlatform.Size = Vector3.new(20, 0.5, 20)
     airlockPlatform.Position = position
     airlockPlatform.Anchored = true
     airlockPlatform.CanCollide = true
-    airlockPlatform.Transparency = 1 -- Invisible
+    airlockPlatform.Transparency = 1
     airlockPlatform.Parent = game.Workspace
     return airlockPlatform
 end
--- Disable current mode
 local function disableCurrentMode()
     if humanoidRootPart then humanoidRootPart.Anchored = false end
     if currentMode == "swarm" then
@@ -150,6 +140,7 @@ local function disableCurrentMode()
         if connections.follow then connections.follow:Disconnect(); connections.follow = nil end
     elseif currentMode == "airlock" then
         if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
+        if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
     elseif currentMode == "setup" then
         if connections.setupMove then connections.setupMove:Disconnect(); connections.setupMove = nil end
     end
@@ -159,7 +150,6 @@ local function disableCurrentMode()
     airlockPosition = nil
     toggleNoclip(character, false)
 end
--- Setup line behind target player
 local function setup(targetPlayer)
     disableCurrentMode()
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
@@ -170,16 +160,14 @@ local function setup(targetPlayer)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local spacing = 1 -- 1 stud spacing for single-file line
+    local spacing = 1
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * (spacing * (index + 1))
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
-  
     local startTime = tick()
-    local duration = 0.5 -- Smooth transition over 0.5 seconds
+    local duration = 0.5
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
-  
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -197,7 +185,6 @@ local function setup(targetPlayer)
     end)
     toggleNoclip(character, false)
 end
--- Setup 4x5 grid in middle of club, supporting up to 20 alts
 local function setupClub()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -205,31 +192,27 @@ local function setupClub()
         return
     end
     toggleNoclip(character, true)
-    local clubPos = Vector3.new(-265, -7, -380) -- Your exact club spot (middle)
+    local clubPos = Vector3.new(-265, -7, -380)
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local totalAlts = #players - 1 -- Total number of alts (excluding host)
+    local totalAlts = #players - 1
     local maxAlts = 20
-    if totalAlts > maxAlts then totalAlts = maxAlts end -- Cap at 20 alts
-    local rows = 5 -- 5 rows
-    local cols = 4 -- 4 alts per row
-    local spacing = 2 -- 2 studs spacing between alts
-    local halfWidth = (cols * spacing) / 2 -- Half the width of the grid
-    local halfDepth = (rows * spacing) / 2 -- Half the depth of the grid
-    -- Calculate row and column based on index
+    if totalAlts > maxAlts then totalAlts = maxAlts end
+    local rows = 5
+    local cols = 4
+    local spacing = 2
+    local halfWidth = (cols * spacing) / 2
+    local halfDepth = (rows * spacing) / 2
     local row = math.floor(index / cols)
     local col = index % cols
-    -- Offset from center to position the alt in the grid
-    local offsetX = -halfWidth + (col * spacing) + (spacing / 2) -- Center the columns
-    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
+    local offsetX = -halfWidth + (col * spacing) + (spacing / 2)
+    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2)
     local offsetPosition = clubPos + Vector3.new(offsetX, 0, offsetZ)
-    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
-  
+    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1))
     local startTime = tick()
-    local duration = 0.5 -- Smooth transition over 0.5 seconds
+    local duration = 0.5
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
-  
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -247,7 +230,6 @@ local function setupClub()
     end)
     toggleNoclip(character, false)
 end
--- Setup 4x5 grid at bank, supporting up to 20 alts
 local function setupBank()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -255,31 +237,27 @@ local function setupBank()
         return
     end
     toggleNoclip(character, true)
-    local bankPos = Vector3.new(-376, 21, -283) -- Bank coordinates
+    local bankPos = Vector3.new(-376, 21, -283)
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local totalAlts = #players - 1 -- Total number of alts (excluding host)
+    local totalAlts = #players - 1
     local maxAlts = 20
-    if totalAlts > maxAlts then totalAlts = maxAlts end -- Cap at 20 alts
-    local rows = 5 -- 5 rows
-    local cols = 4 -- 4 alts per row
-    local spacing = 2 -- 2 studs spacing between alts
-    local halfWidth = (cols * spacing) / 2 -- Half the width of the grid
-    local halfDepth = (rows * spacing) / 2 -- Half the depth of the grid
-    -- Calculate row and column based on index
+    if totalAlts > maxAlts then totalAlts = maxAlts end
+    local rows = 5
+    local cols = 4
+    local spacing = 2
+    local halfWidth = (cols * spacing) / 2
+    local halfDepth = (rows * spacing) / 2
     local row = math.floor(index / cols)
     local col = index % cols
-    -- Offset from center to position the alt in the grid
-    local offsetX = -halfWidth + (col * spacing) + (spacing / 2) -- Center the columns
-    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
+    local offsetX = -halfWidth + (col * spacing) + (spacing / 2)
+    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2)
     local offsetPosition = bankPos + Vector3.new(offsetX, 0, offsetZ)
-    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
-  
+    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1))
     local startTime = tick()
-    local duration = 0.5 -- Smooth transition over 0.5 seconds
+    local duration = 0.5
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
-  
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -297,7 +275,6 @@ local function setupBank()
     end)
     toggleNoclip(character, false)
 end
--- Swarm around target
 local function swarm(targetPlayer)
     disableCurrentMode()
     currentMode = "swarm"
@@ -325,7 +302,6 @@ local function swarm(targetPlayer)
         task.wait(0.05)
     end)
 end
--- Follow target
 local function follow(targetPlayer)
     disableCurrentMode()
     currentMode = "follow"
@@ -338,7 +314,7 @@ local function follow(targetPlayer)
     end
     toggleNoclip(character, true)
     connections.follow = RunService.RenderStepped:Connect(function()
-        if currentMode ~= "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then return end
+        if currentMode != "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then return end
         local targetRoot = currentTarget.Character.HumanoidRootPart
         local targetPos = targetRoot.Position
         local players = getPlayers()
@@ -353,7 +329,6 @@ local function follow(targetPlayer)
         task.wait(0.01)
     end)
 end
--- Airlock alts
 local function airlock()
     disableCurrentMode()
     if not humanoidRootPart or not humanoid then
@@ -364,16 +339,21 @@ local function airlock()
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local commonY = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
-    local targetHeight = commonY + 13 -- Move 13 studs up
-    local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight - 0.5, originalCFrame.Position.Z) -- Platform just below character
+    local targetHeight = commonY + 13
+    local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight - 0.5, originalCFrame.Position.Z)
     airlockPlatform = createAirlockPlatform(platformPosition)
-    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0)) -- Store target position
+    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0))
     toggleNoclip(character, true)
     humanoidRootPart.CFrame = airlockPosition
-    humanoidRootPart.Anchored = true -- Anchor to prevent falling
+    humanoidRootPart.Anchored = true
     toggleNoclip(character, false)
-    task.wait(0.1) -- Brief delay to ensure position sets
-    -- Use a custom loop to enforce position
+    task.wait(0.1)
+    -- Load and play looping animation
+    local animation = Instance.new("Animation")
+    animation.AnimationId = "rbxassetid://97171309"
+    airlockAnimationTrack = humanoid:LoadAnimation(animation)
+    airlockAnimationTrack.Looped = true -- Set animation to loop
+    airlockAnimationTrack:Play()
     if not connections.airlockFreeze then
         connections.airlockFreeze = RunService.RenderStepped:Connect(function()
             if currentMode == "airlock" and humanoidRootPart and airlockPosition then
@@ -385,10 +365,10 @@ local function airlock()
     end
     currentMode = "airlock"
 end
--- Unairlock alts
 local function unairlock()
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
+    if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
     if not humanoidRootPart or not humanoid or not originalCFrame then
         warn("Unairlock failed: Missing required components")
         return
@@ -401,12 +381,10 @@ local function unairlock()
     airlockPosition = nil
     currentMode = nil
 end
--- Unswarm
 local function unswarm()
     disableCurrentMode()
     setup(hostPlayer)
 end
--- Bring alts to host
 local function bring()
     disableCurrentMode()
     if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
@@ -426,7 +404,6 @@ local function bring()
     humanoidRootPart.CFrame = targetCFrame
     toggleNoclip(character, false)
 end
--- Drop cash repeatedly
 local function dropAllCash()
     if not mainEvent then
         warn("MainEvent not found, cannot drop cash.")
@@ -447,7 +424,6 @@ local function dropAllCash()
         end
     end)
 end
--- Stop dropping cash
 local function stopDrop()
     isDropping = false
     if connections.drop then connections.drop:Disconnect(); connections.drop = nil end
@@ -457,30 +433,19 @@ local function stopDrop()
         end)
     end
 end
--- Kick alt
 local function kickAlt()
     pcall(function()
         player:Kick("Kicked by you're host.")
     end)
 end
--- Rejoin game
 local function rejoinGame()
     pcall(function()
         TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
     end)
 end
--- Handle host leaving
 Players.PlayerRemoving:Connect(function(leavingPlayer)
     if leavingPlayer == hostPlayer then kickAlt() end
 end)
--- Handle host character reset
-hostPlayer.CharacterAdded:Connect(function(newChar)
-    if currentTarget == hostPlayer then
-        if currentMode == "swarm" then swarm(hostPlayer) end
-        if currentMode == "follow" then follow(hostPlayer) end
-    end
-end)
--- Handle commands from host
 hostPlayer.Chatted:Connect(function(message)
     local lowerMsg = string.lower(message)
     if string.sub(lowerMsg, 1, 1) ~= "?" then return end
@@ -545,7 +510,6 @@ hostPlayer.Chatted:Connect(function(message)
         warn("Unknown command: " .. cmd)
     end
 end)
--- Handle player character reset
 player.CharacterAdded:Connect(function(newChar)
     character = newChar
     humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
@@ -555,11 +519,10 @@ player.CharacterAdded:Connect(function(newChar)
         if currentMode == "follow" then follow(currentTarget) end
         if currentMode == "airlock" and airlockPosition then airlock() end
         if currentMode == "setup" and currentTarget == nil then
-            if currentTarget == nil and setupClub then setupClub() end -- Reapply club setup if targeted nil
+            if currentTarget == nil and setupClub then setupClub() end
         end
     end
 end)
--- Cleanup connections when player leaves
 player.AncestryChanged:Connect(function()
     if not player:IsDescendantOf(game) then
         for key, conn in pairs(connections) do
@@ -571,9 +534,9 @@ player.AncestryChanged:Connect(function()
         currentTarget = nil
         airlockPosition = nil
         if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
+        if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
     end
 end)
--- Initialize script
 createOverlay()
 limitFPS()
 preventAFK()
