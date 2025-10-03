@@ -12,7 +12,7 @@ local isDropping = false
 local currentMode = nil  -- "swarm", "follow", "stack", "airlock", nil
 local currentTarget = nil
 local originalCFrame = nil
-local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil, airlockFreeze = nil}
+local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil, airlockFreeze = nil, setupMove = nil}
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
 local airlockPlatform = nil
@@ -158,6 +158,8 @@ local function disableCurrentMode()
         if humanoidRootPart then humanoidRootPart.Anchored = false end
     elseif currentMode == "airlock" then
         if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
+    elseif currentMode == "setup" then
+        if connections.setupMove then connections.setupMove:Disconnect(); connections.setupMove = nil end
     end
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     currentMode = nil
@@ -176,11 +178,31 @@ local function setup(targetPlayer)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local spacing = 0  -- Set to 0 for direct placement behind host
+    local spacing = 1  -- 1 stud spacing for single-file line
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * (spacing * index)
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
-    humanoidRootPart.CFrame = targetCFrame
+    
+    local startTime = tick()
+    local duration = 0.5  -- Smooth transition over 0.5 seconds
+    local startCFrame = humanoidRootPart.CFrame
+    currentMode = "setup"
+    
+    if connections.setupMove then connections.setupMove:Disconnect() end
+    connections.setupMove = RunService.RenderStepped:Connect(function()
+        if currentMode ~= "setup" or not humanoidRootPart then
+            connections.setupMove:Disconnect()
+            connections.setupMove = nil
+            return
+        end
+        local elapsed = tick() - startTime
+        local t = math.min(elapsed / duration, 1)
+        humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
+        if t >= 1 then
+            connections.setupMove:Disconnect()
+            connections.setupMove = nil
+        end
+    end)
     toggleNoclip(character, false)
 end
 
