@@ -10,10 +10,25 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
-local isHost = player.UserId == config.HostUserId
-local isAlt = table.find(config.AltUserIds, player.UserId) ~= nil
+
+-- Determine if host or alt using UserIds or Usernames
+local isHost = false
+local isAlt = false
+local hostIdentifier = config.HostIdentifier
+local altIdentifiers = config.AltIdentifiers or {}
+if config.UseUsernames then
+    isHost = (player.Name == hostIdentifier)
+    for _, altName in pairs(altIdentifiers) do
+        if player.Name == altName then isAlt = true break end
+    end
+else
+    isHost = (player.UserId == hostIdentifier)
+    for _, altId in pairs(altIdentifiers) do
+        if player.UserId == altId then isAlt = true break end
+    end
+end
 if not isHost and not isAlt then
-    warn("This script is only for the configured host or alts. Shutting down.")
+    warn("This script is only for the configured host or alts. Shutting down. (Name: " .. player.Name .. ", UserId: " .. player.UserId .. ")")
     return
 end
 
@@ -130,7 +145,7 @@ if isHost then
                 local cmd = cmdFunc()
                 if cmd then
                     player:Chat("?" .. cmd)
-                    print("Sent command: ?" .. cmd)
+                    print("Host sent command: ?" .. cmd)
                 end
             end)
         end
@@ -229,7 +244,7 @@ if isAlt then
         local timeout = 60
         local startTime = tick()
         while tick() - startTime < timeout do
-            hostPlayer = Players:GetPlayerByUserId(config.HostUserId)
+            hostPlayer = config.UseUsernames and Players:FindFirstChild(hostIdentifier) or Players:GetPlayerByUserId(hostIdentifier)
             if hostPlayer then
                 print("Host found: " .. hostPlayer.Name)
                 break
@@ -283,6 +298,7 @@ if isAlt then
         local behind = -targetPlayer.Character.HumanoidRootPart.CFrame.LookVector * (1 * (index + 1))
         humanoidRootPart.CFrame = CFrame.lookAt(targetPlayer.Character.HumanoidRootPart.Position + behind, targetPlayer.Character.HumanoidRootPart.Position)
         toggleNoclip(false)
+        print("Alt executed setup for " .. (targetPlayer.Name or "unknown"))
     end
 
     local function setupClub()
@@ -298,6 +314,7 @@ if isAlt then
         local offset = Vector3.new(-6 + col * 2, 0, -8 + row * 2)
         humanoidRootPart.CFrame = CFrame.new(clubPos + offset, clubPos + offset + Vector3.new(0, 0, -1))
         toggleNoclip(false)
+        print("Alt executed setup club")
     end
 
     local function setupBank()
@@ -313,6 +330,7 @@ if isAlt then
         local offset = Vector3.new(-6 + col * 2, 0, -8 + row * 2)
         humanoidRootPart.CFrame = CFrame.new(bankPos + offset, bankPos + offset + Vector3.new(0, 0, -1))
         toggleNoclip(false)
+        print("Alt executed setup bank")
     end
 
     local function swarm(targetPlayer)
@@ -332,6 +350,7 @@ if isAlt then
             local pos = center + Vector3.new(math.cos(angle) * 10, 0, math.sin(angle) * 10)
             humanoidRootPart.CFrame = CFrame.lookAt(pos, center)
         end)
+        print("Alt executed swarm for " .. targetPlayer.Name)
     end
 
     local function follow(targetPlayer)
@@ -350,6 +369,7 @@ if isAlt then
             local targetPos = currentTarget.Character.HumanoidRootPart.Position + offset
             humanoidRootPart.CFrame = humanoidRootPart.CFrame:Lerp(CFrame.lookAt(targetPos, currentTarget.Character.HumanoidRootPart.Position), 0.5)
         end)
+        print("Alt executed follow for " .. targetPlayer.Name)
     end
 
     local function airlock()
@@ -369,6 +389,7 @@ if isAlt then
         connections.airlock = RunService.RenderStepped:Connect(function()
             if currentMode == "airlock" then humanoidRootPart.CFrame = airlockPosition end
         end)
+        print("Alt executed airlock")
     end
 
     local function unairlock()
@@ -379,6 +400,7 @@ if isAlt then
             humanoidRootPart.CFrame = originalCFrame
         end
         currentMode = nil
+        print("Alt executed unairlock")
     end
 
     local function bring()
@@ -393,6 +415,7 @@ if isAlt then
         local pos = hostPlayer.Character.HumanoidRootPart.Position + Vector3.new(math.cos(angle) * 2, 0, math.sin(angle) * 2)
         humanoidRootPart.CFrame = CFrame.lookAt(pos, hostPlayer.Character.HumanoidRootPart.Position)
         toggleNoclip(false)
+        print("Alt executed bring")
     end
 
     local function dropAllCash()
@@ -410,12 +433,14 @@ if isAlt then
                 end
             end
         end)
+        print("Alt executed drop")
     end
 
     local function stopDrop()
         isDropping = false
         if connections.drop then connections.drop:Disconnect() end
         if mainEvent then pcall(function() mainEvent:FireServer("Block", false) end) end
+        print("Alt executed stop drop")
     end
 
     local function kickAlt() player:Kick("Kicked by host") end
@@ -423,7 +448,7 @@ if isAlt then
 
     -- Listen for host chat
     Players.PlayerAdded:Connect(function(p)
-        if p.UserId == config.HostUserId then
+        if (config.UseUsernames and p.Name == hostIdentifier) or (not config.UseUsernames and p.UserId == hostIdentifier) then
             hostPlayer = p
             print("Host found: " .. p.Name)
             p.Chatted:Connect(function(msg)
@@ -431,7 +456,7 @@ if isAlt then
                 if string.sub(lower, 1, 1) ~= "?" then return end
                 local cmd = string.sub(lower, 2):match("^%s*(.-)%s*$")
                 if cmd == "" then return end
-                print("Alt received: " .. cmd)
+                print("Alt received command: " .. cmd)
                 if cmd == "setup host" then setup(hostPlayer)
                 elseif cmd:match("^setup%s+(.+)$") then
                     local targetName = cmd:match("^setup%s+(.+)$")
@@ -464,6 +489,9 @@ if isAlt then
         humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
         humanoid = newChar:WaitForChild("Humanoid")
         if currentMode == "airlock" then airlock() end
+        print("Creating overlay for alt " .. player.Name)
+        local success, err = pcall(createOverlay)
+        if not success then warn("Overlay creation failed: " .. err) else print("Overlay created for alt " .. player.Name) end
     end)
 
     -- Init for alt
@@ -477,9 +505,32 @@ if isAlt then
     connections.afk = RunService.Heartbeat:Connect(function()
         if humanoid then humanoid.Jump = true; task.wait(0.1); humanoid.Jump = false end
     end)
-    print("Creating overlay for alt " .. player.Name)
-    createOverlay() -- Overlay strictly for alt
     print("Alt initialized for " .. player.Name)
 end
 
 print("dhc.lmao Script loaded for " .. player.Name)
+
+-- Overlay function (defined at the end to avoid scoping issues)
+local function createOverlay()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+    screenGui.Name = "DhcOverlay"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.Position = UDim2.new(0, 0, 0, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(0, 200, 0, 50)
+    textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = "dhc.lmao"
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextSize = 24
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.Parent = frame
+end
