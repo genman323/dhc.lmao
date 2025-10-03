@@ -17,14 +17,6 @@ local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
 local airlockPlatform = nil
 local airlockPosition = nil -- Store airlock target position
-local airlockAnimationTrack = nil
-local altPattern = "ZqwEaA" -- Pattern to identify user's alts (adjust if needed)
-
--- Create or get the RemoteEvent for alt registration
-local altRegisterEvent = Instance.new("RemoteEvent")
-altRegisterEvent.Name = "AltRegisterEvent"
-altRegisterEvent.Parent = ReplicatedStorage
-
 -- Anti-cheat bypass hook
 local detectionFlags = {
     "CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK",
@@ -42,7 +34,6 @@ end)
 if not mainEvent then
     warn("MainEvent not found. Some features like dropping cash may not work.")
 end
-
 -- Wait for host with timeout
 local function waitForHost(timeout)
     local success, result = pcall(function()
@@ -60,19 +51,16 @@ if not hostPlayer then
     warn("Script cannot proceed without host player. Shutting down.")
     return
 end
-
 -- Cache player list once per function call
 local function getPlayers()
     return Players:GetPlayers()
 end
-
 -- Disable all seats
 local function disableAllSeats()
     for _, seat in pairs(game.Workspace:GetDescendants()) do
         if seat:IsA("Seat") then seat.Disabled = true end
     end
 end
-
 -- Create overlay UI
 local function createOverlay()
     local screenGui = Instance.new("ScreenGui")
@@ -91,14 +79,12 @@ local function createOverlay()
     textLabel.Size = UDim2.new(0, 200, 0, 50)
     textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao - Alts: 0" -- Will update with alt count
+    textLabel.Text = "dhc.lmao"
     textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     textLabel.TextSize = 24
     textLabel.Font = Enum.Font.SourceSansBold
     textLabel.Parent = frame
-    return textLabel
 end
-
 -- Limit FPS to reduce client load
 local function limitFPS()
     local targetDeltaTime = 1 / 5
@@ -110,7 +96,6 @@ local function limitFPS()
         lastTime = currentTime
     end)
 end
-
 -- Prevent AFK kicking
 local function preventAFK()
     connections.afk = RunService.Heartbeat:Connect(function()
@@ -121,15 +106,10 @@ local function preventAFK()
         end
     end)
 end
-
--- Get alt index for positioning, supporting up to 20 alts, filtering only user's alts
+-- Get alt index for positioning, supporting up to 20 alts
 local function getAltIndex(playerName, players)
     local alts = {}
-    for _, p in pairs(players) do
-        if p ~= hostPlayer and string.find(p.Name, altPattern) then
-            table.insert(alts, p)
-        end
-    end
+    for _, p in pairs(players) do if p ~= hostPlayer then table.insert(alts, p) end end
     table.sort(alts, function(a, b) return a.Name < b.Name end)
     local maxAlts = 20
     if #alts > maxAlts then
@@ -139,7 +119,6 @@ local function getAltIndex(playerName, players)
     for i, p in ipairs(alts) do if p.Name == playerName then return i - 1 end end
     return 0
 end
-
 -- Toggle noclip for character
 local function toggleNoclip(char, enable)
     if not char then return end
@@ -150,7 +129,6 @@ local function toggleNoclip(char, enable)
         end
     end
 end
-
 -- Create airlock platform
 local function createAirlockPlatform(position)
     if airlockPlatform then airlockPlatform:Destroy() end
@@ -163,7 +141,6 @@ local function createAirlockPlatform(position)
     airlockPlatform.Parent = game.Workspace
     return airlockPlatform
 end
-
 -- Disable current mode
 local function disableCurrentMode()
     if humanoidRootPart then humanoidRootPart.Anchored = false end
@@ -173,7 +150,6 @@ local function disableCurrentMode()
         if connections.follow then connections.follow:Disconnect(); connections.follow = nil end
     elseif currentMode == "airlock" then
         if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
-        if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
     elseif currentMode == "setup" then
         if connections.setupMove then connections.setupMove:Disconnect(); connections.setupMove = nil end
     end
@@ -183,7 +159,6 @@ local function disableCurrentMode()
     airlockPosition = nil
     toggleNoclip(character, false)
 end
-
 -- Setup line behind target player
 local function setup(targetPlayer)
     disableCurrentMode()
@@ -222,7 +197,6 @@ local function setup(targetPlayer)
     end)
     toggleNoclip(character, false)
 end
-
 -- Setup 4x5 grid in middle of club, supporting up to 20 alts
 local function setupClub()
     disableCurrentMode()
@@ -273,7 +247,6 @@ local function setupClub()
     end)
     toggleNoclip(character, false)
 end
-
 -- Setup 4x5 grid at bank, supporting up to 20 alts
 local function setupBank()
     disableCurrentMode()
@@ -324,7 +297,6 @@ local function setupBank()
     end)
     toggleNoclip(character, false)
 end
-
 -- Swarm around target
 local function swarm(targetPlayer)
     disableCurrentMode()
@@ -353,7 +325,6 @@ local function swarm(targetPlayer)
         task.wait(0.05)
     end)
 end
-
 -- Follow target
 local function follow(targetPlayer)
     disableCurrentMode()
@@ -382,8 +353,7 @@ local function follow(targetPlayer)
         task.wait(0.01)
     end)
 end
-
--- Airlock alts with idle animation
+-- Airlock alts
 local function airlock()
     disableCurrentMode()
     if not humanoidRootPart or not humanoid then
@@ -403,12 +373,6 @@ local function airlock()
     humanoidRootPart.Anchored = true -- Anchor to prevent falling
     toggleNoclip(character, false)
     task.wait(0.1) -- Brief delay to ensure position sets
-    -- Load and play idle animation
-    local idleAnimation = Instance.new("Animation")
-    idleAnimation.AnimationId = "rbxassetid://97171309"
-    airlockAnimationTrack = humanoid:LoadAnimation(idleAnimation)
-    airlockAnimationTrack.Looped = true
-    airlockAnimationTrack:Play()
     -- Use a custom loop to enforce position
     if not connections.airlockFreeze then
         connections.airlockFreeze = RunService.RenderStepped:Connect(function()
@@ -421,7 +385,6 @@ local function airlock()
     end
     currentMode = "airlock"
 end
-
 -- Unairlock alts
 local function unairlock()
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
@@ -430,7 +393,6 @@ local function unairlock()
         warn("Unairlock failed: Missing required components")
         return
     end
-    if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
     toggleNoclip(character, true)
     humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = originalCFrame
@@ -439,13 +401,11 @@ local function unairlock()
     airlockPosition = nil
     currentMode = nil
 end
-
 -- Unswarm
 local function unswarm()
     disableCurrentMode()
     setup(hostPlayer)
 end
-
 -- Bring alts to host
 local function bring()
     disableCurrentMode()
@@ -466,7 +426,6 @@ local function bring()
     humanoidRootPart.CFrame = targetCFrame
     toggleNoclip(character, false)
 end
-
 -- Drop cash repeatedly
 local function dropAllCash()
     if not mainEvent then
@@ -488,7 +447,6 @@ local function dropAllCash()
         end
     end)
 end
-
 -- Stop dropping cash
 local function stopDrop()
     isDropping = false
@@ -499,26 +457,22 @@ local function stopDrop()
         end)
     end
 end
-
 -- Kick alt
 local function kickAlt()
     pcall(function()
         player:Kick("Kicked by you're host.")
     end)
 end
-
 -- Rejoin game
 local function rejoinGame()
     pcall(function()
         TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
     end)
 end
-
 -- Handle host leaving
 Players.PlayerRemoving:Connect(function(leavingPlayer)
     if leavingPlayer == hostPlayer then kickAlt() end
 end)
-
 -- Handle host character reset
 hostPlayer.CharacterAdded:Connect(function(newChar)
     if currentTarget == hostPlayer then
@@ -526,7 +480,6 @@ hostPlayer.CharacterAdded:Connect(function(newChar)
         if currentMode == "follow" then follow(hostPlayer) end
     end
 end)
-
 -- Handle commands from host
 hostPlayer.Chatted:Connect(function(message)
     local lowerMsg = string.lower(message)
@@ -592,7 +545,6 @@ hostPlayer.Chatted:Connect(function(message)
         warn("Unknown command: " .. cmd)
     end
 end)
-
 -- Handle player character reset
 player.CharacterAdded:Connect(function(newChar)
     character = newChar
@@ -607,7 +559,6 @@ player.CharacterAdded:Connect(function(newChar)
         end
     end
 end)
-
 -- Cleanup connections when player leaves
 player.AncestryChanged:Connect(function()
     if not player:IsDescendantOf(game) then
@@ -620,43 +571,11 @@ player.AncestryChanged:Connect(function()
         currentTarget = nil
         airlockPosition = nil
         if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
-        if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
-        if player ~= hostPlayer then
-            altRegisterEvent:FireServer("Unregister", player.Name)
-        end
     end
 end)
-
 -- Initialize script
-local overlayText = createOverlay()
+createOverlay()
 limitFPS()
 preventAFK()
 disableAllSeats()
-
--- Register alt with host
-if player ~= hostPlayer and string.find(player.Name, altPattern) then
-    altRegisterEvent:FireServer("Register", player.Name)
-    print("Alt " .. player.Name .. " registered with host.")
-else
-    -- Host logic to track alts
-    local altCount = 0
-    local registeredAlts = {}
-
-    altRegisterEvent.OnServerEvent:Connect(function(playerSending, action, altName)
-        if playerSending == hostPlayer then
-            if action == "Register" and string.find(altName, altPattern) and not registeredAlts[altName] then
-                altCount = altCount + 1
-                registeredAlts[altName] = true
-                overlayText.Text = "dhc.lmao - Alts: " .. altCount
-                print("Registered alt: " .. altName .. ", Total alts: " .. altCount)
-            elseif action == "Unregister" and registeredAlts[altName] then
-                altCount = math.max(0, altCount - 1)
-                registeredAlts[altName] = nil
-                overlayText.Text = "dhc.lmao - Alts: " .. altCount
-                print("Unregistered alt: " .. altName .. ", Total alts: " .. altCount)
-            end
-        end
-    end)
-end
-
 print("dhc.lmao Alt Control Script loaded for " .. player.Name .. " in Da Hood")
