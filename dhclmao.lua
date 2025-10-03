@@ -9,13 +9,13 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 local isDropping = false
-local currentMode = nil  -- "swarm", "follow", "stack", nil
+local currentMode = nil  -- "swarm", "follow", "stack", "airlock", nil
 local currentTarget = nil
 local originalCFrame = nil
 local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil}
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
-local levitationAnimId = "rbxassetid://250928005"
+local levitationAnimId = "rbxassetid://619542203"  -- Roblox Levitation Idle animation
 local animTrack = nil
 local airlockPlatform = nil
 
@@ -138,12 +138,23 @@ end
 
 -- Play levitation animation
 local function playLevitationAnim()
-    local anim = Instance.new("Animation")
-    anim.AnimationId = levitationAnimId
-    local animTrack = humanoid:LoadAnimation(anim)
-    animTrack.Priority = Enum.AnimationPriority.Idle
-    animTrack.Looped = true
-    animTrack:Play()
+    if not humanoid then
+        warn("Cannot play levitation animation: Humanoid not found")
+        return nil
+    end
+    local success, animTrack = pcall(function()
+        local anim = Instance.new("Animation")
+        anim.AnimationId = levitationAnimId
+        local track = humanoid:LoadAnimation(anim)
+        track.Priority = Enum.AnimationPriority.Idle
+        track.Looped = true
+        track:Play()
+        return track
+    end)
+    if not success then
+        warn("Failed to load levitation animation: " .. tostring(animTrack))
+        return nil
+    end
     return animTrack
 end
 
@@ -158,7 +169,7 @@ end
 local function createAirlockPlatform(position)
     if airlockPlatform then airlockPlatform:Destroy() end
     airlockPlatform = Instance.new("Part")
-    airlockPlatform.Size = Vector3.new(10, 1, 10)  -- Big enough for alt to stand
+    airlockPlatform.Size = Vector3.new(10, 0.5, 10)  -- Adjusted thickness for stability
     airlockPlatform.Position = position
     airlockPlatform.Anchored = true
     airlockPlatform.CanCollide = true
@@ -170,13 +181,13 @@ end
 -- Disable current mode
 local function disableCurrentMode()
     if animTrack then stopAnim(animTrack) animTrack = nil end
-    humanoid.PlatformStand = false
+    if humanoid then humanoid.PlatformStand = false end
     if currentMode == "swarm" then
         if connections.swarm then connections.swarm:Disconnect(); connections.swarm = nil end
     elseif currentMode == "follow" then
         if connections.follow then connections.follow:Disconnect(); connections.follow = nil end
     elseif currentMode == "stack" then
-        humanoidRootPart.Anchored = false
+        if humanoidRootPart then humanoidRootPart.Anchored = false end
     end
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     currentMode = nil
@@ -288,21 +299,26 @@ end
 -- Airlock alts
 local function airlock()
     disableCurrentMode()
-    if not humanoidRootPart then return end
+    if not humanoidRootPart or not humanoid then
+        warn("Airlock failed: Humanoid or HumanoidRootPart not found")
+        return
+    end
     originalCFrame = humanoidRootPart.CFrame
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local commonY = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
-    local targetHeight = commonY + 12.5  -- 12-13 studs higher
-    local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight, originalCFrame.Position.Z)
+    local targetHeight = commonY + 13  -- Move 13 studs up
+    local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight - 0.5, originalCFrame.Position.Z)  -- Platform just below character
     airlockPlatform = createAirlockPlatform(platformPosition)
     toggleNoclip(character, true)
-    humanoidRootPart.Anchored = false
-    humanoidRootPart.CFrame = CFrame.new(platformPosition + Vector3.new(0, 2, 0))  -- Position on platform
-    humanoidRootPart.Anchored = true
-    animTrack = playLevitationAnim()
-    currentMode = "airlock"
+    humanoidRootPart.CFrame = CFrame.new(platformPosition + Vector3.new(0, 1, 0))  -- Position character just above platform
+    humanoid.PlatformStand = true  -- Freeze character
     toggleNoclip(character, false)
+    animTrack = playLevitationAnim()  -- Play animation after positioning
+    if not animTrack then
+        warn("Airlock: Animation could not be played, continuing without animation")
+    end
+    currentMode = "airlock"
 end
 
 -- Unairlock alts
@@ -310,9 +326,12 @@ local function unairlock()
     stopAnim(animTrack)
     animTrack = nil
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
-    if not humanoidRootPart or not originalCFrame then return end
+    if not humanoidRootPart or not humanoid or not originalCFrame then
+        warn("Unairlock failed: Missing required components")
+        return
+    end
     toggleNoclip(character, true)
-    humanoidRootPart.Anchored = false
+    humanoid.PlatformStand = false  -- Unfreeze character
     humanoidRootPart.CFrame = originalCFrame
     toggleNoclip(character, false)
     originalCFrame = nil
@@ -495,6 +514,7 @@ player.CharacterAdded:Connect(function(newChar)
         if currentMode == "swarm" then swarm(currentTarget) end
         if currentMode == "follow" then follow(currentTarget) end
         if currentMode == "stack" then stack(currentTarget) end
+        if currentMode == "airlock" then airlock() end
     end
 end)
 
