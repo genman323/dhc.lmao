@@ -12,11 +12,9 @@ local isDropping = false
 local currentMode = nil  -- "swarm", "follow", "stack", "airlock", nil
 local currentTarget = nil
 local originalCFrame = nil
-local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil}
+local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil, airlockFreeze = nil}
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
-local levitationAnimId = "rbxassetid://619542203"  -- Roblox Levitation Idle animation
-local animTrack = nil
 local airlockPlatform = nil
 
 -- Anti-cheat bypass hook
@@ -136,41 +134,65 @@ local function toggleNoclip(char, enable)
     end
 end
 
--- Play levitation animation
-local function playLevitationAnim()
-    if not humanoid then
-        warn("Cannot play levitation animation: Humanoid not found")
-        return nil
+-- Apply levitation pose by adjusting Motor6D transforms
+local function applyLevitationPose()
+    if not character or not humanoidRootPart then
+        warn("Cannot apply levitation pose: Character or HumanoidRootPart not found")
+        return
     end
     if humanoid.RigType ~= Enum.HumanoidRigType.R15 then
-        warn("Cannot play levitation animation: R15 rig required, but character is " .. tostring(humanoid.RigType))
-        return nil
+        warn("Cannot apply levitation pose: R15 rig required, but character is " .. tostring(humanoid.RigType))
+        return
     end
-    if humanoid:GetState() == Enum.HumanoidStateType.Dead then
-        warn("Cannot play levitation animation: Humanoid is dead")
-        return nil
+    local upperTorso = character:FindFirstChild("UpperTorso")
+    local leftUpperArm = character:FindFirstChild("LeftUpperArm")
+    local rightUpperArm = character:FindFirstChild("RightUpperArm")
+    local leftUpperLeg = character:FindFirstChild("LeftUpperLeg")
+    local rightUpperLeg = character:FindFirstChild("RightUpperLeg")
+    if not upperTorso or not leftUpperArm or not rightUpperArm or not leftUpperLeg or not rightUpperLeg then
+        warn("Cannot apply levitation pose: Required body parts not found")
+        return
     end
-    local success, animTrack = pcall(function()
-        local anim = Instance.new("Animation")
-        anim.AnimationId = levitationAnimId
-        local track = humanoid:LoadAnimation(anim)
-        track.Priority = Enum.AnimationPriority.Idle
-        track.Looped = true
-        track:Play()
-        return track
-    end)
-    if not success then
-        warn("Failed to load or play levitation animation: " .. tostring(animTrack))
-        return nil
+    local rootJoint = upperTorso:FindFirstChild("RootJoint")
+    local leftShoulder = leftUpperArm:FindFirstChild("LeftShoulder")
+    local rightShoulder = rightUpperArm:FindFirstChild("RightShoulder")
+    local leftHip = leftUpperLeg:FindFirstChild("LeftHip")
+    local rightHip = rightUpperLeg:FindFirstChild("RightHip")
+    if not rootJoint or not leftShoulder or not rightShoulder or not leftHip or not rightHip then
+        warn("Cannot apply levitation pose: Motor6D joints not found")
+        return
     end
-    return animTrack
+    -- Adjust transforms for levitation effect
+    rootJoint.Transform = CFrame.new(0, 1, 0) * CFrame.Angles(0, 0, 0)  -- Lift upperTorso 1 stud
+    leftShoulder.Transform = CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(-30), 0, 0)  -- Raise left arm slightly
+    rightShoulder.Transform = CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(-30), 0, 0)  -- Raise right arm slightly
+    leftHip.Transform = CFrame.new(0, 0.3, 0) * CFrame.Angles(math.rad(15), 0, 0)  -- Bend left leg slightly
+    rightHip.Transform = CFrame.new(0, 0.3, 0) * CFrame.Angles(math.rad(15), 0, 0)  -- Bend right leg slightly
+    print("Levitation pose applied to character")
 end
 
--- Stop animation
-local function stopAnim(animTrack)
-    if animTrack then
-        animTrack:Stop()
-    end
+-- Remove levitation pose
+local function removeLevitationPose()
+    if not character or not humanoidRootPart then return end
+    local upperTorso = character:FindFirstChild("UpperTorso")
+    local leftUpperArm = character:FindFirstChild("LeftUpperArm")
+    local rightUpperArm = character:FindFirstChild("RightUpperArm")
+    local leftUpperLeg = character:FindFirstChild("LeftUpperLeg")
+    local rightUpperLeg = character:FindFirstChild("RightUpperLeg")
+    if not upperTorso or not leftUpperArm or not rightUpperArm or not leftUpperLeg or not rightUpperLeg then return end
+    local rootJoint = upperTorso:FindFirstChild("RootJoint")
+    local leftShoulder = leftUpperArm:FindFirstChild("LeftShoulder")
+    local rightShoulder = rightUpperArm:FindFirstChild("RightShoulder")
+    local leftHip = leftUpperLeg:FindFirstChild("LeftHip")
+    local rightHip = rightUpperLeg:FindFirstChild("RightHip")
+    if not rootJoint or not leftShoulder or not rightShoulder or not leftHip or not rightHip then return end
+    -- Reset to default transforms
+    rootJoint.Transform = CFrame.new()
+    leftShoulder.Transform = CFrame.new()
+    rightShoulder.Transform = CFrame.new()
+    leftHip.Transform = CFrame.new()
+    rightHip.Transform = CFrame.new()
+    print("Levitation pose removed from character")
 end
 
 -- Create airlock platform
@@ -188,7 +210,7 @@ end
 
 -- Disable current mode
 local function disableCurrentMode()
-    if animTrack then stopAnim(animTrack) animTrack = nil end
+    removeLevitationPose()
     if humanoidRootPart then humanoidRootPart.Anchored = false end
     if currentMode == "swarm" then
         if connections.swarm then connections.swarm:Disconnect(); connections.swarm = nil end
@@ -196,6 +218,8 @@ local function disableCurrentMode()
         if connections.follow then connections.follow:Disconnect(); connections.follow = nil end
     elseif currentMode == "stack" then
         if humanoidRootPart then humanoidRootPart.Anchored = false end
+    elseif currentMode == "airlock" then
+        if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
     end
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     currentMode = nil
@@ -244,7 +268,7 @@ local function swarm(targetPlayer)
         local angle = (hash % 360) / 180 * math.pi + os.clock() * 2
         local radius = 10
         local x = math.cos(angle) * radius
-        z = math.sin(angle) * radius
+        local z = math.sin(angle) * radius
         local position = center + Vector3.new(x, 0, z)
         humanoidRootPart.CFrame = CFrame.lookAt(position, center)
         task.wait(0.05)
@@ -321,28 +345,31 @@ local function airlock()
     toggleNoclip(character, true)
     humanoidRootPart.CFrame = CFrame.new(platformPosition + Vector3.new(0, 1, 0))  -- Position character just above platform
     toggleNoclip(character, false)
-    animTrack = playLevitationAnim()  -- Play animation before anchoring
-    task.wait(0.1)  -- Brief delay to ensure animation starts
-    if humanoidRootPart then
-        humanoidRootPart.Anchored = true  -- Freeze character completely
-    end
-    if not animTrack then
-        warn("Airlock: Animation could not be played, continuing without animation")
+    applyLevitationPose()  -- Apply levitation pose instead of animation
+    task.wait(0.1)  -- Brief delay to ensure pose applies
+    -- Use a custom loop to freeze position instead of Anchored
+    if not connections.airlockFreeze then
+        connections.airlockFreeze = RunService.RenderStepped:Connect(function()
+            if currentMode == "airlock" and humanoidRootPart then
+                humanoidRootPart.CFrame = humanoidRootPart.CFrame  -- Maintain current position
+                humanoidRootPart.Velocity = Vector3.new(0, 0, 0)  -- Prevent physics movement
+                humanoidRootPart.RotVelocity = Vector3.new(0, 0, 0)  -- Prevent rotation
+            end
+        end)
     end
     currentMode = "airlock"
 end
 
 -- Unairlock alts
 local function unairlock()
-    stopAnim(animTrack)
-    animTrack = nil
+    removeLevitationPose()
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
+    if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
     if not humanoidRootPart or not humanoid or not originalCFrame then
         warn("Unairlock failed: Missing required components")
         return
     end
     toggleNoclip(character, true)
-    humanoidRootPart.Anchored = false  -- Unfreeze character
     humanoidRootPart.CFrame = originalCFrame
     toggleNoclip(character, false)
     originalCFrame = nil
@@ -410,7 +437,7 @@ local function stopDrop()
     if connections.drop then connections.drop:Disconnect(); connections.drop = nil end
     if mainEvent then
         pcall(function()
-            mainEvent:FireServer("Block", false)
+            mainEvent:FindServer("Block", false)
         end)
     end
 end
@@ -548,4 +575,4 @@ createOverlay()
 limitFPS()
 preventAFK()
 disableAllSeats()
-print("dhc.lmao Alt Control Script loaded for " .. player.Name)
+print("dhc.lmao Alt Control Script loaded for " .. player.Name .. " in Da Hood")
