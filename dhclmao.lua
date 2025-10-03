@@ -4,301 +4,68 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
+local hostName = "Sab3r_PRO2003"
+local hostPlayer = nil
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+local isDropping = false
+local currentMode = nil -- "swarm", "follow", "airlock", "setup", nil
+local currentTarget = nil
+local originalCFrame = nil
+local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil, airlockFreeze = nil, setupMove = nil}
+local lastDropTime, dropCooldown = 0, 0.1
+local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
+local airlockPlatform = nil
+local airlockPosition = nil
+local isHost = false -- Role flag
 
--- Config
-local HostUserId = 8920111503
-local AltUserIds = {7597015903} -- Add more alts here if needed
-
-local isHost = player.UserId == HostUserId
-local isAlt = table.find(AltUserIds, player.UserId) ~= nil
-if not isHost and not isAlt then
-    warn("This script is only for the configured host or alts. Shutting down.")
-    return
-end
-
--- Create overlay (only for alts)
-local function createOverlay()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = player:WaitForChild("PlayerGui")
-    screenGui.Name = "DhcOverlay"
-    screenGui.ResetOnSpawn = false
-    screenGui.IgnoreGuiInset = true
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.Position = UDim2.new(0, 0, 0, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0, 200, 0, 50)
-    textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextSize = 24
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.Parent = frame
-end
-
--- Host GUI (only for host)
-if isHost then
-    local function createGUI()
-        local screenGui = Instance.new("ScreenGui")
-        screenGui.Name = "AltControlGUI"
-        screenGui.ResetOnSpawn = false
-        screenGui.Parent = player:WaitForChild("PlayerGui")
-
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(0, 250, 0, 400)
-        frame.Position = UDim2.new(0.5, -125, 0.5, -200)
-        frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        frame.BorderSizePixel = 0
-        frame.Parent = screenGui
-
-        local uiCorner = Instance.new("UICorner")
-        uiCorner.CornerRadius = UDim.new(0, 8)
-        uiCorner.Parent = frame
-
-        local uiStroke = Instance.new("UIStroke")
-        uiStroke.Color = Color3.fromRGB(100, 100, 100)
-        uiStroke.Transparency = 0.5
-        uiStroke.Parent = frame
-
-        local titleFrame = Instance.new("Frame")
-        titleFrame.Size = UDim2.new(1, 0, 0, 30)
-        titleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        titleFrame.BorderSizePixel = 0
-        titleFrame.Parent = frame
-
-        local titleCorner = Instance.new("UICorner")
-        titleCorner.CornerRadius = UDim.new(0, 8)
-        titleCorner.Parent = titleFrame
-
-        local titleLabel = Instance.new("TextLabel")
-        titleLabel.Size = UDim2.new(1, -30, 1, 0)
-        titleLabel.Position = UDim2.new(0, 10, 0, 0)
-        titleLabel.BackgroundTransparency = 1
-        titleLabel.Text = "Alt Control"
-        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        titleLabel.TextSize = 18
-        titleLabel.Font = Enum.Font.GothamBold
-        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        titleLabel.Parent = titleFrame
-
-        local closeButton = Instance.new("TextButton")
-        closeButton.Size = UDim2.new(0, 30, 0, 30)
-        closeButton.Position = UDim2.new(1, -30, 0, 0)
-        closeButton.BackgroundTransparency = 1
-        closeButton.Text = "X"
-        closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        closeButton.TextSize = 18
-        closeButton.Font = Enum.Font.Gotham
-        closeButton.Parent = titleFrame
-        closeButton.MouseButton1Click:Connect(function()
-            screenGui:Destroy()
-        end)
-
-        local scrollingFrame = Instance.new("ScrollingFrame")
-        scrollingFrame.Size = UDim2.new(1, 0, 1, -30)
-        scrollingFrame.Position = UDim2.new(0, 0, 0, 30)
-        scrollingFrame.BackgroundTransparency = 1
-        scrollingFrame.ScrollBarThickness = 4
-        scrollingFrame.Parent = frame
-
-        local uiListLayout = Instance.new("UIListLayout")
-        uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        uiListLayout.Padding = UDim.new(0, 5)
-        uiListLayout.Parent = scrollingFrame
-
-        local targetBox = Instance.new("TextBox")
-        targetBox.Size = UDim2.new(1, -10, 0, 30)
-        targetBox.Position = UDim2.new(0, 5, 0, 0)
-        targetBox.PlaceholderText = "Target Player Name"
-        targetBox.Text = ""
-        targetBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        targetBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        targetBox.BorderSizePixel = 0
-        targetBox.Font = Enum.Font.Gotham
-        targetBox.TextSize = 14
-        targetBox.Parent = scrollingFrame
-
-        local targetCorner = Instance.new("UICorner")
-        targetCorner.CornerRadius = UDim.new(0, 4)
-        targetCorner.Parent = targetBox
-
-        local targetStroke = Instance.new("UIStroke")
-        targetStroke.Color = Color3.fromRGB(80, 80, 80)
-        targetStroke.Parent = targetBox
-
-        local function addButton(text, cmdFunc)
-            local button = Instance.new("TextButton")
-            button.Size = UDim2.new(1, -10, 0, 30)
-            button.Text = text
-            button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            button.TextColor3 = Color3.fromRGB(255, 255, 255)
-            button.BorderSizePixel = 0
-            button.Font = Enum.Font.Gotham
-            button.TextSize = 14
-            button.Parent = scrollingFrame
-            local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 4)
-            btnCorner.Parent = button
-            local btnStroke = Instance.new("UIStroke")
-            btnStroke.Color = Color3.fromRGB(80, 80, 80)
-            btnStroke.Parent = button
-            button.MouseButton1Click:Connect(function()
-                local cmd = cmdFunc()
-                if cmd then
-                    player:Chat("?" .. cmd)
-                    print("Sent command: ?" .. cmd)
-                end
-            end)
-        end
-
-        addButton("Setup Host", function() return "setup host" end)
-        addButton("Setup Club", function() return "setup club" end)
-        addButton("Setup Bank", function() return "setup bank" end)
-        addButton("Setup Target", function()
-            local target = targetBox.Text
-            if target == "" then return nil end
-            return "setup " .. target
-        end)
-        addButton("Swarm Host", function() return "swarm host" end)
-        addButton("Swarm Target", function()
-            local target = targetBox.Text
-            if target == "" then return nil end
-            return "swarm " .. target
-        end)
-        addButton("Unswarm", function() return "unswarm" end)
-        addButton("Follow Host", function() return "follow host" end)
-        addButton("Follow Target", function()
-            local target = targetBox.Text
-            if target == "" then return nil end
-            return "follow " .. target
-        end)
-        addButton("Unfollow", function() return "unfollow" end)
-        addButton("Airlock", function() return "airlock" end)
-        addButton("Unairlock", function() return "unairlock" end)
-        addButton("Bring", function() return "bring" end)
-        addButton("Drop", function() return "drop" end)
-        addButton("Stop Drop", function() return "stop" end)
-        addButton("Kick Alts", function() return "kick" end)
-        addButton("Rejoin Alts", function() return "rejoin" end)
-
-        -- Draggable logic
-        local dragging = false
-        local dragInput, dragStart, startPos
-        local function updateInput(input)
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-        titleFrame.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-                dragStart = input.Position
-                startPos = frame.Position
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then dragging = false end
-                end)
-            end
-        end)
-        titleFrame.InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if input == dragInput and dragging then updateInput(input) end
-        end)
-    end
-
-    createGUI()
-end
-
--- Alt logic
-if isAlt then
-    local hostPlayer = nil
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    local humanoid = character:WaitForChild("Humanoid")
-    local isDropping = false
-    local currentMode = nil
-    local currentTarget = nil
-    local originalCFrame = nil
-    local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil, airlockFreeze = nil, setupMove = nil}
-    local lastDropTime, dropCooldown = 0, 0.1
-    local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
-    local airlockPlatform = nil
-    local airlockPosition = nil -- Store airlock target position
--- Anti-cheat bypass hook
-local detectionFlags = {
-    "CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK",
-    "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"
-}
+-- Anti-cheat bypass
+local detectionFlags = {"CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK", "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"}
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local args = {...}
     local method = getnamecallmethod()
     if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
-        return wait(9e9) -- Block detection
+        return wait(9e9)
     end
     return oldNamecall(self, ...)
 end)
+
 if not mainEvent then
     warn("MainEvent not found. Some features like dropping cash may not work.")
 end
--- Wait for host with timeout
+
+-- Wait for host
 local function waitForHost(timeout)
-    local startTime = tick()
-    while tick() - startTime < timeout do
-        local hp = Players:GetPlayerByUserId(config.HostUserId)
-        if hp then
-            return hp
-        end
-        task.wait(0.1)
+    local success, result = pcall(function()
+        return Players:WaitForChild(hostName, timeout)
+    end)
+    if success and result then
+        return result
+    else
+        warn("Host player " .. hostName .. " not found within " .. timeout .. " seconds.")
+        return nil
     end
-    warn("Host player not found within " .. timeout .. " seconds.")
-    return nil
 end
+
 hostPlayer = waitForHost(10)
 if not hostPlayer then
     warn("Script cannot proceed without host player. Shutting down.")
     return
 end
--- Cache player list once per function call
+
+-- Utility functions (unchanged from original)
 local function getPlayers()
     return Players:GetPlayers()
 end
--- Disable all seats
+
 local function disableAllSeats()
     for _, seat in pairs(game.Workspace:GetDescendants()) do
         if seat:IsA("Seat") then seat.Disabled = true end
     end
 end
--- Create overlay UI
-local function createOverlay()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = player:WaitForChild("PlayerGui")
-    screenGui.Name = "DhcOverlay"
-    screenGui.ResetOnSpawn = false
-    screenGui.IgnoreGuiInset = true
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.Position = UDim2.new(0, 0, 0, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0, 200, 0, 50)
-    textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextSize = 24
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.Parent = frame
-end
--- Limit FPS to reduce client load
+
 local function limitFPS()
     local targetDeltaTime = 1 / 5
     local lastTime = tick()
@@ -309,7 +76,7 @@ local function limitFPS()
         lastTime = currentTime
     end)
 end
--- Prevent AFK kicking
+
 local function preventAFK()
     connections.afk = RunService.Heartbeat:Connect(function()
         if humanoid then
@@ -319,7 +86,7 @@ local function preventAFK()
         end
     end)
 end
--- Get alt index for positioning, supporting up to 20 alts
+
 local function getAltIndex(playerName, players)
     local alts = {}
     for _, p in pairs(players) do if p ~= hostPlayer then table.insert(alts, p) end end
@@ -332,29 +99,29 @@ local function getAltIndex(playerName, players)
     for i, p in ipairs(alts) do if p.Name == playerName then return i - 1 end end
     return 0
 end
--- Toggle noclip for character
+
 local function toggleNoclip(char, enable)
     if not char then return end
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") and not part:IsA("Accessory") then
             part.CanCollide = not enable
-            part.Velocity = Vector3.new(0, 0, 0) -- Reset velocity to reduce glitching
+            part.Velocity = Vector3.new(0, 0, 0)
         end
     end
 end
--- Create airlock platform
+
 local function createAirlockPlatform(position)
     if airlockPlatform then airlockPlatform:Destroy() end
     airlockPlatform = Instance.new("Part")
-    airlockPlatform.Size = Vector3.new(20, 0.5, 20) -- Larger platform for stability
+    airlockPlatform.Size = Vector3.new(20, 0.5, 20)
     airlockPlatform.Position = position
     airlockPlatform.Anchored = true
     airlockPlatform.CanCollide = true
-    airlockPlatform.Transparency = 1 -- Invisible
+    airlockPlatform.Transparency = 1
     airlockPlatform.Parent = game.Workspace
     return airlockPlatform
 end
--- Disable current mode
+
 local function disableCurrentMode()
     if humanoidRootPart then humanoidRootPart.Anchored = false end
     if currentMode == "swarm" then
@@ -372,7 +139,8 @@ local function disableCurrentMode()
     airlockPosition = nil
     toggleNoclip(character, false)
 end
--- Setup line behind target player
+
+-- Movement functions (unchanged)
 local function setup(targetPlayer)
     disableCurrentMode()
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
@@ -383,16 +151,14 @@ local function setup(targetPlayer)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local spacing = 1 -- 1 stud spacing for single-file line
+    local spacing = 1
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * (spacing * (index + 1))
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
- 
     local startTime = tick()
-    local duration = 0.5 -- Smooth transition over 0.5 seconds
+    local duration = 0.5
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
- 
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -410,7 +176,7 @@ local function setup(targetPlayer)
     end)
     toggleNoclip(character, false)
 end
--- Setup 4x5 grid in middle of club, supporting up to 20 alts
+
 local function setupClub()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -418,31 +184,27 @@ local function setupClub()
         return
     end
     toggleNoclip(character, true)
-    local clubPos = Vector3.new(-265, -7, -380) -- Your exact club spot (middle)
+    local clubPos = Vector3.new(-265, -7, -380)
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local totalAlts = #players - 1 -- Total number of alts (excluding host)
+    local totalAlts = #players - 1
     local maxAlts = 20
-    if totalAlts > maxAlts then totalAlts = maxAlts end -- Cap at 20 alts
-    local rows = 5 -- 5 rows
-    local cols = 4 -- 4 alts per row
-    local spacing = 2 -- 2 studs spacing between alts
-    local halfWidth = (cols * spacing) / 2 -- Half the width of the grid
-    local halfDepth = (rows * spacing) / 2 -- Half the depth of the grid
-    -- Calculate row and column based on index
+    if totalAlts > maxAlts then totalAlts = maxAlts end
+    local rows = 5
+    local cols = 4
+    local spacing = 2
+    local halfWidth = (cols * spacing) / 2
+    local halfDepth = (rows * spacing) / 2
     local row = math.floor(index / cols)
     local col = index % cols
-    -- Offset from center to position the alt in the grid
-    local offsetX = -halfWidth + (col * spacing) + (spacing / 2) -- Center the columns
-    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
+    local offsetX = -halfWidth + (col * spacing) + (spacing / 2)
+    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2)
     local offsetPosition = clubPos + Vector3.new(offsetX, 0, offsetZ)
-    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
- 
+    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1))
     local startTime = tick()
-    local duration = 0.5 -- Smooth transition over 0.5 seconds
+    local duration = 0.5
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
- 
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -460,7 +222,7 @@ local function setupClub()
     end)
     toggleNoclip(character, false)
 end
--- Setup 4x5 grid at bank, supporting up to 20 alts
+
 local function setupBank()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -468,31 +230,27 @@ local function setupBank()
         return
     end
     toggleNoclip(character, true)
-    local bankPos = Vector3.new(-376, 21, -283) -- Bank coordinates
+    local bankPos = Vector3.new(-376, 21, -283)
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local totalAlts = #players - 1 -- Total number of alts (excluding host)
+    local totalAlts = #players - 1
     local maxAlts = 20
-    if totalAlts > maxAlts then totalAlts = maxAlts end -- Cap at 20 alts
-    local rows = 5 -- 5 rows
-    local cols = 4 -- 4 alts per row
-    local spacing = 2 -- 2 studs spacing between alts
-    local halfWidth = (cols * spacing) / 2 -- Half the width of the grid
-    local halfDepth = (rows * spacing) / 2 -- Half the depth of the grid
-    -- Calculate row and column based on index
+    if totalAlts > maxAlts then totalAlts = maxAlts end
+    local rows = 5
+    local cols = 4
+    local spacing = 2
+    local halfWidth = (cols * spacing) / 2
+    local halfDepth = (rows * spacing) / 2
     local row = math.floor(index / cols)
     local col = index % cols
-    -- Offset from center to position the alt in the grid
-    local offsetX = -halfWidth + (col * spacing) + (spacing / 2) -- Center the columns
-    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
+    local offsetX = -halfWidth + (col * spacing) + (spacing / 2)
+    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2)
     local offsetPosition = bankPos + Vector3.new(offsetX, 0, offsetZ)
-    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
- 
+    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1))
     local startTime = tick()
-    local duration = 0.5 -- Smooth transition over 0.5 seconds
+    local duration = 0.5
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
- 
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -510,7 +268,7 @@ local function setupBank()
     end)
     toggleNoclip(character, false)
 end
--- Swarm around target
+
 local function swarm(targetPlayer)
     disableCurrentMode()
     currentMode = "swarm"
@@ -538,7 +296,7 @@ local function swarm(targetPlayer)
         task.wait(0.05)
     end)
 end
--- Follow target
+
 local function follow(targetPlayer)
     disableCurrentMode()
     currentMode = "follow"
@@ -566,7 +324,7 @@ local function follow(targetPlayer)
         task.wait(0.01)
     end)
 end
--- Airlock alts
+
 local function airlock()
     disableCurrentMode()
     if not humanoidRootPart or not humanoid then
@@ -577,16 +335,15 @@ local function airlock()
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local commonY = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
-    local targetHeight = commonY + 13 -- Move 13 studs up
-    local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight - 0.5, originalCFrame.Position.Z) -- Platform just below character
+    local targetHeight = commonY + 13
+    local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight - 0.5, originalCFrame.Position.Z)
     airlockPlatform = createAirlockPlatform(platformPosition)
-    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0)) -- Store target position
+    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0))
     toggleNoclip(character, true)
     humanoidRootPart.CFrame = airlockPosition
-    humanoidRootPart.Anchored = true -- Anchor to prevent falling
+    humanoidRootPart.Anchored = true
     toggleNoclip(character, false)
-    task.wait(0.1) -- Brief delay to ensure position sets
-    -- Use a custom loop to enforce position
+    task.wait(0.1)
     if not connections.airlockFreeze then
         connections.airlockFreeze = RunService.RenderStepped:Connect(function()
             if currentMode == "airlock" and humanoidRootPart and airlockPosition then
@@ -598,7 +355,7 @@ local function airlock()
     end
     currentMode = "airlock"
 end
--- Unairlock alts
+
 local function unairlock()
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
@@ -614,12 +371,12 @@ local function unairlock()
     airlockPosition = nil
     currentMode = nil
 end
--- Unswarm
+
 local function unswarm()
     disableCurrentMode()
     setup(hostPlayer)
 end
--- Bring alts to host
+
 local function bring()
     disableCurrentMode()
     if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
@@ -639,7 +396,7 @@ local function bring()
     humanoidRootPart.CFrame = targetCFrame
     toggleNoclip(character, false)
 end
--- Drop cash repeatedly
+
 local function dropAllCash()
     if not mainEvent then
         warn("MainEvent not found, cannot drop cash.")
@@ -660,7 +417,7 @@ local function dropAllCash()
         end
     end)
 end
--- Stop dropping cash
+
 local function stopDrop()
     isDropping = false
     if connections.drop then connections.drop:Disconnect(); connections.drop = nil end
@@ -670,31 +427,288 @@ local function stopDrop()
         end)
     end
 end
--- Kick alt
+
 local function kickAlt()
     pcall(function()
-        player:Kick("Kicked by you're host.")
+        player:Kick("Kicked by your host.")
     end)
 end
--- Rejoin game
+
 local function rejoinGame()
     pcall(function()
         TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
     end)
 end
--- Handle host leaving
-Players.PlayerRemoving:Connect(function(leavingPlayer)
-    if leavingPlayer == hostPlayer then kickAlt() end
-end)
--- Handle host character reset
-hostPlayer.CharacterAdded:Connect(function(newChar)
-    if currentTarget == hostPlayer then
-        if currentMode == "swarm" then swarm(hostPlayer) end
-        if currentMode == "follow" then follow(hostPlayer) end
+
+-- GUI creation
+local function createRoleSelectionGUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "RoleSelectionGUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 200)
+    frame.Position = UDim2.new(0.5, -150, 0.5, -100)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 10)
+    uiCorner.Parent = frame
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.Position = UDim2.new(0, 0, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Text = "Select Role"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 24
+    title.Font = Enum.Font.GothamBold
+    title.TextXAlignment = Enum.TextXAlignment.Center
+    title.Parent = frame
+
+    local altButton = Instance.new("TextButton")
+    altButton.Size = UDim2.new(0, 120, 0, 50)
+    altButton.Position = UDim2.new(0, 30, 0, 80)
+    altButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    altButton.Text = "Alt"
+    altButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    altButton.TextSize = 18
+    altButton.Font = Enum.Font.Gotham
+    altButton.Parent = frame
+    local altCorner = Instance.new("UICorner")
+    altCorner.CornerRadius = UDim.new(0, 8)
+    altCorner.Parent = altButton
+
+    local hostButton = Instance.new("TextButton")
+    hostButton.Size = UDim2.new(0, 120, 0, 50)
+    hostButton.Position = UDim2.new(0, 150, 0, 80)
+    hostButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    hostButton.Text = "Host"
+    hostButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    hostButton.TextSize = 18
+    hostButton.Font = Enum.Font.Gotham
+    hostButton.Parent = frame
+    local hostCorner = Instance.new("UICorner")
+    hostCorner.CornerRadius = UDim.new(0, 8)
+    hostCorner.Parent = hostButton
+
+    local function onRoleSelected(role)
+        isHost = (role == "Host")
+        screenGui:Destroy()
+        createMainGUI()
+        if not isHost then
+            -- Start listening for commands if Alt
+            hostPlayer.Chatted:Connect(function(message)
+                handleCommand(message)
+            end)
+        end
     end
-end)
--- Handle commands from host
-hostPlayer.Chatted:Connect(function(message)
+
+    altButton.MouseButton1Click:Connect(function() onRoleSelected("Alt") end)
+    hostButton.MouseButton1Click:Connect(function() onRoleSelected("Host") end)
+end
+
+local function createMainGUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "DhcControlGUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 400)
+    frame.Position = UDim2.new(0, 10, 0, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 10)
+    uiCorner.Parent = frame
+
+    -- Make GUI draggable
+    local dragging, dragInput, dragStart, startPos
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.Position = UDim2.new(0, 0, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Text = "dhc.lmao Control"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 24
+    title.Font = Enum.Font.GothamBold
+    title.TextXAlignment = Enum.TextXAlignment.Center
+    title.Parent = frame
+
+    if isHost then
+        -- Host GUI with buttons
+        local buttonConfigs = {
+            {Text = "Setup Host", Func = function() setup(hostPlayer) end, YOffset = 70},
+            {Text = "Setup Club", Func = setupClub, YOffset = 120},
+            {Text = "Setup Bank", Func = setupBank, YOffset = 170},
+            {Text = "Swarm Host", Func = function() swarm(hostPlayer) end, YOffset = 220},
+            {Text = "Unswarm", Func = unswarm, YOffset = 270},
+            {Text = "Follow Host", Func = function() follow(hostPlayer) end, YOffset = 320},
+            {Text = "Unfollow", Func = function() disableCurrentMode(); setup(hostPlayer) end, YOffset = 370},
+            {Text = "Airlock", Func = airlock, YOffset = 420},
+            {Text = "Unairlock", Func = unairlock, YOffset = 470},
+            {Text = "Bring", Func = bring, YOffset = 520},
+            {Text = "Drop Cash", Func = dropAllCash, YOffset = 570},
+            {Text = "Stop Drop", Func = stopDrop, YOffset = 620},
+            {Text = "Kick Alts", Func = kickAlt, YOffset = 670},
+            {Text = "Rejoin", Func = rejoinGame, YOffset = 720}
+        }
+
+        for _, config in ipairs(buttonConfigs) do
+            local button = Instance.new("TextButton")
+            button.Size = UDim2.new(0, 240, 0, 40)
+            button.Position = UDim2.new(0, 30, 0, config.YOffset)
+            button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            button.Text = config.Text
+            button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            button.TextSize = 16
+            button.Font = Enum.Font.Gotham
+            button.Parent = frame
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 8)
+            btnCorner.Parent = button
+            button.MouseButton1Click:Connect(config.Func)
+        end
+
+        local targetLabel = Instance.new("TextLabel")
+        targetLabel.Size = UDim2.new(0, 240, 0, 30)
+        targetLabel.Position = UDim2.new(0, 30, 0, 770)
+        targetLabel.BackgroundTransparency = 1
+        targetLabel.Text = "Target Player:"
+        targetLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        targetLabel.TextSize = 14
+        targetLabel.Font = Enum.Font.Gotham
+        targetLabel.Parent = frame
+
+        local targetBox = Instance.new("TextBox")
+        targetBox.Size = UDim2.new(0, 240, 0, 40)
+        targetBox.Position = UDim2.new(0, 30, 0, 800)
+        targetBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        targetBox.Text = ""
+        targetBox.PlaceholderText = "Enter player name"
+        targetBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        targetBox.TextSize = 14
+        targetBox.Font = Enum.Font.Gotham
+        targetBox.Parent = frame
+        local boxCorner = Instance.new("UICorner")
+        boxCorner.CornerRadius = UDim.new(0, 8)
+        boxCorner.Parent = targetBox
+
+        local setupTargetButton = Instance.new("TextButton")
+        setupTargetButton.Size = UDim2.new(0, 120, 0, 40)
+        setupTargetButton.Position = UDim2.new(0, 30, 0, 850)
+        setupTargetButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        setupTargetButton.Text = "Setup Target"
+        setupTargetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        setupTargetButton.TextSize = 14
+        setupTargetButton.Font = Enum.Font.Gotham
+        setupTargetButton.Parent = frame
+        local setupCorner = Instance.new("UICorner")
+        setupCorner.CornerRadius = UDim.new(0, 8)
+        setupCorner.Parent = setupTargetButton
+        setupTargetButton.MouseButton1Click:Connect(function()
+            local targetName = targetBox.Text
+            local target = Players:FindFirstChild(targetName)
+            if target then
+                setup(target)
+            else
+                warn("Setup failed: Player " .. targetName .. " not found")
+            end
+        end)
+
+        local swarmTargetButton = Instance.new("TextButton")
+        swarmTargetButton.Size = UDim2.new(0, 120, 0, 40)
+        swarmTargetButton.Position = UDim2.new(0, 150, 0, 850)
+        swarmTargetButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        swarmTargetButton.Text = "Swarm Target"
+        swarmTargetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        swarmTargetButton.TextSize = 14
+        swarmTargetButton.Font = Enum.Font.Gotham
+        swarmTargetButton.Parent = frame
+        local swarmCorner = Instance.new("UICorner")
+        swarmCorner.CornerRadius = UDim.new(0, 8)
+        swarmCorner.Parent = swarmTargetButton
+        swarmTargetButton.MouseButton1Click:Connect(function()
+            local targetName = targetBox.Text
+            local target = Players:FindFirstChild(targetName)
+            if target then
+                swarm(target)
+            else
+                warn("Swarm failed: Player " .. targetName .. " not found")
+            end
+        end)
+
+        local followTargetButton = Instance.new("TextButton")
+        followTargetButton.Size = UDim2.new(0, 120, 0, 40)
+        followTargetButton.Position = UDim2.new(0, 30, 0, 900)
+        followTargetButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        followTargetButton.Text = "Follow Target"
+        followTargetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        followTargetButton.TextSize = 14
+        followTargetButton.Font = Enum.Font.Gotham
+        followTargetButton.Parent = frame
+        local followCorner = Instance.new("UICorner")
+        followCorner.CornerRadius = UDim.new(0, 8)
+        followCorner.Parent = followTargetButton
+        followTargetButton.MouseButton1Click:Connect(function()
+            local targetName = targetBox.Text
+            local target = Players:FindFirstChild(targetName)
+            if target then
+                follow(target)
+            else
+                warn("Follow failed: Player " .. targetName .. " not found")
+            end
+        end)
+    else
+        -- Alt GUI (minimal, shows status)
+        local statusLabel = Instance.new("TextLabel")
+        statusLabel.Size = UDim2.new(1, 0, 0, 50)
+        statusLabel.Position = UDim2.new(0, 0, 0, 70)
+        statusLabel.BackgroundTransparency = 1
+        statusLabel.Text = "Alt Mode: Waiting for commands"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        statusLabel.TextSize = 16
+        statusLabel.Font = Enum.Font.Gotham
+        statusLabel.TextXAlignment = Enum.TextXAlignment.Center
+        statusLabel.Parent = frame
+    end
+end
+
+-- Command handler for Alt mode
+local function handleCommand(message)
     local lowerMsg = string.lower(message)
     if string.sub(lowerMsg, 1, 1) ~= "?" then return end
     local cmd = string.sub(lowerMsg, 2):match("^%s*(.-)%s*$")
@@ -757,8 +771,20 @@ hostPlayer.Chatted:Connect(function(message)
     else
         warn("Unknown command: " .. cmd)
     end
+end
+
+-- Event handlers
+Players.PlayerRemoving:Connect(function(leavingPlayer)
+    if leavingPlayer == hostPlayer then kickAlt() end
 end)
--- Handle player character reset
+
+hostPlayer.CharacterAdded:Connect(function(newChar)
+    if currentTarget == hostPlayer then
+        if currentMode == "swarm" then swarm(hostPlayer) end
+        if currentMode == "follow" then follow(hostPlayer) end
+    end
+end)
+
 player.CharacterAdded:Connect(function(newChar)
     character = newChar
     humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
@@ -768,11 +794,11 @@ player.CharacterAdded:Connect(function(newChar)
         if currentMode == "follow" then follow(currentTarget) end
         if currentMode == "airlock" and airlockPosition then airlock() end
         if currentMode == "setup" and currentTarget == nil then
-            if currentTarget == nil and setupClub then setupClub() end -- Reapply club setup if targeted nil
+            if currentTarget == nil and setupClub then setupClub() end
         end
     end
 end)
--- Cleanup connections when player leaves
+
 player.AncestryChanged:Connect(function()
     if not player:IsDescendantOf(game) then
         for key, conn in pairs(connections) do
@@ -786,10 +812,10 @@ player.AncestryChanged:Connect(function()
         if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     end
 end)
--- Initialize script
-createOverlay()
+
+-- Initialize
+disableAllSeats()
 limitFPS()
 preventAFK()
-disableAllSeats()
-print("dhc.lmao Alt Control Script loaded for " .. player.Name .. " in Da Hood")
-end
+createRoleSelectionGUI()
+print("dhc.lmao Alt Control Script with GUI loaded for " .. player.Name .. " in Da Hood")
