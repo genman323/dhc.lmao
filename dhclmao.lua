@@ -197,7 +197,7 @@ local function setup(targetPlayer)
     end)
     toggleNoclip(character, false)
 end
--- Setup line in middle of club, supporting up to 20 alts
+-- Setup 4x5 grid in middle of club, supporting up to 20 alts
 local function setupClub()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -211,11 +211,18 @@ local function setupClub()
     local totalAlts = #players - 1 -- Total number of alts (excluding host)
     local maxAlts = 20
     if totalAlts > maxAlts then totalAlts = maxAlts end -- Cap at 20 alts
-    local spacing = 2 -- Base spacing, adjustable for 20 alts
-    if totalAlts > 10 then spacing = 1.5 end -- Reduce spacing for larger groups to fit
-    local halfSpread = (totalAlts * spacing) / 2 -- Calculate half the total spread
-    local offsetX = -halfSpread + (index * spacing) -- Center the line and distribute symmetrically
-    local offsetPosition = clubPos + Vector3.new(offsetX, 0, 0) -- Horizontal spread along X-axis
+    local rows = 5 -- 5 rows
+    local cols = 4 -- 4 alts per row
+    local spacing = 2 -- 2 studs spacing between alts
+    local halfWidth = (cols * spacing) / 2 -- Half the width of the grid
+    local halfDepth = (rows * spacing) / 2 -- Half the depth of the grid
+    -- Calculate row and column based on index
+    local row = math.floor(index / cols)
+    local col = index % cols
+    -- Offset from center to position the alt in the grid
+    local offsetX = -halfWidth + (col * spacing) + (spacing / 2) -- Center the columns
+    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
+    local offsetPosition = clubPos + Vector3.new(offsetX, 0, offsetZ)
     local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
   
     local startTime = tick()
@@ -240,7 +247,7 @@ local function setupClub()
     end)
     toggleNoclip(character, false)
 end
--- Setup line at bank, supporting up to 20 alts
+-- Setup 4x5 grid at bank, supporting up to 20 alts
 local function setupBank()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -248,17 +255,25 @@ local function setupBank()
         return
     end
     toggleNoclip(character, true)
-    local bankPos = Vector3.new(-376, 21, -283) -- Bank coordinates from image
+    local bankPos = Vector3.new(-376, 21, -283) -- Bank coordinates
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local totalAlts = #players - 1 -- Total number of alts (excluding host)
     local maxAlts = 20
     if totalAlts > maxAlts then totalAlts = maxAlts end -- Cap at 20 alts
-    local spacing = 1 -- 1 stud spacing for single-file line
-    if totalAlts > 10 then spacing = 0.8 end -- Reduce spacing for larger groups to fit
-    local behindDirection = Vector3.new(0, 0, -1) -- Single-file line along -Z axis
-    local offsetPosition = bankPos + behindDirection * (spacing * (index + 1))
-    local targetCFrame = CFrame.lookAt(offsetPosition, bankPos)
+    local rows = 5 -- 5 rows
+    local cols = 4 -- 4 alts per row
+    local spacing = 2 -- 2 studs spacing between alts
+    local halfWidth = (cols * spacing) / 2 -- Half the width of the grid
+    local halfDepth = (rows * spacing) / 2 -- Half the depth of the grid
+    -- Calculate row and column based on index
+    local row = math.floor(index / cols)
+    local col = index % cols
+    -- Offset from center to position the alt in the grid
+    local offsetX = -halfWidth + (col * spacing) + (spacing / 2) -- Center the columns
+    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
+    local offsetPosition = bankPos + Vector3.new(offsetX, 0, offsetZ)
+    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
   
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
