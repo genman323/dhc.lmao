@@ -192,7 +192,6 @@ local function setup(targetPlayer)
     end)
     toggleNoclip(character, false)
 end
--- Setup line in middle of club
 local function setupClub()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -206,7 +205,7 @@ local function setupClub()
     local spacing = 2 -- Increased spacing for horizontal line
     local behindDirection = Vector3.new(1, 0, 0) -- Horizontal direction along +X axis
     local offsetPosition = clubPos + behindDirection * (spacing * index)
-    local targetCFrame = CFrame.lookAt(offsetPosition, clubPos + Vector3.new(0, 0, -1))
+    local targetCFrame = CFrame.new(offsetPosition) * CFrame.Angles(0, math.pi, 0) -- Face -Z direction (forward)
   
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
