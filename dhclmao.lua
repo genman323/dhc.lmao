@@ -162,12 +162,12 @@ local function applyLevitationPose()
         warn("Cannot apply levitation pose: Motor6D joints not found")
         return
     end
-    -- Adjust transforms for levitation effect
-    rootJoint.Transform = CFrame.new(0, 1, 0) * CFrame.Angles(0, 0, 0)  -- Lift upperTorso 1 stud
-    leftShoulder.Transform = CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(-30), 0, 0)  -- Raise left arm slightly
-    rightShoulder.Transform = CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(-30), 0, 0)  -- Raise right arm slightly
-    leftHip.Transform = CFrame.new(0, 0.3, 0) * CFrame.Angles(math.rad(15), 0, 0)  -- Bend left leg slightly
-    rightHip.Transform = CFrame.new(0, 0.3, 0) * CFrame.Angles(math.rad(15), 0, 0)  -- Bend right leg slightly
+    -- Enhanced levitation pose: lift higher, raise arms, bend legs, add slight tilt
+    rootJoint.Transform = CFrame.new(0, 2, 0) * CFrame.Angles(math.rad(10), 0, 0)  -- Lift 2 studs, slight forward tilt
+    leftShoulder.Transform = CFrame.new(0, 0.7, -0.2) * CFrame.Angles(math.rad(-45), math.rad(15), 0)  -- Raise left arm, slight outward twist
+    rightShoulder.Transform = CFrame.new(0, 0.7, -0.2) * CFrame.Angles(math.rad(-45), math.rad(-15), 0)  -- Raise right arm, slight outward twist
+    leftHip.Transform = CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(30), 0, math.rad(10))  -- Bend left leg, slight outward
+    rightHip.Transform = CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(30), 0, math.rad(-10))  -- Bend right leg, slight outward
     print("Levitation pose applied to character")
 end
 
@@ -345,7 +345,7 @@ local function airlock()
     toggleNoclip(character, true)
     humanoidRootPart.CFrame = CFrame.new(platformPosition + Vector3.new(0, 1, 0))  -- Position character just above platform
     toggleNoclip(character, false)
-    applyLevitationPose()  -- Apply levitation pose instead of animation
+    applyLevitationPose()  -- Apply enhanced levitation pose
     task.wait(0.1)  -- Brief delay to ensure pose applies
     -- Use a custom loop to freeze position instead of Anchored
     if not connections.airlockFreeze then
@@ -437,7 +437,7 @@ local function stopDrop()
     if connections.drop then connections.drop:Disconnect(); connections.drop = nil end
     if mainEvent then
         pcall(function()
-            mainEvent:FindServer("Block", false)
+            mainEvent:FireServer("Block", false)
         end)
     end
 end
