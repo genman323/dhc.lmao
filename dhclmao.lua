@@ -15,8 +15,7 @@ local originalCFrame = nil
 local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil}
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
-local floatingAnimId = "rbxassetid://619542203"
-local animTrack = nil
+local levitationAnimId = "rbxassetid://250928005"
 
 -- Anti-cheat bypass hook
 local detectionFlags = {
@@ -130,32 +129,32 @@ local function toggleNoclip(char, enable)
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") and not part:IsA("Accessory") then
             part.CanCollide = not enable
+            part.Velocity = Vector3.new(0, 0, 0)  -- Reset velocity to reduce glitching
         end
     end
 end
 
--- Play floating animation
-local function playFloatingAnim()
-    if animTrack then animTrack:Stop() animTrack = nil end
+-- Play levitation animation
+local function playLevitationAnim()
     local anim = Instance.new("Animation")
-    anim.AnimationId = floatingAnimId
-    animTrack = humanoid:LoadAnimation(anim)
+    anim.AnimationId = levitationAnimId
+    local animTrack = humanoid:LoadAnimation(anim)
     animTrack.Priority = Enum.AnimationPriority.Idle
     animTrack.Looped = true
     animTrack:Play()
+    return animTrack
 end
 
--- Stop floating animation
-local function stopFloatingAnim()
+-- Stop animation
+local function stopAnim(animTrack)
     if animTrack then
         animTrack:Stop()
-        animTrack = nil
     end
 end
 
 -- Disable current mode
 local function disableCurrentMode()
-    stopFloatingAnim()
+    if animTrack then stopAnim(animTrack) animTrack = nil end
     humanoid.PlatformStand = false
     if currentMode == "swarm" then
         if connections.swarm then connections.swarm:Disconnect(); connections.swarm = nil end
@@ -182,7 +181,7 @@ local function setup(targetPlayer)
     local index = getAltIndex(player.Name, players)
     local spacing = 1
     local behindDirection = -targetRoot.CFrame.LookVector
-    local offsetPosition = targetRoot.Position + behindDirection * (spacing * index)  -- Closer, first at 0, then 1, 2, etc.
+    local offsetPosition = targetRoot.Position + behindDirection * (spacing * index)
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
     humanoidRootPart.CFrame = targetCFrame
     toggleNoclip(character, false)
@@ -200,8 +199,6 @@ local function swarm(targetPlayer)
         return
     end
     toggleNoclip(character, true)
-    humanoid.PlatformStand = true
-    playFloatingAnim()
     connections.swarm = RunService.RenderStepped:Connect(function()
         if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then return end
         local center = currentTarget.Character.HumanoidRootPart.Position
@@ -209,7 +206,7 @@ local function swarm(targetPlayer)
         for i = 1, #player.Name do
             hash = hash + string.byte(player.Name, i)
         end
-        local angle = (hash % 360) / 180 * math.pi + os.clock() * 2 -- Decent speed
+        local angle = (hash % 360) / 180 * math.pi + os.clock() * 2
         local radius = 10
         local x = math.cos(angle) * radius
         local z = math.sin(angle) * radius
@@ -243,8 +240,8 @@ local function follow(targetPlayer)
         local lookPos = targetPos
         local currentCFrame = humanoidRootPart.CFrame
         local targetCFrame = CFrame.lookAt(myPos, lookPos)
-        humanoidRootPart.CFrame = currentCFrame:Lerp(targetCFrame, 0.5)  -- Lerp for smoothness
-        task.wait(0.01)  -- Reduced delay for smoother movement
+        humanoidRootPart.CFrame = currentCFrame:Lerp(targetCFrame, 0.5)
+        task.wait(0.01)
     end)
 end
 
@@ -260,18 +257,15 @@ local function stack(targetPlayer)
         return
     end
     toggleNoclip(character, true)
-    humanoid.PlatformStand = true
-    playFloatingAnim()
     local targetRoot = currentTarget.Character.HumanoidRootPart
-    local basePosition = targetRoot.Position
-    local heightOffset = 5
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local targetPosition = Vector3.new(basePosition.X, basePosition.Y + targetRoot.Size.Y + 2 + (index * heightOffset), basePosition.Z)
-    local targetCFrame = CFrame.new(targetPosition) * targetRoot.CFrame.Rotation
-    humanoidRootPart.Anchored = false
-    humanoidRootPart.CFrame = targetCFrame
+    local basePosition = targetRoot.Position
+    local heightOffset = 5
+    local targetPosition = Vector3.new(basePosition.X, basePosition.Y + 15 + (index * heightOffset), basePosition.Z)  -- Start at 15 studs, stack vertically
+    local targetCFrame = CFrame.new(targetPosition) * CFrame.Angles(0, targetRoot.Orientation.Y * math.pi / 180, 0)  -- Align with host's Y rotation
     humanoidRootPart.Anchored = true
+    humanoidRootPart.CFrame = targetCFrame
     toggleNoclip(character, false)
 end
 
@@ -283,21 +277,19 @@ local function airlock()
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local commonY = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
-    local targetHeight = commonY + 15  -- Higher, 15 studs
+    local targetHeight = commonY + 15  -- Fixed 15 studs high
     local targetCFrame = CFrame.new(originalCFrame.Position.X, targetHeight, originalCFrame.Position.Z) * originalCFrame.Rotation
     toggleNoclip(character, true)
-    humanoid.PlatformStand = true
-    playFloatingAnim()
-    humanoidRootPart.Anchored = false
-    humanoidRootPart.CFrame = targetCFrame
+    animTrack = playLevitationAnim()
     humanoidRootPart.Anchored = true
+    humanoidRootPart.CFrame = targetCFrame
     toggleNoclip(character, false)
 end
 
 -- Unairlock alts
 local function unairlock()
-    stopFloatingAnim()
-    humanoid.PlatformStand = false
+    stopAnim(animTrack)
+    animTrack = nil
     if not humanoidRootPart or not originalCFrame then return end
     toggleNoclip(character, true)
     humanoidRootPart.Anchored = false
@@ -308,16 +300,12 @@ end
 
 -- Unswarm
 local function unswarm()
-    stopFloatingAnim()
-    humanoid.PlatformStand = false
     disableCurrentMode()
     setup(hostPlayer)
 end
 
 -- Unstack
 local function unstack()
-    stopFloatingAnim()
-    humanoid.PlatformStand = false
     disableCurrentMode()
     setup(hostPlayer)
 end
