@@ -215,19 +215,19 @@ local function setupClub()
         return
     end
     toggleNoclip(character, true)
-    local clubPos = Vector3.new(-265, 49, -457)  -- Middle position in Kool Klub
+    local clubPos = Vector3.new(-265, -7, -380) -- Updated to your exact club spot
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local spacing = 1  -- 1 stud spacing for single-file line
-    local behindDirection = Vector3.new(0, 0, -1)  -- Fixed direction for line (along -Z)
+    local spacing = 1 -- 1 stud spacing for single-file line
+    local behindDirection = Vector3.new(0, 0, -1) -- Fixed direction for line (along -Z)
     local offsetPosition = clubPos + behindDirection * (spacing * (index + 1))
     local targetCFrame = CFrame.lookAt(offsetPosition, clubPos)
-    
+  
     local startTime = tick()
-    local duration = 0.5  -- Smooth transition over 0.5 seconds
+    local duration = 0.5 -- Smooth transition over 0.5 seconds
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
-    
+  
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -246,7 +246,6 @@ local function setupClub()
     end)
     toggleNoclip(character, false)
 end
-
 -- Swarm around target
 local function swarm(targetPlayer)
     disableCurrentMode()
