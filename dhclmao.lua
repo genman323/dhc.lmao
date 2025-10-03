@@ -16,6 +16,8 @@ local connections = {drop = nil, swarm = nil, follow = nil, fps = nil, afk = nil
 local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
 local levitationAnimId = "rbxassetid://250928005"
+local animTrack = nil
+local airlockPlatform = nil
 
 -- Anti-cheat bypass hook
 local detectionFlags = {
@@ -152,6 +154,19 @@ local function stopAnim(animTrack)
     end
 end
 
+-- Create airlock platform
+local function createAirlockPlatform(position)
+    if airlockPlatform then airlockPlatform:Destroy() end
+    airlockPlatform = Instance.new("Part")
+    airlockPlatform.Size = Vector3.new(10, 1, 10)  -- Big enough for alt to stand
+    airlockPlatform.Position = position
+    airlockPlatform.Anchored = true
+    airlockPlatform.CanCollide = true
+    airlockPlatform.Transparency = 1  -- Invisible
+    airlockPlatform.Parent = game.Workspace
+    return airlockPlatform
+end
+
 -- Disable current mode
 local function disableCurrentMode()
     if animTrack then stopAnim(animTrack) animTrack = nil end
@@ -163,6 +178,7 @@ local function disableCurrentMode()
     elseif currentMode == "stack" then
         humanoidRootPart.Anchored = false
     end
+    if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     currentMode = nil
     currentTarget = nil
     toggleNoclip(character, false)
@@ -263,7 +279,7 @@ local function stack(targetPlayer)
     local basePosition = targetRoot.Position
     local heightOffset = 5
     local targetPosition = Vector3.new(basePosition.X, basePosition.Y + 15 + (index * heightOffset), basePosition.Z)  -- Start at 15 studs, stack vertically
-    local targetCFrame = CFrame.new(targetPosition) * CFrame.Angles(0, targetRoot.Orientation.Y * math.pi / 180, 0)  -- Align with host's Y rotation
+    local targetCFrame = CFrame.new(targetPosition) * CFrame.Angles(0, targetRoot.Orientation.Y * math.pi / 180, 0)
     humanoidRootPart.Anchored = true
     humanoidRootPart.CFrame = targetCFrame
     toggleNoclip(character, false)
@@ -277,12 +293,15 @@ local function airlock()
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local commonY = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
-    local targetHeight = commonY + 15  -- Fixed 15 studs high
-    local targetCFrame = CFrame.new(originalCFrame.Position.X, targetHeight, originalCFrame.Position.Z) * originalCFrame.Rotation
+    local targetHeight = commonY + 12.5  -- 12-13 studs higher
+    local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight, originalCFrame.Position.Z)
+    airlockPlatform = createAirlockPlatform(platformPosition)
     toggleNoclip(character, true)
-    animTrack = playLevitationAnim()
+    humanoidRootPart.Anchored = false
+    humanoidRootPart.CFrame = CFrame.new(platformPosition + Vector3.new(0, 2, 0))  -- Position on platform
     humanoidRootPart.Anchored = true
-    humanoidRootPart.CFrame = targetCFrame
+    animTrack = playLevitationAnim()
+    currentMode = "airlock"
     toggleNoclip(character, false)
 end
 
@@ -290,12 +309,14 @@ end
 local function unairlock()
     stopAnim(animTrack)
     animTrack = nil
+    if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     if not humanoidRootPart or not originalCFrame then return end
     toggleNoclip(character, true)
     humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = originalCFrame
     toggleNoclip(character, false)
     originalCFrame = nil
+    currentMode = nil
 end
 
 -- Unswarm
@@ -487,6 +508,7 @@ player.AncestryChanged:Connect(function()
         isDropping = false
         currentMode = nil
         currentTarget = nil
+        if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     end
 end)
 
