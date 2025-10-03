@@ -17,8 +17,11 @@ if not isHost and not isAlt then
     return
 end
 
+print("Script started for " .. player.Name .. " (Host: " .. tostring(isHost) .. ", Alt: " .. tostring(isAlt) .. ")")
+
 -- Host GUI
 if isHost then
+    print("Executing host logic for " .. player.Name)
     local function createGUI()
         local screenGui = Instance.new("ScreenGui")
         screenGui.Name = "AltControlGUI"
@@ -193,7 +196,7 @@ end
 
 -- Alt logic
 if isAlt then
-    print("Alt mode activated for " .. player.Name)
+    print("Executing alt logic for " .. player.Name)
     local hostPlayer = nil
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
@@ -463,7 +466,7 @@ if isAlt then
         if currentMode == "airlock" then airlock() end
     end)
 
-    -- Init for alt (including overlay)
+    -- Init for alt
     disableAllSeats()
     connections.fps = RunService.RenderStepped:Connect(function()
         local targetDelta = 1 / 5
@@ -474,7 +477,8 @@ if isAlt then
     connections.afk = RunService.Heartbeat:Connect(function()
         if humanoid then humanoid.Jump = true; task.wait(0.1); humanoid.Jump = false end
     end)
-    createOverlay() -- Overlay only for alt
+    print("Creating overlay for alt " .. player.Name)
+    createOverlay() -- Overlay strictly for alt
     print("Alt initialized for " .. player.Name)
 end
 
