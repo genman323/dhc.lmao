@@ -4,8 +4,6 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
-local hostName = "2tacticalforyou"
-local hostPlayer = nil
 local character = nil
 local humanoidRootPart = nil
 local humanoid = nil
@@ -19,6 +17,7 @@ local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
 local airlockPlatform = nil
 local airlockPosition = nil
 local isHost = false -- Role flag
+local hostPlayer = nil -- Will be set if Alt mode and host is chosen
 
 -- Anti-cheat bypass with safety
 local detectionFlags = {"CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK", "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"}
@@ -39,25 +38,6 @@ end
 
 if not mainEvent then
     warn("MainEvent not found. Some features like dropping cash may not work.")
-end
-
--- Wait for host
-local function waitForHost(timeout)
-    local success, result = pcall(function()
-        return Players:WaitForChild(hostName, timeout)
-    end)
-    if success and result then
-        return result
-    else
-        warn("Host player " .. hostName .. " not found within " .. timeout .. " seconds.")
-        return nil
-    end
-end
-
-hostPlayer = waitForHost(10)
-if not hostPlayer then
-    warn("Script cannot proceed without host player. Shutting down.")
-    return
 end
 
 -- Utility functions
@@ -339,7 +319,7 @@ local function airlock()
     originalCFrame = humanoidRootPart.CFrame
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local commonY = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
+    local commonY = (hostPlayer and hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
     local targetHeight = commonY + 13
     local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight - 0.5, originalCFrame.Position.Z)
     airlockPlatform = createAirlockPlatform(platformPosition)
@@ -379,7 +359,7 @@ end
 
 local function unswarm()
     disableCurrentMode()
-    setup(hostPlayer)
+    if hostPlayer then setup(hostPlayer) end
 end
 
 local function bring()
@@ -458,8 +438,8 @@ local function createRoleSelectionGUI()
     screenGui.Parent = player.PlayerGui
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 200)
-    frame.Position = UDim2.new(0.5, -150, 0.5, -100)
+    frame.Size = UDim2.new(0, 300, 0, 250)
+    frame.Position = UDim2.new(0.5, -150, 0.5, -125)
     frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
@@ -478,46 +458,66 @@ local function createRoleSelectionGUI()
     title.TextXAlignment = Enum.TextXAlignment.Center
     title.Parent = frame
 
-    local altButton = Instance.new("TextButton")
-    altButton.Size = UDim2.new(0, 120, 0, 50)
-    altButton.Position = UDim2.new(0, 30, 0, 80)
-    altButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    altButton.Text = "Alt"
-    altButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    altButton.TextSize = 18
-    altButton.Font = Enum.Font.Gotham
-    altButton.Parent = frame
-    local altCorner = Instance.new("UICorner")
-    altCorner.CornerRadius = UDim.new(0, 8)
-    altCorner.Parent = altButton
+    local rolePrompt = Instance.new("TextLabel")
+    rolePrompt.Size = UDim2.new(1, -40, 0, 50)
+    rolePrompt.Position = UDim2.new(0, 20, 0, 70)
+    rolePrompt.BackgroundTransparency = 1
+    rolePrompt.Text = "Are you the Host or an Alt? Enter Host name if Alt:"
+    rolePrompt.TextColor3 = Color3.fromRGB(200, 200, 200)
+    rolePrompt.TextSize = 14
+    rolePrompt.Font = Enum.Font.Gotham
+    rolePrompt.TextWrapped = true
+    rolePrompt.TextXAlignment = Enum.TextXAlignment.Left
+    rolePrompt.Parent = frame
 
-    local hostButton = Instance.new("TextButton")
-    hostButton.Size = UDim2.new(0, 120, 0, 50)
-    hostButton.Position = UDim2.new(0, 150, 0, 80)
-    hostButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    hostButton.Text = "Host"
-    hostButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    hostButton.TextSize = 18
-    hostButton.Font = Enum.Font.Gotham
-    hostButton.Parent = frame
-    local hostCorner = Instance.new("UICorner")
-    hostCorner.CornerRadius = UDim.new(0, 8)
-    hostCorner.Parent = hostButton
+    local roleBox = Instance.new("TextBox")
+    roleBox.Size = UDim2.new(0, 240, 0, 40)
+    roleBox.Position = UDim2.new(0, 30, 0, 130)
+    roleBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    roleBox.Text = ""
+    roleBox.PlaceholderText = "Enter 'Host' or Alt's Host name"
+    roleBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    roleBox.TextSize = 14
+    roleBox.Font = Enum.Font.Gotham
+    roleBox.Parent = frame
+    local boxCorner = Instance.new("UICorner")
+    boxCorner.CornerRadius = UDim.new(0, 8)
+    boxCorner.Parent = roleBox
 
-    local function onRoleSelected(role)
-        isHost = (role == "Host")
+    local confirmButton = Instance.new("TextButton")
+    confirmButton.Size = UDim2.new(0, 120, 0, 40)
+    confirmButton.Position = UDim2.new(0, 90, 0, 180)
+    confirmButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    confirmButton.Text = "Confirm"
+    confirmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    confirmButton.TextSize = 16
+    confirmButton.Font = Enum.Font.Gotham
+    confirmButton.Parent = frame
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = confirmButton
+
+    confirmButton.MouseButton1Click:Connect(function()
+        local roleInput = roleBox.Text:lower()
+        if roleInput == "host" then
+            isHost = true
+            hostPlayer = player -- Host is themselves
+        else
+            isHost = false
+            hostPlayer = Players:FindFirstChild(roleInput)
+            if not hostPlayer then
+                warn("Host player " .. roleInput .. " not found. Please try again.")
+                return
+            end
+        end
         screenGui:Destroy()
         createMainGUI()
         if not isHost then
-            -- Start listening for commands if Alt
             hostPlayer.Chatted:Connect(function(message)
                 handleCommand(message)
             end)
         end
-    end
-
-    altButton.MouseButton1Click:Connect(function() onRoleSelected("Alt") end)
-    hostButton.MouseButton1Click:Connect(function() onRoleSelected("Host") end)
+    end)
 end
 
 local function createMainGUI()
@@ -580,13 +580,13 @@ local function createMainGUI()
     if isHost then
         -- Host GUI with buttons
         local buttonConfigs = {
-            {Text = "Setup Host", Func = function() setup(hostPlayer) end, YOffset = 70},
+            {Text = "Setup Self", Func = function() setup(player) end, YOffset = 70},
             {Text = "Setup Club", Func = setupClub, YOffset = 120},
             {Text = "Setup Bank", Func = setupBank, YOffset = 170},
-            {Text = "Swarm Host", Func = function() swarm(hostPlayer) end, YOffset = 220},
+            {Text = "Swarm Self", Func = function() swarm(player) end, YOffset = 220},
             {Text = "Unswarm", Func = unswarm, YOffset = 270},
-            {Text = "Follow Host", Func = function() follow(hostPlayer) end, YOffset = 320},
-            {Text = "Unfollow", Func = function() disableCurrentMode(); setup(hostPlayer) end, YOffset = 370},
+            {Text = "Follow Self", Func = function() follow(player) end, YOffset = 320},
+            {Text = "Unfollow", Func = function() disableCurrentMode(); setup(player) end, YOffset = 370},
             {Text = "Airlock", Func = airlock, YOffset = 420},
             {Text = "Unairlock", Func = unairlock, YOffset = 470},
             {Text = "Bring", Func = bring, YOffset = 520},
@@ -707,7 +707,7 @@ local function createMainGUI()
         statusLabel.Size = UDim2.new(1, 0, 0, 50)
         statusLabel.Position = UDim2.new(0, 0, 0, 70)
         statusLabel.BackgroundTransparency = 1
-        statusLabel.Text = "Alt Mode: Waiting for commands"
+        statusLabel.Text = "Alt Mode: Waiting for " .. hostPlayer.Name .. "'s commands"
         statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
         statusLabel.TextSize = 16
         statusLabel.Font = Enum.Font.Gotham
@@ -722,8 +722,8 @@ local function handleCommand(message)
     if string.sub(lowerMsg, 1, 1) ~= "?" then return end
     local cmd = string.sub(lowerMsg, 2):match("^%s*(.-)%s*$")
     if cmd == "" then return end
-    if cmd == "setup host" then
-        setup(hostPlayer)
+    if cmd == "setup self" then
+        setup(player)
     elseif cmd:match("^setup%s+(.+)$") then
         local targetName = cmd:match("^setup%s+(.+)$")
         if targetName == "club" then
@@ -738,8 +738,8 @@ local function handleCommand(message)
                 warn("Setup failed: Player " .. targetName .. " not found")
             end
         end
-    elseif cmd == "swarm host" then
-        swarm(hostPlayer)
+    elseif cmd == "swarm self" then
+        swarm(player)
     elseif cmd:match("^swarm%s+(.+)$") then
         local targetName = cmd:match("^swarm%s+(.+)$")
         local target = Players:FindFirstChild(targetName)
@@ -750,8 +750,8 @@ local function handleCommand(message)
         end
     elseif cmd == "unswarm" then
         unswarm()
-    elseif cmd == "follow host" then
-        follow(hostPlayer)
+    elseif cmd == "follow self" then
+        follow(player)
     elseif cmd:match("^follow%s+(.+)$") then
         local targetName = cmd:match("^follow%s+(.+)$")
         local target = Players:FindFirstChild(targetName)
@@ -762,7 +762,7 @@ local function handleCommand(message)
         end
     elseif cmd == "unfollow" then
         disableCurrentMode()
-        setup(hostPlayer)
+        if hostPlayer then setup(hostPlayer) end
     elseif cmd == "airlock" then
         airlock()
     elseif cmd == "unairlock" then
