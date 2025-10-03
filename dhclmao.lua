@@ -106,11 +106,16 @@ local function preventAFK()
         end
     end)
 end
--- Get alt index for positioning
+-- Get alt index for positioning, supporting up to 20 alts
 local function getAltIndex(playerName, players)
     local alts = {}
     for _, p in pairs(players) do if p ~= hostPlayer then table.insert(alts, p) end end
     table.sort(alts, function(a, b) return a.Name < b.Name end)
+    local maxAlts = 20
+    if #alts > maxAlts then
+        warn("Limiting to " .. maxAlts .. " alts due to maximum capacity.")
+        alts = table.move(alts, 1, maxAlts, 1, {})
+    end
     for i, p in ipairs(alts) do if p.Name == playerName then return i - 1 end end
     return 0
 end
@@ -192,6 +197,7 @@ local function setup(targetPlayer)
     end)
     toggleNoclip(character, false)
 end
+-- Setup line in middle of club, supporting up to 20 alts
 local function setupClub()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -199,13 +205,18 @@ local function setupClub()
         return
     end
     toggleNoclip(character, true)
-    local clubPos = Vector3.new(-265, -7, -380) -- Your exact club spot
+    local clubPos = Vector3.new(-265, -7, -380) -- Your exact club spot (middle)
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local spacing = 2 -- Increased spacing for horizontal line
-    local behindDirection = Vector3.new(1, 0, 0) -- Horizontal direction along +X axis
-    local offsetPosition = clubPos + behindDirection * (spacing * index)
-    local targetCFrame = CFrame.new(offsetPosition) * CFrame.Angles(0, math.pi, 0) -- Face -Z direction (forward)
+    local totalAlts = #players - 1 -- Total number of alts (excluding host)
+    local maxAlts = 20
+    if totalAlts > maxAlts then totalAlts = maxAlts end -- Cap at 20 alts
+    local spacing = 2 -- Base spacing, adjustable for 20 alts
+    if totalAlts > 10 then spacing = 1.5 end -- Reduce spacing for larger groups to fit
+    local halfSpread = (totalAlts * spacing) / 2 -- Calculate half the total spread
+    local offsetX = -halfSpread + (index * spacing) -- Center the line and distribute symmetrically
+    local offsetPosition = clubPos + Vector3.new(offsetX, 0, 0) -- Horizontal spread along X-axis
+    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
   
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
@@ -229,7 +240,7 @@ local function setupClub()
     end)
     toggleNoclip(character, false)
 end
--- Setup line at bank
+-- Setup line at bank, supporting up to 20 alts
 local function setupBank()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -240,7 +251,11 @@ local function setupBank()
     local bankPos = Vector3.new(-376, 21, -283) -- Bank coordinates from image
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
+    local totalAlts = #players - 1 -- Total number of alts (excluding host)
+    local maxAlts = 20
+    if totalAlts > maxAlts then totalAlts = maxAlts end -- Cap at 20 alts
     local spacing = 1 -- 1 stud spacing for single-file line
+    if totalAlts > 10 then spacing = 0.8 end -- Reduce spacing for larger groups to fit
     local behindDirection = Vector3.new(0, 0, -1) -- Single-file line along -Z axis
     local offsetPosition = bankPos + behindDirection * (spacing * (index + 1))
     local targetCFrame = CFrame.lookAt(offsetPosition, bankPos)
