@@ -207,7 +207,6 @@ local function setup(targetPlayer)
     toggleNoclip(character, false)
 end
 
--- Setup line in middle of club
 local function setupClub()
     disableCurrentMode()
     if not humanoidRootPart then
@@ -215,13 +214,13 @@ local function setupClub()
         return
     end
     toggleNoclip(character, true)
-    local clubPos = Vector3.new(-265, -7, -380) -- Updated to your exact club spot
+    local clubPos = Vector3.new(-265, -7, -380) -- Your exact club spot
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local spacing = 1 -- 1 stud spacing for single-file line
-    local behindDirection = Vector3.new(0, 0, -1) -- Fixed direction for line (along -Z)
-    local offsetPosition = clubPos + behindDirection * (spacing * (index + 1))
-    local targetCFrame = CFrame.lookAt(offsetPosition, clubPos)
+    local spacing = 2 -- Increased spacing for horizontal line (adjust as needed)
+    local behindDirection = Vector3.new(1, 0, 0) -- Horizontal direction along +X axis
+    local offsetPosition = clubPos + behindDirection * (spacing * index) -- Use index directly for horizontal spacing
+    local targetCFrame = CFrame.lookAt(offsetPosition, clubPos + Vector3.new(0, 0, -1)) -- Look toward -Z direction
   
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
@@ -239,7 +238,6 @@ local function setupClub()
         local t = math.min(elapsed / duration, 1)
         humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
         if t >= 1 then
-            humanoidRootPart.Anchored = true
             connections.setupMove:Disconnect()
             connections.setupMove = nil
         end
