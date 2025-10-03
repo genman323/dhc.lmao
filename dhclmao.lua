@@ -17,7 +17,7 @@ local lastDropTime, dropCooldown = 0, 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
 local airlockPlatform = nil
 local airlockPosition = nil -- Store airlock target position
-local airlockAnimationTrack = nil -- Track the animation
+-- Anti-cheat bypass hook
 local detectionFlags = {
     "CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK",
     "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"
@@ -150,7 +150,6 @@ local function disableCurrentMode()
         if connections.follow then connections.follow:Disconnect(); connections.follow = nil end
     elseif currentMode == "airlock" then
         if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
-        if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end -- Stop animation
     elseif currentMode == "setup" then
         if connections.setupMove then connections.setupMove:Disconnect(); connections.setupMove = nil end
     end
@@ -175,12 +174,12 @@ local function setup(targetPlayer)
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * (spacing * (index + 1))
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
- 
+  
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
- 
+  
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -225,12 +224,12 @@ local function setupClub()
     local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
     local offsetPosition = clubPos + Vector3.new(offsetX, 0, offsetZ)
     local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
- 
+  
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
- 
+  
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -275,12 +274,12 @@ local function setupBank()
     local offsetZ = -halfDepth + (row * spacing) + (spacing / 2) -- Center the rows
     local offsetPosition = bankPos + Vector3.new(offsetX, 0, offsetZ)
     local targetCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1)) -- Face -Z direction (forward)
- 
+  
     local startTime = tick()
     local duration = 0.5 -- Smooth transition over 0.5 seconds
     local startCFrame = humanoidRootPart.CFrame
     currentMode = "setup"
- 
+  
     if connections.setupMove then connections.setupMove:Disconnect() end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
@@ -374,14 +373,6 @@ local function airlock()
     humanoidRootPart.Anchored = true -- Anchor to prevent falling
     toggleNoclip(character, false)
     task.wait(0.1) -- Brief delay to ensure position sets
-    
-    -- Load and play looping animation
-    local animation = Instance.new("Animation")
-    animation.AnimationId = "rbxassetid://97171309"
-    airlockAnimationTrack = humanoid:LoadAnimation(animation)
-    airlockAnimationTrack.Looped = true -- Make it loop indefinitely
-    airlockAnimationTrack:Play()
-    
     -- Use a custom loop to enforce position
     if not connections.airlockFreeze then
         connections.airlockFreeze = RunService.RenderStepped:Connect(function()
@@ -398,10 +389,6 @@ end
 local function unairlock()
     if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
     if connections.airlockFreeze then connections.airlockFreeze:Disconnect(); connections.airlockFreeze = nil end
-    if airlockAnimationTrack then 
-        airlockAnimationTrack:Stop() 
-        airlockAnimationTrack = nil 
-    end -- Stop the looping animation
     if not humanoidRootPart or not humanoid or not originalCFrame then
         warn("Unairlock failed: Missing required components")
         return
@@ -584,7 +571,6 @@ player.AncestryChanged:Connect(function()
         currentTarget = nil
         airlockPosition = nil
         if airlockPlatform then airlockPlatform:Destroy() airlockPlatform = nil end
-        if airlockAnimationTrack then airlockAnimationTrack:Stop(); airlockAnimationTrack = nil end
     end
 end)
 -- Initialize script
