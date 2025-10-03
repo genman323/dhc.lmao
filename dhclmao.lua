@@ -17,7 +17,7 @@ if not isHost and not isAlt then
     return
 end
 
--- Create overlay for everyone (host and alts) - always shows
+-- Create overlay for everyone
 local function createOverlay()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Parent = player:WaitForChild("PlayerGui")
@@ -43,7 +43,7 @@ local function createOverlay()
     print("Overlay created for " .. player.Name)
 end
 
--- Host GUI (only for host)
+-- Host GUI
 if isHost then
     local function createGUI()
         local screenGui = Instance.new("ScreenGui")
@@ -153,7 +153,7 @@ if isHost then
                 local cmd = cmdFunc()
                 if cmd then
                     player:Chat("?" .. cmd)
-                    print("Sent command: ?" .. cmd) -- Debug
+                    print("Sent command: ?" .. cmd)
                 end
             end)
         end
@@ -217,7 +217,7 @@ if isHost then
     print("Alt Control GUI loaded for host " .. player.Name)
 end
 
--- Alt logic (if not host)
+-- Alt logic
 if isAlt then
     print("Alt mode activated for " .. player.Name)
     local hostPlayer = nil
@@ -247,7 +247,7 @@ if isAlt then
 
     if not mainEvent then warn("MainEvent not found.") end
 
-    -- Wait for host (non-blocking for overlay)
+    -- Wait for host
     spawn(function()
         local timeout = 60
         local startTime = tick()
@@ -262,19 +262,20 @@ if isAlt then
         if not hostPlayer then warn("Host not found after " .. timeout .. "s. Commands disabled.") end
     end)
 
-    -- Core functions (simplified)
+    -- Utility functions
     local function getPlayers() return Players:GetPlayers() end
     local function disableAllSeats()
         for _, seat in pairs(game.Workspace:GetDescendants()) do if seat:IsA("Seat") then seat.Disabled = true end end
     end
-    local function getAltIndex(playerName)
+    local function getAltIndex()
         local alts = {}
         for _, p in pairs(getPlayers()) do if p ~= hostPlayer then table.insert(alts, p) end end
         table.sort(alts, function(a, b) return a.Name < b.Name end)
-        for i, p in ipairs(alts) do if p.Name == playerName then return i - 1 end end
+        for i, p in ipairs(alts) do if p.Name == player.Name then return i - 1 end end
         return 0
     end
     local function toggleNoclip(enable)
+        if not character then return end
         for _, part in pairs(character:GetDescendants()) do
             if part:IsA("BasePart") and not part:IsA("Accessory") then
                 part.CanCollide = not enable
@@ -293,22 +294,29 @@ if isAlt then
         toggleNoclip(false)
     end
 
-    -- Command handlers (simplified)
+    -- Command functions
     local function setup(targetPlayer)
+        if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+            warn("Setup failed: Invalid target or character")
+            return
+        end
         disableCurrentMode()
-        if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
         toggleNoclip(true)
-        local index = getAltIndex(player.Name)
+        local index = getAltIndex()
         local behind = -targetPlayer.Character.HumanoidRootPart.CFrame.LookVector * (1 * (index + 1))
         humanoidRootPart.CFrame = CFrame.lookAt(targetPlayer.Character.HumanoidRootPart.Position + behind, targetPlayer.Character.HumanoidRootPart.Position)
         toggleNoclip(false)
     end
 
     local function setupClub()
+        if not humanoidRootPart then
+            warn("Setup club failed: No HumanoidRootPart")
+            return
+        end
         disableCurrentMode()
         toggleNoclip(true)
         local clubPos = Vector3.new(-265, -7, -380)
-        local index = getAltIndex(player.Name)
+        local index = getAltIndex()
         local row, col = math.floor(index / 4), index % 4
         local offset = Vector3.new(-6 + col * 2, 0, -8 + row * 2)
         humanoidRootPart.CFrame = CFrame.new(clubPos + offset, clubPos + offset + Vector3.new(0, 0, -1))
@@ -316,10 +324,14 @@ if isAlt then
     end
 
     local function setupBank()
+        if not humanoidRootPart then
+            warn("Setup bank failed: No HumanoidRootPart")
+            return
+        end
         disableCurrentMode()
         toggleNoclip(true)
         local bankPos = Vector3.new(-376, 21, -283)
-        local index = getAltIndex(player.Name)
+        local index = getAltIndex()
         local row, col = math.floor(index / 4), index % 4
         local offset = Vector3.new(-6 + col * 2, 0, -8 + row * 2)
         humanoidRootPart.CFrame = CFrame.new(bankPos + offset, bankPos + offset + Vector3.new(0, 0, -1))
@@ -327,6 +339,10 @@ if isAlt then
     end
 
     local function swarm(targetPlayer)
+        if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+            warn("Swarm failed: Invalid target or character")
+            return
+        end
         disableCurrentMode()
         currentMode = "swarm"
         currentTarget = targetPlayer
@@ -342,13 +358,17 @@ if isAlt then
     end
 
     local function follow(targetPlayer)
+        if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+            warn("Follow failed: Invalid target or character")
+            return
+        end
         disableCurrentMode()
         currentMode = "follow"
         currentTarget = targetPlayer
         toggleNoclip(true)
         connections.follow = RunService.RenderStepped:Connect(function()
             if not currentTarget or not currentTarget.Character then return end
-            local index = getAltIndex(player.Name)
+            local index = getAltIndex()
             local offset = -currentTarget.Character.HumanoidRootPart.CFrame.LookVector * (1 + index)
             local targetPos = currentTarget.Character.HumanoidRootPart.Position + offset
             humanoidRootPart.CFrame = humanoidRootPart.CFrame:Lerp(CFrame.lookAt(targetPos, currentTarget.Character.HumanoidRootPart.Position), 0.5)
@@ -356,6 +376,10 @@ if isAlt then
     end
 
     local function airlock()
+        if not humanoidRootPart or not humanoid then
+            warn("Airlock failed: No HumanoidRootPart or Humanoid")
+            return
+        end
         disableCurrentMode()
         originalCFrame = humanoidRootPart.CFrame
         local y = (hostPlayer and hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart")) and hostPlayer.Character.HumanoidRootPart.Position.Y or originalCFrame.Position.Y
@@ -373,16 +397,21 @@ if isAlt then
     local function unairlock()
         if airlockPlatform then airlockPlatform:Destroy() end
         if connections.airlock then connections.airlock:Disconnect() end
-        humanoidRootPart.Anchored = false
-        humanoidRootPart.CFrame = originalCFrame
+        if humanoidRootPart then
+            humanoidRootPart.Anchored = false
+            humanoidRootPart.CFrame = originalCFrame
+        end
         currentMode = nil
     end
 
     local function bring()
+        if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+            warn("Bring failed: Invalid host or character")
+            return
+        end
         disableCurrentMode()
-        if not hostPlayer or not hostPlayer.Character then return end
         toggleNoclip(true)
-        local index = getAltIndex(player.Name)
+        local index = getAltIndex()
         local angle = index * (2 * math.pi / (#getPlayers()))
         local pos = hostPlayer.Character.HumanoidRootPart.Position + Vector3.new(math.cos(angle) * 2, 0, math.sin(angle) * 2)
         humanoidRootPart.CFrame = CFrame.lookAt(pos, hostPlayer.Character.HumanoidRootPart.Position)
@@ -390,9 +419,13 @@ if isAlt then
     end
 
     local function dropAllCash()
+        if not mainEvent then
+            warn("Drop failed: MainEvent not found")
+            return
+        end
         isDropping = true
         connections.drop = RunService.Heartbeat:Connect(function()
-            if isDropping and mainEvent then
+            if isDropping then
                 local now = tick()
                 if now - lastDropTime >= dropCooldown then
                     pcall(function() mainEvent:FireServer("DropMoney", 15000) mainEvent:FireServer("Block", true) end)
@@ -415,7 +448,7 @@ if isAlt then
     Players.PlayerAdded:Connect(function(p)
         if p.UserId == config.HostUserId then
             hostPlayer = p
-            print("Host joined: " .. p.Name)
+            print("Host found: " .. p.Name)
             p.Chatted:Connect(function(msg)
                 local lower = string.lower(msg)
                 if string.sub(lower, 1, 1) ~= "?" then return end
@@ -423,17 +456,17 @@ if isAlt then
                 if cmd == "" then return end
                 print("Alt received: " .. cmd)
                 if cmd == "setup host" then setup(hostPlayer)
-                elseif string.find(cmd, "setup ") then
-                    local targetName = string.match(cmd, "setup (.+)")
+                elseif cmd:match("^setup%s+(.+)$") then
+                    local targetName = cmd:match("^setup%s+(.+)$")
                     if targetName == "club" then setupClub()
                     elseif targetName == "bank" then setupBank()
                     else local target = Players:FindFirstChild(targetName); if target then setup(target) end
                     end
                 elseif cmd == "swarm host" then swarm(hostPlayer)
-                elseif string.find(cmd, "swarm ") then local targetName = string.match(cmd, "swarm (.+)"); local target = Players:FindFirstChild(targetName); if target then swarm(target) end
+                elseif cmd:match("^swarm%s+(.+)$") then local targetName = cmd:match("^swarm%s+(.+)$"); local target = Players:FindFirstChild(targetName); if target then swarm(target) end
                 elseif cmd == "unswarm" then disableCurrentMode(); setup(hostPlayer)
                 elseif cmd == "follow host" then follow(hostPlayer)
-                elseif string.find(cmd, "follow ") then local targetName = string.match(cmd, "follow (.+)"); local target = Players:FindFirstChild(targetName); if target then follow(target) end
+                elseif cmd:match("^follow%s+(.+)$") then local targetName = cmd:match("^follow%s+(.+)$"); local target = Players:FindFirstChild(targetName); if target then follow(target) end
                 elseif cmd == "unfollow" then disableCurrentMode(); setup(hostPlayer)
                 elseif cmd == "airlock" then airlock()
                 elseif cmd == "unairlock" then unairlock()
@@ -442,7 +475,7 @@ if isAlt then
                 elseif cmd == "stop" then stopDrop()
                 elseif cmd == "kick" then kickAlt()
                 elseif cmd == "rejoin" then rejoinGame()
-                else warn("Unknown: " .. cmd) end
+                else warn("Unknown command: " .. cmd) end
             end)
         end
     end)
@@ -453,7 +486,6 @@ if isAlt then
         character = newChar
         humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
         humanoid = newChar:WaitForChild("Humanoid")
-        -- Reapply mode if active
         if currentMode == "airlock" then airlock() end
     end)
 
