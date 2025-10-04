@@ -515,9 +515,17 @@ local function buyMask()
     humanoidRootPart.CFrame = CFrame.new(buyPosition)
     task.wait(0.5)  -- Wait for any loading
     
-    -- Buy the mask
+    -- Try common buy methods for Da Hood tools/masks
     pcall(function()
-        mainEvent:FireServer("BuyItem", "Surgeon Mask", 1)
+        mainEvent:FireServer("BuyTool", "Surgeon Mask")
+    end)
+    task.wait(0.2)
+    pcall(function()
+        mainEvent:FireServer("BuyItem", "Surgeon Mask")
+    end)
+    task.wait(0.2)
+    pcall(function()
+        mainEvent:FireServer("PurchaseTool", "Surgeon Mask")
     end)
     task.wait(0.5)
     
