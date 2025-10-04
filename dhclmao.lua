@@ -23,6 +23,7 @@ local airlockPlatform = nil
 local airlockPosition = nil
 local lastDropTime = 0
 local dropCooldown = 0.1
+local originalAnims = nil
 local connections = {
     drop = nil,
     swarm = nil,
@@ -171,6 +172,46 @@ local function createAirlockPlatform(position)
     airlockPlatform.Transparency = 1
     airlockPlatform.Parent = game.Workspace
     return airlockPlatform
+end
+
+-- Animation Management
+local function saveOriginalAnimations()
+    local animate = character:WaitForChild("Animate")
+    originalAnims = {
+        idle1 = animate.idle.Animation1.AnimationId,
+        idle2 = animate.idle.Animation2.AnimationId,
+        walk = animate.walk.WalkAnim.AnimationId,
+        run = animate.run.RunAnim.AnimationId,
+        jump = animate.jump.JumpAnim.AnimationId,
+        climb = animate.climb.ClimbAnim.AnimationId,
+        fall = animate.fall.FallAnim.AnimationId
+    }
+end
+
+local function applyLevitationAnimation()
+    local animate = character:WaitForChild("Animate")
+    animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616006778"
+    animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616008087"
+    animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616013216"
+    animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616010382"
+    animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616008936"
+    animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=616003713"
+    animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616005863"
+    humanoid.Jump = true
+end
+
+local function restoreOriginalAnimations()
+    if originalAnims and character:FindFirstChild("Animate") then
+        local animate = character.Animate
+        animate.idle.Animation1.AnimationId = originalAnims.idle1
+        animate.idle.Animation2.AnimationId = originalAnims.idle2
+        animate.walk.WalkAnim.AnimationId = originalAnims.walk
+        animate.run.RunAnim.AnimationId = originalAnims.run
+        animate.jump.JumpAnim.AnimationId = originalAnims.jump
+        animate.climb.ClimbAnim.AnimationId = originalAnims.climb
+        animate.fall.FallAnim.AnimationId = originalAnims.fall
+        humanoid.Jump = true
+    end
 end
 
 -- Mode Management
@@ -349,59 +390,51 @@ local function airlock()
         warn("Airlock failed: Humanoid or HumanoidRootPart not found")
         return
     end
-    -- Store original position
+    -- Save original position and animations
     originalCFrame = humanoidRootPart.CFrame
-    local players = getPlayers()
-    local index = getAltIndex(player.Name, players)
-    
-    -- Use raycasting to find the ground height for more accuracy
+    saveOriginalAnimations()
+
+    -- Use raycasting to find the ground height for accurate positioning
     local rayOrigin = humanoidRootPart.Position
-    local rayDirection = Vector3.new(0, -1000, 0) -- Cast downward
+    local rayDirection = Vector3.new(0, -1000, 0)
     local raycastParams = RaycastParams.new()
     raycastParams.FilterDescendantsInstances = {character}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
     local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-    
     local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
-    local targetHeight = groundY + 13 -- 13 studs above ground
-    local platformPosition = Vector3.new(humanoidRootPart.Position.X, targetHeight - 0.5, humanoidRootPart.Position.Z)
-    
-    -- Debug: Log positions
-    print("Airlock - Ground Y:", groundY, "Target Height:", targetHeight, "Platform Position:", platformPosition)
-    
-    -- Create platform
-    airlockPlatform = createAirlockPlatform(platformPosition)
-    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0), humanoidRootPart.CFrame.Position * Vector3.new(1, 0, 1))
-    
-    -- Ensure noclip is enabled during movement
+    local targetHeight = groundY + 13 -- Target 13 studs above ground
+
+    -- Create airlock platform at target height
+    airlockPosition = CFrame.new(humanoidRootPart.Position.X, targetHeight, humanoidRootPart.Position.Z)
+    airlockPlatform = createAirlockPlatform(Vector3.new(humanoidRootPart.Position.X, targetHeight - 0.5, humanoidRootPart.Position.Z))
+
+    -- Move character to airlock position with smooth transition
     toggleNoclip(character, true)
-    
-    -- Set position and anchor
-    humanoidRootPart.CFrame = airlockPosition
-    humanoidRootPart.Anchored = true
-    humanoidRootPart.Velocity = Vector3.zero
-    humanoidRootPart.RotVelocity = Vector3.zero
-    
-    -- Disable noclip after positioning
-    toggleNoclip(character, false)
-    
-    -- Enforce position in RenderStepped
-    if connections.airlockFreeze then
-        connections.airlockFreeze:Disconnect()
+    local startTime = tick()
+    local duration = 1.0
+    local startCFrame = humanoidRootPart.CFrame
+    currentMode = "airlock"
+    if connections.airlockMove then
+        connections.airlockMove:Disconnect()
     end
-    connections.airlockFreeze = RunService.RenderStepped:Connect(function()
-        if currentMode == "airlock" and humanoidRootPart and airlockPosition then
-            humanoidRootPart.CFrame = airlockPosition
-            humanoidRootPart.Velocity = Vector3.zero
-            humanoidRootPart.RotVelocity = Vector3.zero
-        else
-            -- Disconnect if conditions are not met
-            connections.airlockFreeze:Disconnect()
-            connections.airlockFreeze = nil
+    connections.airlockMove = RunService.RenderStepped:Connect(function()
+        if currentMode ~= "airlock" or not humanoidRootPart then
+            connections.airlockMove:Disconnect()
+            connections.airlockMove = nil
+            return
+        end
+        local elapsed = tick() - startTime
+        local t = math.min(elapsed / duration, 1)
+        humanoidRootPart.CFrame = startCFrame:Lerp(airlockPosition, t)
+        if t >= 1 then
+            humanoidRootPart.Anchored = true
+            connections.airlockMove:Disconnect()
+            connections.airlockMove = nil
+            -- Apply levitation animation when fully up
+            applyLevitationAnimation()
         end
     end)
-    
-    currentMode = "airlock"
+    toggleNoclip(character, false)
 end
 
 local function unairlock()
@@ -420,6 +453,7 @@ local function unairlock()
     toggleNoclip(character, true)
     humanoidRootPart.Anchored = false
     humanoidRootPart.CFrame = originalCFrame
+    restoreOriginalAnimations()
     toggleNoclip(character, false)
     originalCFrame = nil
     airlockPosition = nil
@@ -497,52 +531,6 @@ local function rejoinGame()
     pcall(function()
         TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
     end)
-end
-
-local function buyMask()
-    if not mainEvent then
-        warn("MainEvent not found, cannot buy mask.")
-        return
-    end
-    if not humanoidRootPart or not humanoid then
-        warn("Character not ready for mask purchase.")
-        return
-    end
-    -- Enable noclip for faster movement
-    toggleNoclip(character, true)
-    -- Teleport to buy position
-    local buyPosition = Vector3.new(-271.42, 21.85, -283.32)
-    humanoidRootPart.CFrame = CFrame.new(buyPosition)
-    task.wait(0.5)  -- Wait for any loading
-    
-    -- Try common buy methods for Da Hood tools/masks
-    pcall(function()
-        mainEvent:FireServer("BuyTool", "Surgeon Mask")
-    end)
-    task.wait(0.2)
-    pcall(function()
-        mainEvent:FireServer("BuyItem", "Surgeon Mask")
-    end)
-    task.wait(0.2)
-    pcall(function()
-        mainEvent:FireServer("PurchaseTool", "Surgeon Mask")
-    end)
-    task.wait(0.5)
-    
-    -- Equip and activate the mask
-    local backpack = player:WaitForChild("Backpack")
-    local maskTool = backpack:FindFirstChild("Surgeon Mask") or character:FindFirstChild("Surgeon Mask")
-    if maskTool and maskTool:IsA("Tool") then
-        humanoid:EquipTool(maskTool)
-        task.wait(0.1)
-        maskTool:Activate()
-    else
-        warn("Surgeon Mask not found in backpack or character.")
-    end
-    
-    -- Teleport back to host
-    bring()
-    toggleNoclip(character, false)
 end
 
 -- Event Handlers
@@ -643,8 +631,6 @@ local function handleCommands(message)
         kickAlt()
     elseif cmd == "rejoin" then
         rejoinGame()
-    elseif cmd == "mask" then
-        buyMask()
     else
         warn("Unknown command: " .. cmd)
     end
