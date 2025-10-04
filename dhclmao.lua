@@ -9,10 +9,17 @@ local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 
 -- Local Player and Host Setup
-local player = Players.LocalPlayer
-if not player then
-    warn("LocalPlayer not found, waiting for initialization...")
-    player = Players.LocalPlayerAdded:Wait()
+local player
+local success, result = pcall(function()
+    player = Players.LocalPlayer
+    if not player then
+        task.wait(5) -- Wait for LocalPlayer to initialize
+        player = Players.LocalPlayer
+    end
+end)
+if not success or not player then
+    warn("Failed to initialize LocalPlayer, script will terminate.")
+    return
 end
 print("Local player initialized: " .. player.Name)
 
@@ -74,7 +81,10 @@ local function disableAllSeats()
 end
 
 local function toggleNoclip(char, enable)
-    if not char then return end
+    if not char then
+        warn("toggleNoclip: Character is nil")
+        return
+    end
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") and not part:IsA("Accessory") then
             part.CanCollide = not enable
@@ -153,16 +163,20 @@ local function setup(targetPlayer)
     end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
+            if connections.setupMove then
+                connections.setupMove:Disconnect()
+                connections.setupMove = nil
+            end
             return
         end
         local elapsed = tick() - startTime
         local t = math.min(elapsed / duration, 1)
         humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
         if t >= 1 then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
+            if connections.setupMove then
+                connections.setupMove:Disconnect()
+                connections.setupMove = nil
+            end
         end
     end)
     toggleNoclip(character, false)
@@ -203,16 +217,20 @@ local function setupClub()
     end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
+            if connections.setupMove then
+                connections.setupMove:Disconnect()
+                connections.setupMove = nil
+            end
             return
         end
         local elapsed = tick() - startTime
         local t = math.min(elapsed / duration, 1)
         humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
         if t >= 1 then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
+            if connections.setupMove then
+                connections.setupMove:Disconnect()
+                connections.setupMove = nil
+            end
         end
     end)
     toggleNoclip(character, false)
@@ -254,16 +272,20 @@ local function setupBank()
     end
     connections.setupMove = RunService.RenderStepped:Connect(function()
         if currentMode ~= "setup" or not humanoidRootPart then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
+            if connections.setupMove then
+                connections.setupMove:Disconnect()
+                connections.setupMove = nil
+            end
             return
         end
         local elapsed = tick() - startTime
         local t = math.min(elapsed / duration, 1)
         humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
         if t >= 1 then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
+            if connections.setupMove then
+                connections.setupMove:Disconnect()
+                connections.setupMove = nil
+            end
         end
     end)
     toggleNoclip(character, false)
@@ -282,6 +304,10 @@ local function swarm(targetPlayer)
     toggleNoclip(character, true)
     connections.swarm = RunService.RenderStepped:Connect(function()
         if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+            if connections.swarm then
+                connections.swarm:Disconnect()
+                connections.swarm = nil
+            end
             return
         end
         local center = currentTarget.Character.HumanoidRootPart.Position
@@ -312,6 +338,10 @@ local function follow(targetPlayer)
     toggleNoclip(character, true)
     connections.follow = RunService.RenderStepped:Connect(function()
         if currentMode ~= "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+            if connections.follow then
+                connections.follow:Disconnect()
+                connections.follow = nil
+            end
             return
         end
         local targetRoot = currentTarget.Character.HumanoidRootPart
@@ -430,8 +460,10 @@ local function grabAndBring(target, destination)
     currentMode = "grab"
     connections.grab = RunService.RenderStepped:Connect(function()
         if currentMode ~= "grab" or not targetChar or not bodyEffects["K.O"] then
-            connections.grab:Disconnect()
-            connections.grab = nil
+            if connections.grab then
+                connections.grab:Disconnect()
+                connections.grab = nil
+            end
             toggleNoclip(character, false)
             return
         end
@@ -443,8 +475,10 @@ local function grabAndBring(target, destination)
             vim:SendKeyEvent(false, Enum.KeyCode.G, false, game)
             task.wait(0.5)
             humanoid:MoveTo(destination)
-            connections.grab:Disconnect()
-            connections.grab = nil
+            if connections.grab then
+                connections.grab:Disconnect()
+                connections.grab = nil
+            end
             currentMode = nil
             toggleNoclip(character, false)
         else
@@ -459,7 +493,9 @@ local function buyMask()
     if not humanoidRootPart then
         warn("Buy mask failed: Local character not found, retrying...")
         task.wait(2)
-        humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+        if character then
+            humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+        end
         if not humanoidRootPart then
             warn("Retry failed: HumanoidRootPart not found")
             return
@@ -546,7 +582,7 @@ local function rejoinGame()
     end)
 end
 
--- Anti-Cheat Bypass
+-- Anti-Cheat Bypass (Optional)
 local detectionFlags = {
     "CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK",
     "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"
@@ -572,7 +608,13 @@ end
 -- UI Setup
 local function createOverlay()
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = player:WaitForChild("PlayerGui")
+    local success, err = pcall(function()
+        screenGui.Parent = player:WaitForChild("PlayerGui", 5)
+    end)
+    if not success then
+        warn("Failed to create overlay: " .. err)
+        return
+    end
     screenGui.Name = "DhcOverlay"
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
@@ -643,31 +685,37 @@ local function getAltIndex(playerName, players)
 end
 
 -- Event Handlers
-player.CharacterAdded:Connect(function(newChar)
+local function setupCharacterHandler(newChar)
     print("Character added for " .. player.Name)
     character = newChar
-    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
-    humanoid = newChar:WaitForChild("Humanoid")
+    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart", 5)
+    humanoid = newChar:WaitForChild("Humanoid", 5)
+    if not humanoidRootPart or not humanoid then
+        warn("Failed to initialize HumanoidRootPart or Humanoid")
+        return
+    end
     print("HumanoidRootPart and Humanoid initialized")
     if currentMode and currentTarget then
         if currentMode == "swarm" then
             swarm(currentTarget)
-        end
-        if currentMode == "follow" then
+        elseif currentMode == "follow" then
             follow(currentTarget)
-        end
-        if currentMode == "airlock" and airlockPosition then
+        elseif currentMode == "airlock" and airlockPosition then
             airlock()
-        end
-        if currentMode == "setup" and currentTarget == nil then
-            if setupClub then
-                setupClub()
-            end
-        end
-        if currentMode == "grab" then
+        elseif currentMode == "setup" and not currentTarget then
+            setupClub()
+        elseif currentMode == "grab" then
+            -- Handle grab mode if needed
         end
     end
+end
+
+local success, err = pcall(function()
+    player.CharacterAdded:Connect(setupCharacterHandler)
 end)
+if not success then
+    warn("Failed to connect CharacterAdded event: " .. err)
+end
 
 Players.PlayerRemoving:Connect(function(leavingPlayer)
     if leavingPlayer == hostPlayer then
@@ -679,8 +727,7 @@ hostPlayer.CharacterAdded:Connect(function(newChar)
     if currentTarget == hostPlayer then
         if currentMode == "swarm" then
             swarm(hostPlayer)
-        end
-        if currentMode == "follow" then
+        elseif currentMode == "follow" then
             follow(hostPlayer)
         end
     end
