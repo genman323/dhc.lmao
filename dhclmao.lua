@@ -97,7 +97,7 @@ local function createOverlay()
     textLabel.Size = UDim2.new(0, 200, 0, 50)
     textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao"
+    textLabel.Text = "dhc.lmao - Loaded at 07:33 PM PDT on Friday, October 03, 2025"
     textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     textLabel.TextSize = 24
     textLabel.Font = Enum.Font.SourceSansBold
@@ -530,7 +530,15 @@ end
 
 local function rejoinGame()
     pcall(function()
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
+        -- Ensure player is properly loaded
+        if player.Parent and player.Character then
+            -- Try simple teleport first
+            TeleportService:Teleport(game.PlaceId, player)
+        else
+            warn("Player not fully loaded, retrying in 1 second...")
+            task.wait(1)
+            TeleportService:Teleport(game.PlaceId, player)
+        end
     end)
 end
 
