@@ -10,15 +10,18 @@ local UserInputService = game:GetService("UserInputService")
 
 -- Local Player and Host Setup
 local player = Players.LocalPlayer
+if not player then
+    warn("LocalPlayer not found, waiting for initialization...")
+    player = Players.LocalPlayerAdded:Wait()
+end
 print("Local player initialized: " .. player.Name)
-local hostName = "Sab3r_PRO2003"
-local hostPlayer = nil
-local character = player.Character or player.CharacterAdded:Wait()
-print("Character loaded for " .. player.Name)
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:WaitForChild("Humanoid")
 
 -- State Variables
+local hostName = "Sab3r_PRO2003"
+local hostPlayer = nil
+local character = nil
+local humanoidRootPart = nil
+local humanoid = nil
 local isDropping = false
 local currentMode = nil -- "swarm", "follow", "airlock", "setup", nil
 local currentTarget = nil
@@ -35,7 +38,7 @@ local connections = {
 }
 local lastDropTime = 0
 local dropCooldown = 0.1
-local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
+local mainEvent = ReplicatedStorage:WaitForChild("MainEvent", 5)
 if mainEvent then
     print("mainEvent found in ReplicatedStorage")
 else
@@ -122,7 +125,9 @@ local function disableCurrentMode()
     currentMode = nil
     currentTarget = nil
     airlockPosition = nil
-    toggleNoclip(character, false)
+    if character then
+        toggleNoclip(character, false)
+    end
 end
 
 local function setup(targetPlayer)
@@ -638,6 +643,32 @@ local function getAltIndex(playerName, players)
 end
 
 -- Event Handlers
+player.CharacterAdded:Connect(function(newChar)
+    print("Character added for " .. player.Name)
+    character = newChar
+    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+    humanoid = newChar:WaitForChild("Humanoid")
+    print("HumanoidRootPart and Humanoid initialized")
+    if currentMode and currentTarget then
+        if currentMode == "swarm" then
+            swarm(currentTarget)
+        end
+        if currentMode == "follow" then
+            follow(currentTarget)
+        end
+        if currentMode == "airlock" and airlockPosition then
+            airlock()
+        end
+        if currentMode == "setup" and currentTarget == nil then
+            if setupClub then
+                setupClub()
+            end
+        end
+        if currentMode == "grab" then
+        end
+    end
+end)
+
 Players.PlayerRemoving:Connect(function(leavingPlayer)
     if leavingPlayer == hostPlayer then
         kickAlt()
@@ -651,30 +682,6 @@ hostPlayer.CharacterAdded:Connect(function(newChar)
         end
         if currentMode == "follow" then
             follow(hostPlayer)
-        end
-    end
-end)
-
-player.CharacterAdded:Connect(function(newChar)
-    character = newChar
-    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
-    humanoid = newChar:WaitForChild("Humanoid")
-    if currentMode and currentTarget then
-        if currentMode == "swarm" then
-            swarm(currentTarget)
-        end
-        if currentMode == "follow" then
-            follow(currentTarget)
-        end
-        if currentMode == "airlock" and airlockPosition then
-            airlock()
-        end
-        if currentMode == "setup" and currentTarget == nil then
-            if currentTarget == nil and setupClub then
-                setupClub()
-            end
-        end
-        if currentMode == "grab" then
         end
     end
 end)
