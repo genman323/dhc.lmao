@@ -10,9 +10,11 @@ local UserInputService = game:GetService("UserInputService")
 
 -- Local Player and Host Setup
 local player = Players.LocalPlayer
+print("Local player initialized: " .. player.Name)
 local hostName = "Sab3r_PRO2003"
 local hostPlayer = nil
 local character = player.Character or player.CharacterAdded:Wait()
+print("Character loaded for " .. player.Name)
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 
@@ -34,28 +36,13 @@ local connections = {
 local lastDropTime = 0
 local dropCooldown = 0.1
 local mainEvent = ReplicatedStorage:WaitForChild("MainEvent")
+if mainEvent then
+    print("mainEvent found in ReplicatedStorage")
+else
+    warn("mainEvent not found in ReplicatedStorage")
+end
 local airlockPlatform = nil
 local airlockPosition = nil
-
--- Anti-Cheat Bypass
-local detectionFlags = {
-    "CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK",
-    "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"
-}
-
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local args = {...}
-    local method = getnamecallmethod()
-    if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
-        return wait(9e9)
-    end
-    return oldNamecall(self, ...)
-end)
-
-if not mainEvent then
-    warn("MainEvent not found. Some features like dropping cash may not work.")
-end
 
 -- Utility Functions
 local function waitForHost(timeout)
@@ -63,6 +50,7 @@ local function waitForHost(timeout)
         return Players:WaitForChild(hostName, timeout)
     end)
     if success and result then
+        print("Host player " .. hostName .. " found")
         return result
     else
         warn("Host player " .. hostName .. " not found within " .. timeout .. " seconds.")
@@ -106,80 +94,7 @@ local function createAirlockPlatform(position)
     return airlockPlatform
 end
 
--- UI Setup
-local function createOverlay()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = player:WaitForChild("PlayerGui")
-    screenGui.Name = "DhcOverlay"
-    screenGui.ResetOnSpawn = false
-    screenGui.IgnoreGuiInset = true
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.Position = UDim2.new(0, 0, 0, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0, 200, 0, 50)
-    textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextSize = 24
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.Parent = frame
-end
-
--- Performance Optimization
-local function limitFPS()
-    local targetDeltaTime = 1 / 5
-    local lastTime = tick()
-    connections.fps = RunService.RenderStepped:Connect(function(deltaTime)
-        local currentTime = tick()
-        local elapsed = currentTime - lastTime
-        if elapsed < targetDeltaTime then
-            task.wait(targetDeltaTime - elapsed)
-        end
-        lastTime = currentTime
-    end)
-end
-
-local function preventAFK()
-    connections.afk = RunService.Heartbeat:Connect(function()
-        if humanoid then
-            humanoid.Jump = true
-            task.wait(0.1)
-            humanoid.Jump = false
-        end
-    end)
-end
-
--- Alt Positioning
-local function getAltIndex(playerName, players)
-    local alts = {}
-    for _, p in pairs(players) do
-        if p ~= hostPlayer then
-            table.insert(alts, p)
-        end
-    end
-    table.sort(alts, function(a, b) return a.Name < b.Name end)
-    local maxAlts = 20
-    if #alts > maxAlts then
-        warn("Limiting to " .. maxAlts .. " alts due to maximum capacity.")
-        alts = table.move(alts, 1, maxAlts, 1, {})
-    end
-    for i, p in ipairs(alts) do
-        if p.Name == playerName then
-            return i - 1
-        end
-    end
-    return 0
-end
-
--- Mode Management
+-- Command Functions
 local function disableCurrentMode()
     if humanoidRootPart then
         humanoidRootPart.Anchored = false
@@ -537,21 +452,40 @@ end
 local function buyMask()
     disableCurrentMode()
     if not humanoidRootPart then
-        warn("Buy mask failed: Local character not found")
+        warn("Buy mask failed: Local character not found, retrying...")
+        task.wait(2)
+        humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
+        if not humanoidRootPart then
+            warn("Retry failed: HumanoidRootPart not found")
+            return
+        end
+    end
+    if not mainEvent then
+        warn("mainEvent not found, cannot buy mask.")
         return
     end
     toggleNoclip(character, true)
     local maskShopPos = Vector3.new(-254, 21, -412) -- Replace with your exact coordinates
+    print("Teleporting to mask shop at: " .. tostring(maskShopPos))
     humanoidRootPart.CFrame = CFrame.new(maskShopPos)
-    pcall(function()
+    task.wait(0.5)
+    local success, err = pcall(function()
         mainEvent:FireServer("BuyItem", "Surgeon Mask")
     end)
+    if not success then
+        warn("Failed to buy mask: " .. err)
+    else
+        print("Attempted to buy Surgeon Mask")
+    end
     task.wait(0.5)
     local backpack = player:FindFirstChild("Backpack")
     if backpack then
         local mask = backpack:FindFirstChild("Surgeon Mask")
         if mask and humanoid then
             humanoid:EquipTool(mask)
+            print("Equipped Surgeon Mask")
+        else
+            warn("Surgeon Mask not found in backpack")
         end
     end
     task.wait(0.5)
@@ -607,6 +541,103 @@ local function rejoinGame()
     end)
 end
 
+-- Anti-Cheat Bypass
+local detectionFlags = {
+    "CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK",
+    "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"
+}
+
+local oldNamecall
+local success, err = pcall(function()
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local args = {...}
+        local method = getnamecallmethod()
+        if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
+            return wait(9e9)
+        end
+        return oldNamecall(self, ...)
+    end)
+end)
+if success then
+    print("Anti-cheat bypass with hookmetamethod initialized")
+else
+    warn("Failed to initialize hookmetamethod: " .. err .. ". Anti-cheat bypass disabled.")
+end
+
+-- UI Setup
+local function createOverlay()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+    screenGui.Name = "DhcOverlay"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.Position = UDim2.new(0, 0, 0, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(0, 200, 0, 50)
+    textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = "dhc.lmao"
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextSize = 24
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.Parent = frame
+end
+
+-- Performance Optimization
+local function limitFPS()
+    local targetDeltaTime = 1 / 5
+    local lastTime = tick()
+    connections.fps = RunService.RenderStepped:Connect(function(deltaTime)
+        local currentTime = tick()
+        local elapsed = currentTime - lastTime
+        if elapsed < targetDeltaTime then
+            task.wait(targetDeltaTime - elapsed)
+        end
+        lastTime = currentTime
+    end)
+end
+
+local function preventAFK()
+    connections.afk = RunService.Heartbeat:Connect(function()
+        if humanoid then
+            humanoid.Jump = true
+            task.wait(0.1)
+            humanoid.Jump = false
+        end
+    end)
+end
+
+-- Alt Positioning
+local function getAltIndex(playerName, players)
+    local alts = {}
+    for _, p in pairs(players) do
+        if p ~= hostPlayer then
+            table.insert(alts, p)
+        end
+    end
+    table.sort(alts, function(a, b) return a.Name < b.Name end)
+    local maxAlts = 20
+    if #alts > maxAlts then
+        warn("Limiting to " .. maxAlts .. " alts due to maximum capacity.")
+        alts = table.move(alts, 1, maxAlts, 1, {})
+    end
+    for i, p in ipairs(alts) do
+        if p.Name == playerName then
+            return i - 1
+        end
+    end
+    return 0
+end
+
+-- Event Handlers
 Players.PlayerRemoving:Connect(function(leavingPlayer)
     if leavingPlayer == hostPlayer then
         kickAlt()
@@ -667,6 +698,7 @@ player.AncestryChanged:Connect(function()
     end
 end)
 
+-- Command Handler
 hostPlayer.Chatted:Connect(function(message)
     local lowerMsg = string.lower(message)
     if string.sub(lowerMsg, 1, 1) ~= "?" then
@@ -750,12 +782,14 @@ hostPlayer.Chatted:Connect(function(message)
     elseif cmd == "rejoin" then
         rejoinGame()
     elseif cmd == "mask" then
+        print("Executing ?mask command")
         buyMask()
     else
         warn("Unknown command: " .. cmd)
     end
 end)
 
+-- Initialization
 hostPlayer = waitForHost(10)
 if not hostPlayer then
     warn("Script cannot proceed without host player. Shutting down.")
