@@ -347,26 +347,58 @@ local function airlock()
         warn("Airlock failed: Humanoid or HumanoidRootPart not found")
         return
     end
+    -- Store original position
     originalCFrame = humanoidRootPart.CFrame
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
-    local commonY = (hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position.Y) or originalCFrame.Position.Y
-    local targetHeight = commonY + 13
-    local platformPosition = Vector3.new(originalCFrame.Position.X, targetHeight - 0.5, originalCFrame.Position.Z)
+    
+    -- Use raycasting to find the ground height for more accuracy
+    local rayOrigin = humanoidRootPart.Position
+    local rayDirection = Vector3.new(0, -1000, 0) -- Cast downward
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {character}
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+    
+    local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
+    local targetHeight = groundY + 13 -- 13 studs above ground
+    local platformPosition = Vector3.new(humanoidRootPart.Position.X, targetHeight - 0.5, humanoidRootPart.Position.Z)
+    
+    -- Debug: Log positions
+    print("Airlock - Ground Y:", groundY, "Target Height:", targetHeight, "Platform Position:", platformPosition)
+    
+    -- Create platform
     airlockPlatform = createAirlockPlatform(platformPosition)
-    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0))
+    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0), humanoidRootPart.CFrame.Position * Vector3.new(1, 0, 1))
+    
+    -- Ensure noclip is enabled during movement
     toggleNoclip(character, true)
+    
+    -- Set position and anchor
     humanoidRootPart.CFrame = airlockPosition
     humanoidRootPart.Anchored = true
+    humanoidRootPart.Velocity = Vector3.zero
+    humanoidRootPart.RotVelocity = Vector3.zero
+    
+    -- Disable noclip after positioning
     toggleNoclip(character, false)
-    task.wait(0.1)
+    
+    -- Enforce position in RenderStepped
+    if connections.airlockFreeze then
+        connections.airlockFreeze:Disconnect()
+    end
     connections.airlockFreeze = RunService.RenderStepped:Connect(function()
         if currentMode == "airlock" and humanoidRootPart and airlockPosition then
             humanoidRootPart.CFrame = airlockPosition
             humanoidRootPart.Velocity = Vector3.zero
             humanoidRootPart.RotVelocity = Vector3.zero
+        else
+            -- Disconnect if conditions are not met
+            connections.airlockFreeze:Disconnect()
+            connections.airlockFreeze = nil
         end
     end)
+    
     currentMode = "airlock"
 end
 
