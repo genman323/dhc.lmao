@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
+local UserInputService = game:GetService("UserInputService")
 
 -- Local Player and Host Setup
 local player = Players.LocalPlayer
@@ -27,7 +28,8 @@ local connections = {
     fps = nil,
     afk = nil,
     airlockFreeze = nil,
-    setupMove = nil
+    setupMove = nil,
+    grab = nil
 }
 local lastDropTime = 0
 local dropCooldown = 0.1
@@ -46,7 +48,7 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local args = {...}
     local method = getnamecallmethod()
     if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
-        return wait(9e9) -- Block detection
+        return wait(9e9)
     end
     return oldNamecall(self, ...)
 end)
@@ -194,6 +196,9 @@ local function disableCurrentMode()
     elseif currentMode == "setup" and connections.setupMove then
         connections.setupMove:Disconnect()
         connections.setupMove = nil
+    elseif currentMode == "grab" and connections.grab then
+        connections.grab:Disconnect()
+        connections.grab = nil
     end
     if airlockPlatform then
         airlockPlatform:Destroy()
@@ -291,6 +296,7 @@ local function setupClub()
         end
     end)
     toggleNoclip(character, false)
+    return clubPos
 end
 
 local function setupBank()
@@ -481,7 +487,78 @@ local function bring()
     toggleNoclip(character, false)
 end
 
--- Cash Dropping
+local function grabAndBring(target, destination)
+    if getAltIndex(player.Name, getPlayers()) ~= 0 then
+        warn("Only the first alt performs grab for this command.")
+        return
+    end
+    disableCurrentMode()
+    if not target or not target.Character or not target.Character:FindFirstChild("UpperTorso") or not target.Character:FindFirstChild("HumanoidRootPart") or not target.Character:FindFirstChild("BodyEffects") or not humanoidRootPart or not humanoid then
+        warn("Grab and bring failed: Invalid target or local character")
+        return
+    end
+    toggleNoclip(character, true)
+    local targetChar = target.Character
+    local bodyEffects = targetChar.BodyEffects
+    local combat = character:FindFirstChild("Combat") or player.Backpack:FindFirstChild("Combat")
+    if not combat then
+        warn("No Combat tool found for punching")
+        toggleNoclip(character, false)
+        return
+    end
+    humanoid:EquipTool(combat)
+    currentMode = "grab"
+    connections.grab = RunService.RenderStepped:Connect(function()
+        if currentMode ~= "grab" or not targetChar or not bodyEffects["K.O"] then
+            connections.grab:Disconnect()
+            connections.grab = nil
+            toggleNoclip(character, false)
+            return
+        end
+        if bodyEffects["K.O"].Value then
+            humanoidRootPart.CFrame = targetChar.HumanoidRootPart.CFrame * CFrame.new(0, 0, -1) * CFrame.Angles(0, math.pi, 0)
+            local vim = game:GetService("VirtualInputManager")
+            vim:SendKeyEvent(true, Enum.KeyCode.G, false, game)
+            task.wait(0.1)
+            vim:SendKeyEvent(false, Enum.KeyCode.G, false, game)
+            task.wait(0.5)
+            humanoid:MoveTo(destination)
+            connections.grab:Disconnect()
+            connections.grab = nil
+            currentMode = nil
+            toggleNoclip(character, false)
+        else
+            humanoidRootPart.CFrame = targetChar.UpperTorso.CFrame * CFrame.new(0, 0, -2) * CFrame.Angles(0, math.pi, 0)
+            combat:Activate()
+        end
+    end)
+end
+
+local function buyMask()
+    disableCurrentMode()
+    if not humanoidRootPart then
+        warn("Buy mask failed: Local character not found")
+        return
+    end
+    toggleNoclip(character, true)
+    local maskShopPos = Vector3.new(-254, 21, -412) -- Replace with your exact coordinates
+    humanoidRootPart.CFrame = CFrame.new(maskShopPos)
+    pcall(function()
+        mainEvent:FireServer("BuyItem", "Surgeon Mask")
+    end)
+    task.wait(0.5)
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        local mask = backpack:FindFirstChild("Surgeon Mask")
+        if mask and humanoid then
+            humanoid:EquipTool(mask)
+        end
+    end
+    task.wait(0.5)
+    setup(hostPlayer)
+    toggleNoclip(character, false)
+end
+
 local function dropAllCash()
     if not mainEvent then
         warn("MainEvent not found, cannot drop cash.")
@@ -518,7 +595,6 @@ local function stopDrop()
     end
 end
 
--- Player Management
 local function kickAlt()
     pcall(function()
         player:Kick("Kicked by your host.")
@@ -531,7 +607,6 @@ local function rejoinGame()
     end)
 end
 
--- Event Handlers
 Players.PlayerRemoving:Connect(function(leavingPlayer)
     if leavingPlayer == hostPlayer then
         kickAlt()
@@ -568,6 +643,8 @@ player.CharacterAdded:Connect(function(newChar)
                 setupClub()
             end
         end
+        if currentMode == "grab" then
+        end
     end
 end)
 
@@ -590,7 +667,6 @@ player.AncestryChanged:Connect(function()
     end
 end)
 
--- Command Handler
 hostPlayer.Chatted:Connect(function(message)
     local lowerMsg = string.lower(message)
     if string.sub(lowerMsg, 1, 1) ~= "?" then
@@ -647,6 +723,24 @@ hostPlayer.Chatted:Connect(function(message)
         unairlock()
     elseif cmd == "bring" then
         bring()
+    elseif cmd:match("^bring%s+(.+)$") then
+        local targetName = cmd:match("^bring%s+(.+)$")
+        local target = nil
+        local destination = nil
+        if targetName == "host" then
+            target = hostPlayer
+            destination = Vector3.new(-265, -7, -380)
+        else
+            target = Players:FindFirstChild(targetName)
+            if target then
+                destination = hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") and hostPlayer.Character.HumanoidRootPart.Position or Vector3.new(0, 0, 0)
+            end
+        end
+        if target and destination then
+            grabAndBring(target, destination)
+        else
+            warn("Bring failed: Player " .. targetName .. " not found")
+        end
     elseif cmd == "drop" then
         dropAllCash()
     elseif cmd == "stop" then
@@ -655,12 +749,13 @@ hostPlayer.Chatted:Connect(function(message)
         kickAlt()
     elseif cmd == "rejoin" then
         rejoinGame()
+    elseif cmd == "mask" then
+        buyMask()
     else
         warn("Unknown command: " .. cmd)
     end
 end)
 
--- Initialization
 hostPlayer = waitForHost(10)
 if not hostPlayer then
     warn("Script cannot proceed without host player. Shutting down.")
