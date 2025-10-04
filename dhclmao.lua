@@ -296,6 +296,7 @@ local function swarm(targetPlayer)
     toggleNoclip(character, true)
     connections.swarm = RunService.RenderStepped:Connect(function()
         if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+            toggleNoclip(character, false)
             return
         end
         local center = currentTarget.Character.HumanoidRootPart.Position
@@ -325,6 +326,7 @@ local function follow(targetPlayer)
     toggleNoclip(character, true)
     connections.follow = RunService.RenderStepped:Connect(function()
         if currentMode ~= "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+            toggleNoclip(character, false)
             return
         end
         local targetRoot = currentTarget.Character.HumanoidRootPart
@@ -497,6 +499,44 @@ local function rejoinGame()
     end)
 end
 
+local function buyMask()
+    if not mainEvent then
+        warn("MainEvent not found, cannot buy mask.")
+        return
+    end
+    if not humanoidRootPart or not humanoid then
+        warn("Character not ready for mask purchase.")
+        return
+    end
+    -- Enable noclip for faster movement
+    toggleNoclip(character, true)
+    -- Teleport to buy position
+    local buyPosition = Vector3.new(-271.42, 21.85, -283.32)
+    humanoidRootPart.CFrame = CFrame.new(buyPosition)
+    task.wait(0.5)  -- Wait for any loading
+    
+    -- Buy the mask
+    pcall(function()
+        mainEvent:FireServer("BuyItem", "Surgeon Mask", 1)
+    end)
+    task.wait(0.5)
+    
+    -- Equip and activate the mask
+    local backpack = player:WaitForChild("Backpack")
+    local maskTool = backpack:FindFirstChild("Surgeon Mask") or character:FindFirstChild("Surgeon Mask")
+    if maskTool and maskTool:IsA("Tool") then
+        humanoid:EquipTool(maskTool)
+        task.wait(0.1)
+        maskTool:Activate()
+    else
+        warn("Surgeon Mask not found in backpack or character.")
+    end
+    
+    -- Teleport back to host
+    bring()
+    toggleNoclip(character, false)
+end
+
 -- Event Handlers
 local function handleHostLeaving(leavingPlayer)
     if leavingPlayer == hostPlayer then
@@ -595,6 +635,8 @@ local function handleCommands(message)
         kickAlt()
     elseif cmd == "rejoin" then
         rejoinGame()
+    elseif cmd == "mask" then
+        buyMask()
     else
         warn("Unknown command: " .. cmd)
     end
