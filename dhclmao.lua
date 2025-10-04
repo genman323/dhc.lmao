@@ -408,11 +408,12 @@ local function airlock()
     airlockPosition = CFrame.new(humanoidRootPart.Position.X, targetHeight, humanoidRootPart.Position.Z)
     airlockPlatform = createAirlockPlatform(Vector3.new(humanoidRootPart.Position.X, targetHeight - 0.5, humanoidRootPart.Position.Z))
 
-    -- Move character to airlock position with smooth transition
+    -- Move character to airlock position with smooth transition, preserving orientation
     toggleNoclip(character, true)
     local startTime = tick()
     local duration = 1.0
     local startCFrame = humanoidRootPart.CFrame
+    local targetCFrame = CFrame.new(airlockPosition.Position) * CFrame.Angles(0, startCFrame:ToEulerAnglesXYZ()) -- Preserve original rotation
     currentMode = "airlock"
     if connections.airlockMove then
         connections.airlockMove:Disconnect()
@@ -425,7 +426,7 @@ local function airlock()
         end
         local elapsed = tick() - startTime
         local t = math.min(elapsed / duration, 1)
-        humanoidRootPart.CFrame = startCFrame:Lerp(airlockPosition, t)
+        humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
         if t >= 1 then
             humanoidRootPart.Anchored = true
             connections.airlockMove:Disconnect()
