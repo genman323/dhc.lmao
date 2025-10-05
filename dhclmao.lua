@@ -371,6 +371,26 @@ local function follow(targetPlayer)
     end)
 end
 
+local function bring()
+    disableCurrentMode()
+    if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
+        warn("Bring failed: Invalid host or local character")
+        return
+    end
+    toggleNoclip(character, true)
+    local hostRoot = hostPlayer.Character.HumanoidRootPart
+    local players = getPlayers()
+    local index = getAltIndex(player.Name, players)
+    local angle = index * (2 * math.pi / #players)
+    local radius = 2
+    local x = math.cos(angle) * radius
+    local z = math.sin(angle) * radius
+    local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
+    local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
+    humanoidRootPart.CFrame = targetCFrame
+    toggleNoclip(character, false)
+end
+
 local function dropAllCash()
     if not mainEvent then
         warn("MainEvent not found, cannot drop cash.")
@@ -393,9 +413,9 @@ local function dropAllCash()
                 local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
                 local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
 
-                -- Tween about 5 studs underground
+                -- Tween about 5.2 studs underground
                 local startY = humanoidRootPart.Position.Y
-                local targetY = groundY - 5
+                local targetY = groundY - 5.2
                 local startCFrame = humanoidRootPart.CFrame
                 local targetCFrame = CFrame.new(startCFrame.X, targetY, startCFrame.Z) * startCFrame.Rotation
                 local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -409,7 +429,7 @@ local function dropAllCash()
                     mainEvent:FireServer("DropMoney", 15000)
                 end)
 
-                -- Return to original setup position if in setup mode
+                -- Return to original setup position if in setup mode and freeze
                 if currentMode == "setup" then
                     local players = getPlayers()
                     local index = getAltIndex(player.Name, players)
@@ -428,7 +448,8 @@ local function dropAllCash()
                     local setupTween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetSetupCFrame})
                     setupTween:Play()
                     setupTween.Completed:Wait()
-                    toggleNoclip(character, false) -- Disable noclip after return
+                    humanoidRootPart.Anchored = true -- Freeze position
+                    toggleNoclip(character, true) -- Keep noclip on to prevent falling
                 end
 
                 lastDropTime = currentTime
