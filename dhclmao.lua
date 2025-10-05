@@ -88,13 +88,13 @@ local function createOverlay()
     screenGui.IgnoreGuiInset = true
 
     local blurEffect = Instance.new("BlurEffect")
-    blurEffect.Size = 10
+    blurEffect.Size = 24 -- Increased blur to make background nearly invisible
     blurEffect.Parent = game.Lighting
 
     local background = Instance.new("Frame")
     background.Size = UDim2.new(1, 0, 1, 0)
     background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    background.BackgroundTransparency = 0.7
+    background.BackgroundTransparency = 0.5 -- Slightly visible to allow overlay focus
     background.Parent = screenGui
 
     local frame = Instance.new("Frame")
@@ -112,7 +112,7 @@ local function createOverlay()
     textLabel.Size = UDim2.new(1, -20, 1, -20)
     textLabel.Position = UDim2.new(0, 10, 0, 10)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao - Loaded at 10:54 PM PDT on Saturday, October 04, 2025"
+    textLabel.Text = "dhc.lmao - Loaded at 11:00 PM PDT on Saturday, October 04, 2025"
     textLabel.TextColor3 = Color3.fromRGB(150, 100, 200) -- Light purple text
     textLabel.TextSize = 18
     textLabel.Font = Enum.Font.GothamBold
@@ -126,7 +126,7 @@ local function createOverlay()
 end
 
 local function limitFPS()
-    local targetDeltaTime = 1 / 5
+    local targetDeltaTime = 1 / 5 -- Cap at 5 FPS
     local lastTime = tick()
     connections.fps = RunService.RenderStepped:Connect(function()
         local currentTime = tick()
@@ -424,6 +424,7 @@ local function airlock()
     tween.Completed:Connect(function()
         if currentMode == "airlock" and humanoidRootPart then
             humanoidRootPart.Anchored = false -- Allow standing on platform
+            humanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Prevent sinking into ground
             applyLevitationAnimation()
         end
     end)
