@@ -1,18 +1,18 @@
 -- Services
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local TeleportService = game:GetService("TeleportService")
-local TweenService = game:GetService("TweenService")
+local Players = game:GetService('Players')
+local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local RunService = game:GetService('RunService')
+local TeleportService = game:GetService('TeleportService')
+local TweenService = game:GetService('TweenService')
 
 -- Local player and character setup
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
-local humanoid = character:WaitForChild("Humanoid", 5)
+local humanoidRootPart = character:WaitForChild('HumanoidRootPart', 5)
+local humanoid = character:WaitForChild('Humanoid', 5)
 
 -- Host setup
-local hostName = "HarperViperZero20033"
+local hostName = 'HarperViperZero20033'
 local hostPlayer = nil
 
 -- State variables
@@ -24,34 +24,47 @@ local airlockPlatform = nil
 local lastDropTime = 0
 local dropCooldown = 0.1
 local originalAnims = nil
+local originalPosition = nil -- Store original position before dropping
 local connections = {
     drop = nil,
     swarm = nil,
     follow = nil,
     fps = nil,
     afk = nil,
-    setupMove = nil
+    setupMove = nil,
 }
 
--- Anti-cheat bypass
+-- Anti-cheat bypass (unchanged)
 local detectionFlags = {
-    "CHECKER_1", "CHECKER", "TeleportDetect", "OneMoreTime", "BRICKCHECK",
-    "BADREQUEST", "BANREMOTE", "KICKREMOTE", "PERMAIDBAN", "PERMABAN"
+    'CHECKER_1',
+    'CHECKER',
+    'TeleportDetect',
+    'OneMoreTime',
+    'BRICKCHECK',
+    'BADREQUEST',
+    'BANREMOTE',
+    'KICKREMOTE',
+    'PERMAIDBAN',
+    'PERMABAN',
 }
 local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local args = {...}
+oldNamecall = hookmetamethod(game, '__namecall', function(self, ...)
+    local args = { ... }
     local method = getnamecallmethod()
-    if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
-        return task.wait(9e9) -- Block detection
+    if
+        method == 'FireServer'
+        and self.Name == 'MainEvent'
+        and table.find(detectionFlags, args[1])
+    then
+        return task.wait(9e9)
     end
     return oldNamecall(self, ...)
 end)
 
 -- Main event
-local mainEvent = ReplicatedStorage:WaitForChild("MainEvent", 5)
+local mainEvent = ReplicatedStorage:WaitForChild('MainEvent', 5)
 if not mainEvent then
-    warn("MainEvent not found. Some features like dropping cash may not work.")
+    warn('MainEvent not found. Some features like dropping cash may not work.')
 end
 
 -- Utility Functions
@@ -62,7 +75,13 @@ local function waitForHost(timeout)
     if success and result then
         return result
     end
-    warn("Host player " .. hostName .. " not found within " .. timeout .. " seconds.")
+    warn(
+        'Host player '
+            .. hostName
+            .. ' not found within '
+            .. timeout
+            .. ' seconds.'
+    )
     return nil
 end
 
@@ -72,70 +91,49 @@ end
 
 local function disableAllSeats()
     for _, seat in ipairs(game.Workspace:GetDescendants()) do
-        if seat:IsA("Seat") then
+        if seat:IsA('Seat') then
             seat.Disabled = true
         end
     end
 end
 
 local function createOverlay()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = player:WaitForChild("PlayerGui", 5)
-    screenGui.Name = "DhcOverlay"
+    local screenGui = Instance.new('ScreenGui')
+    screenGui.Parent = player:WaitForChild('PlayerGui', 5)
+    screenGui.Name = 'DhcOverlay'
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
 
-    local blurEffect = Instance.new("BlurEffect")
-    blurEffect.Size = 48 -- Stronger blur
+    local blurEffect = Instance.new('BlurEffect')
+    blurEffect.Size = 48
     blurEffect.Parent = game.Lighting
 
-    local background = Instance.new("Frame")
+    local background = Instance.new('Frame')
     background.Size = UDim2.new(1, 0, 1, 0)
     background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    background.BackgroundTransparency = 0.5 -- Slightly visible to allow overlay focus
+    background.BackgroundTransparency = 0
     background.Parent = screenGui
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 400, 0, 150)
-    frame.Position = UDim2.new(0.5, -200, 0.5, -75)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 0, 50) -- Dark purple background
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
+    local mainText = Instance.new('TextLabel')
+    mainText.Size = UDim2.new(0, 400, 0, 100)
+    mainText.Position = UDim2.new(0.5, -200, 0.5, -50)
+    mainText.BackgroundTransparency = 1
+    mainText.Text = 'dhc.lmao'
+    mainText.TextSize = 48
+    mainText.Font = Enum.Font.GothamBold
+    mainText.TextColor3 = Color3.fromRGB(120, 60, 180) -- Starting purple
+    mainText.Parent = background
 
-    local uiCorner = Instance.new("UICorner")
-    uiCorner.CornerRadius = UDim.new(0, 15)
-    uiCorner.Parent = frame
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, -20, 0.5, -20)
-    textLabel.Position = UDim2.new(0, 10, 0, 10)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao"
-    textLabel.TextColor3 = Color3.fromRGB(150, 100, 200) -- Light purple text
-    textLabel.TextSize = 18
-    textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextWrapped = true
-    textLabel.Parent = frame
-
-    local hostLabel = Instance.new("TextLabel")
-    hostLabel.Size = UDim2.new(1, -20, 0.5, -20)
-    hostLabel.Position = UDim2.new(0, 10, 0.5, 10)
-    hostLabel.BackgroundTransparency = 1
-    hostLabel.Text = "Host: " .. hostName
-    hostLabel.TextColor3 = Color3.fromRGB(150, 100, 200) -- Light purple text
-    hostLabel.TextSize = 18
-    hostLabel.Font = Enum.Font.GothamBold
-    hostLabel.TextWrapped = true
-    hostLabel.Parent = frame
-
-    local uiStroke = Instance.new("UIStroke")
-    uiStroke.Thickness = 2
-    uiStroke.Color = Color3.fromRGB(80, 40, 120) -- Purple outline
-    uiStroke.Parent = frame
+    local gradient = Instance.new('UIGradient')
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 60, 180)), -- Purple
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))      -- Black
+    }
+    gradient.Parent = mainText
 end
 
 local function limitFPS()
-    local targetDeltaTime = 1 / 5 -- Cap at 5 FPS
+    local targetDeltaTime = 1 / 5
     local lastTime = tick()
     connections.fps = RunService.RenderStepped:Connect(function()
         local currentTime = tick()
@@ -147,12 +145,19 @@ local function limitFPS()
     end)
 end
 
+-- FIXED: AFK prevention - now every 58s instead of every frame
+local lastAFKJump = 0
+local afkInterval = 58 -- seconds
 local function preventAFK()
     connections.afk = RunService.Heartbeat:Connect(function()
-        if humanoid then
-            humanoid.Jump = true
-            task.wait(0.1)
-            humanoid.Jump = false
+        local currentTime = tick()
+        if currentTime - lastAFKJump >= afkInterval then
+            if humanoid then
+                humanoid.Jump = true
+                task.wait(0.1)
+                humanoid.Jump = false
+            end
+            lastAFKJump = currentTime
         end
     end)
 end
@@ -164,11 +169,13 @@ local function getAltIndex(playerName, players)
             table.insert(alts, p)
         end
     end
-    table.sort(alts, function(a, b) return a.Name < b.Name end)
+    table.sort(alts, function(a, b)
+        return a.Name < b.Name
+    end)
     local maxAlts = 20
     if #alts > maxAlts then
-        warn("Limiting to " .. maxAlts .. " alts due to maximum capacity.")
-        alts = {table.unpack(alts, 1, maxAlts)}
+        warn('Limiting to ' .. maxAlts .. ' alts due to maximum capacity.')
+        alts = { table.unpack(alts, 1, maxAlts) }
     end
     for i, p in ipairs(alts) do
         if p.Name == playerName then
@@ -183,16 +190,18 @@ local function toggleNoclip(char, enable)
         return
     end
     for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and not part:IsA("Accessory") then
-            part.CanCollide = false -- Always disable collision for alts
-            part.Velocity = Vector3.zero
+        if part:IsA('BasePart') and not part:IsA('Accessory') then
+            part.CanCollide = not enable
+            if enable then
+                part.Velocity = Vector3.zero
+            end
         end
     end
 end
 
--- Animation Management
+-- Animation Management (Updated for Server Sync)
 local function saveOriginalAnimations()
-    local animate = character:WaitForChild("Animate")
+    local animate = character:WaitForChild('Animate')
     originalAnims = {
         idle1 = animate.idle.Animation1.AnimationId,
         idle2 = animate.idle.Animation2.AnimationId,
@@ -200,34 +209,96 @@ local function saveOriginalAnimations()
         run = animate.run.RunAnim.AnimationId,
         jump = animate.jump.JumpAnim.AnimationId,
         climb = animate.climb.ClimbAnim.AnimationId,
-        fall = animate.fall.FallAnim.AnimationId
+        fall = animate.fall.FallAnim.AnimationId,
     }
 end
 
 local function applyLevitationAnimation()
-    local animate = character:WaitForChild("Animate")
-    animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616006778"
-    animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616008087"
-    animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616013216"
-    animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616010382"
-    animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616008936"
-    animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=616003713"
-    animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616005863"
+    if not character or not humanoid then return end
+    
+    -- Local client animation (for alt's screen)
+    local animate = character:WaitForChild('Animate')
+    animate.idle.Animation1.AnimationId = 'http://www.roblox.com/asset/?id=70731164340462'
+    animate.idle.Animation2.AnimationId = 'http://www.roblox.com/asset/?id=70731164340462'
+    animate.walk.WalkAnim.AnimationId = 'http://www.roblox.com/asset/?id=70731164340462'
+    animate.run.RunAnim.AnimationId = 'http://www.roblox.com/asset/?id=70731164340462'
+    animate.jump.JumpAnim.AnimationId = 'http://www.roblox.com/asset/?id=670731164340462'
+    animate.climb.ClimbAnim.AnimationId = 'http://www.roblox.com/asset/?id=70731164340462'
+    animate.fall.FallAnim.AnimationId = 'http://www.roblox.com/asset/?id=70731164340462'
     humanoid.Jump = true
+    
+    -- Request server to sync animation
+    if mainEvent then
+        pcall(function()
+            mainEvent:FireServer('ApplyLevitation', {
+                idle1 = 'http://www.roblox.com/asset/?id=70731164340462',
+                idle2 = 'http://www.roblox.com/asset/?id=70731164340462',
+                walk = 'http://www.roblox.com/asset/?id=70731164340462',
+                run = 'http://www.roblox.com/asset/?id=70731164340462',
+                jump = 'http://www.roblox.com/asset/?id=70731164340462',
+                climb = 'http://www.roblox.com/asset/?id=70731164340462',
+                fall = 'http://www.roblox.com/asset/?id=70731164340462',
+            })
+        end)
+    end
 end
 
 local function restoreOriginalAnimations()
-    if originalAnims and character:FindFirstChild("Animate") then
-        local animate = character.Animate
-        animate.idle.Animation1.AnimationId = originalAnims.idle1
-        animate.idle.Animation2.AnimationId = originalAnims.idle2
-        animate.walk.WalkAnim.AnimationId = originalAnims.walk
-        animate.run.RunAnim.AnimationId = originalAnims.run
-        animate.jump.JumpAnim.AnimationId = originalAnims.jump
-        animate.climb.ClimbAnim.AnimationId = originalAnims.climb
-        animate.fall.FallAnim.AnimationId = originalAnims.fall
-        humanoid.Jump = true
+    if not character or not humanoid or not originalAnims then return end
+    
+    local animate = character:WaitForChild('Animate')
+    animate.idle.Animation1.AnimationId = originalAnims.idle1
+    animate.idle.Animation2.AnimationId = originalAnims.idle2
+    animate.walk.WalkAnim.AnimationId = originalAnims.walk
+    animate.run.RunAnim.AnimationId = originalAnims.run
+    animate.jump.JumpAnim.AnimationId = originalAnims.jump
+    animate.climb.ClimbAnim.AnimationId = originalAnims.climb
+    animate.fall.FallAnim.AnimationId = originalAnims.fall
+    humanoid.Jump = true
+    
+    if mainEvent then
+        pcall(function()
+            mainEvent:FireServer('RestoreAnimations', originalAnims)
+        end)
     end
+end
+
+local function setupAnimationServerHandler()
+    if not mainEvent then return end
+    
+    mainEvent.OnClientEvent:Connect(function(action, data)
+        if action == 'ApplyLevitation' and character then
+            local humanoid = character:FindFirstChild('Humanoid')
+            if humanoid then
+                local animate = character:FindFirstChild('Animate')
+                if animate then
+                    animate.idle.Animation1.AnimationId = data.idle1
+                    animate.idle.Animation2.AnimationId = data.idle2
+                    animate.walk.WalkAnim.AnimationId = data.walk
+                    animate.run.RunAnim.AnimationId = data.run
+                    animate.jump.JumpAnim.AnimationId = data.jump
+                    animate.climb.ClimbAnim.AnimationId = data.climb
+                    animate.fall.FallAnim.AnimationId = data.fall
+                    humanoid.Jump = true
+                end
+            end
+        elseif action == 'RestoreAnimations' and character then
+            local humanoid = character:FindFirstChild('Humanoid')
+            if humanoid and data then
+                local animate = character:FindFirstChild('Animate')
+                if animate then
+                    animate.idle.Animation1.AnimationId = data.idle1
+                    animate.idle.Animation2.AnimationId = data.idle2
+                    animate.walk.WalkAnim.AnimationId = data.walk
+                    animate.run.RunAnim.AnimationId = data.run
+                    animate.jump.JumpAnim.AnimationId = data.jump
+                    animate.climb.ClimbAnim.AnimationId = data.climb
+                    animate.fall.FallAnim.AnimationId = data.fall
+                    humanoid.Jump = true
+                end
+            end
+        end
+    end)
 end
 
 -- Mode Management
@@ -236,7 +307,7 @@ local function disableCurrentMode()
         humanoidRootPart.Anchored = false
     end
     for key, conn in pairs(connections) do
-        if key ~= "fps" and key ~= "afk" and key ~= "drop" and conn then
+        if key ~= 'fps' and key ~= 'afk' and key ~= 'drop' and conn then
             conn:Disconnect()
             connections[key] = nil
         end
@@ -246,9 +317,20 @@ local function disableCurrentMode()
     toggleNoclip(character, false)
 end
 
+-- FIXED: Added unswarm function
+local function unswarm()
+    if currentMode ~= 'swarm' then
+        warn('Not in swarm mode.')
+        return
+    end
+    disableCurrentMode()
+    print('Unswarm: Returning to setup.')
+    setupClub() -- Default to club grid
+end
+
 local function setupGrid(position, facingDirection)
     if not humanoidRootPart then
-        warn("Setup grid failed: Local character not found")
+        warn('Setup grid failed: Local character not found')
         return
     end
     toggleNoclip(character, true)
@@ -264,13 +346,19 @@ local function setupGrid(position, facingDirection)
     local offsetX = -halfWidth + (col * spacing) + (spacing / 2)
     local offsetZ = -halfDepth + (row * spacing) + (spacing / 2)
     local offsetPosition = position + Vector3.new(offsetX, 0, offsetZ)
-    local targetCFrame = CFrame.new(offsetPosition, offsetPosition + facingDirection)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    local targetCFrame =
+        CFrame.new(offsetPosition, offsetPosition + facingDirection)
+    local tweenInfo =
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(
+        humanoidRootPart,
+        tweenInfo,
+        { CFrame = targetCFrame }
+    )
     tween:Play()
-    currentMode = "setup"
+    currentMode = 'setup'
     tween.Completed:Connect(function()
-        if currentMode == "setup" then
+        if currentMode == 'setup' then
             currentMode = nil
         end
     end)
@@ -279,8 +367,13 @@ end
 
 local function setup(targetPlayer)
     disableCurrentMode()
-    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Setup failed: Invalid target or local character")
+    if
+        not targetPlayer
+        or not targetPlayer.Character
+        or not targetPlayer.Character:FindFirstChild('HumanoidRootPart')
+        or not humanoidRootPart
+    then
+        warn('Setup failed: Invalid target or local character')
         return
     end
     toggleNoclip(character, true)
@@ -289,14 +382,20 @@ local function setup(targetPlayer)
     local index = getAltIndex(player.Name, players)
     local spacing = 1
     local behindDirection = -targetRoot.CFrame.LookVector
-    local offsetPosition = targetRoot.Position + behindDirection * (spacing * (index + 1))
+    local offsetPosition = targetRoot.Position
+        + behindDirection * (spacing * (index + 1))
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    local tweenInfo =
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(
+        humanoidRootPart,
+        tweenInfo,
+        { CFrame = targetCFrame }
+    )
     tween:Play()
-    currentMode = "setup"
+    currentMode = 'setup'
     tween.Completed:Connect(function()
-        if currentMode == "setup" then
+        if currentMode == 'setup' then
             currentMode = nil
         end
     end)
@@ -313,17 +412,28 @@ end
 
 local function swarm(targetPlayer)
     disableCurrentMode()
-    currentMode = "swarm"
+    currentMode = 'swarm'
     currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Swarm failed: Invalid target or local character")
+    if
+        not currentTarget
+        or not currentTarget.Character
+        or not currentTarget.Character:FindFirstChild('HumanoidRootPart')
+        or not humanoidRootPart
+    then
+        warn('Swarm failed: Invalid target or local character')
         currentMode = nil
         currentTarget = nil
         return
     end
     toggleNoclip(character, true)
     connections.swarm = RunService.RenderStepped:Connect(function()
-        if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+        if
+            currentMode ~= 'swarm'
+            or not humanoidRootPart
+            or not currentTarget
+            or not currentTarget.Character
+            or not currentTarget.Character:FindFirstChild('HumanoidRootPart')
+        then
             toggleNoclip(character, false)
             return
         end
@@ -343,17 +453,28 @@ end
 
 local function follow(targetPlayer)
     disableCurrentMode()
-    currentMode = "follow"
+    currentMode = 'follow'
     currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Follow failed: Invalid target or local character")
+    if
+        not currentTarget
+        or not currentTarget.Character
+        or not currentTarget.Character:FindFirstChild('HumanoidRootPart')
+        or not humanoidRootPart
+    then
+        warn('Follow failed: Invalid target or local character')
         currentMode = nil
         currentTarget = nil
         return
     end
     toggleNoclip(character, true)
     connections.follow = RunService.RenderStepped:Connect(function()
-        if currentMode ~= "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+        if
+            currentMode ~= 'follow'
+            or not humanoidRootPart
+            or not currentTarget
+            or not currentTarget.Character
+            or not currentTarget.Character:FindFirstChild('HumanoidRootPart')
+        then
             toggleNoclip(character, false)
             return
         end
@@ -367,14 +488,19 @@ local function follow(targetPlayer)
         local lookPos = targetPos
         local currentCFrame = humanoidRootPart.CFrame
         local targetCFrame = CFrame.lookAt(myPos, lookPos)
-        humanoidRootPart.CFrame = currentCFrame:Lerp(targetCFrame, 0.5)
+        humanoidRootPart.CFrame = currentCFrame:Lerp(targetCFrame, 0.3) -- Reduced for less jitter
     end)
 end
 
 local function bring()
     disableCurrentMode()
-    if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Bring failed: Invalid host or local character")
+    if
+        not hostPlayer
+        or not hostPlayer.Character
+        or not hostPlayer.Character:FindFirstChild('HumanoidRootPart')
+        or not humanoidRootPart
+    then
+        warn('Bring failed: Invalid host or local character')
         return
     end
     toggleNoclip(character, true)
@@ -387,83 +513,143 @@ local function bring()
     local z = math.sin(angle) * radius
     local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
     local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    local tweenInfo =
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(
+        humanoidRootPart,
+        tweenInfo,
+        { CFrame = targetCFrame }
+    )
     tween:Play()
-    -- No toggleNoclip off, keep it on
 end
 
-local function dropAllCash()
-    if not mainEvent then
-        warn("MainEvent not found, cannot drop cash.")
+-- FIXED: Completely restructured drop - bury once, freeze, drop in loop, unbury on stop
+local function buryAlt()
+    if not humanoidRootPart then
         return
     end
-    isDropping = true
-    if connections.drop then
-        connections.drop:Disconnect()
+    originalPosition = humanoidRootPart.CFrame -- Save original position
+    toggleNoclip(character, true)
+
+    -- Improved raycast for ground (longer range, filter more)
+    local rayOrigin = humanoidRootPart.Position
+    local rayDirection = Vector3.new(0, -2000, 0) -- Longer ray
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = { character }
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    local raycastResult =
+        workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+
+    local groundY
+    if raycastResult then
+        groundY = raycastResult.Position.Y
+        print('Raycast hit ground at Y=' .. groundY)
+    else
+        groundY = humanoidRootPart.Position.Y -- Fallback
+        warn('Raycast failed - using fallback Y=' .. groundY)
     end
+
+    local buryDepth = 5 -- Studs underground
+    local targetY = groundY - buryDepth
+    local startCFrame = humanoidRootPart.CFrame
+    local targetCFrame = CFrame.new(
+        startCFrame.Position.X,
+        targetY,
+        startCFrame.Position.Z
+    ) * startCFrame.Rotation
+
+    local tweenInfo =
+        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(
+        humanoidRootPart,
+        tweenInfo,
+        { CFrame = targetCFrame }
+    )
+    tween:Play()
+    tween.Completed:Wait()
+
+    humanoidRootPart.Anchored = true -- FREEZE underground
+    print('Alt buried and frozen at Y=' .. targetY)
+end
+
+local function unburyAlt()
+    if not humanoidRootPart then
+        return
+    end
+    humanoidRootPart.Anchored = false
+    toggleNoclip(character, false)
+    if originalPosition then
+        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = originalPosition })
+        tween:Play()
+        tween.Completed:Wait()
+        originalPosition = nil -- Clear after returning
+    else
+        warn('No original position saved, returning to setup.')
+        setupClub() -- Fallback if no original position
+    end
+    print('Alt unburied and returned to original position.')
+end
+
+local function dropv2()
+    if not mainEvent then
+        warn('MainEvent not found, cannot drop cash.')
+        return
+    end
+    if isDropping then
+        return
+    end -- Prevent double-start
+    isDropping = true
+
+    -- Bury once at start
+    buryAlt()
+
+    -- Start dropping loop (no movement, just fire remote)
     connections.drop = RunService.Heartbeat:Connect(function()
-        if isDropping and humanoidRootPart then
-            local currentTime = tick()
-            if currentTime - lastDropTime >= dropCooldown then
-                -- Use raycasting to find ground level and prevent void fall
-                local rayOrigin = humanoidRootPart.Position
-                local rayDirection = Vector3.new(0, -1000, 0)
-                local raycastParams = RaycastParams.new()
-                raycastParams.FilterDescendantsInstances = {character}
-                raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-                local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-                local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
-
-                -- Tween about 5.2 studs underground
-                local startY = humanoidRootPart.Position.Y
-                local targetY = groundY - 5.2
-                local startCFrame = humanoidRootPart.CFrame
-                local targetCFrame = CFrame.new(startCFrame.X, targetY, startCFrame.Z) * startCFrame.Rotation
-                local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-                local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-                toggleNoclip(character, true) -- Enable noclip during tween
-                tween:Play()
-                tween.Completed:Wait() -- Wait for tween to complete
-
-                humanoidRootPart.Anchored = true -- Freeze once underground
-
-                -- Drop cash
-                pcall(function()
-                    mainEvent:FireServer("DropMoney", 15000)
-                end)
-
-                -- Return to original setup position if in setup mode
-                if currentMode == "setup" then
-                    local players = getPlayers()
-                    local index = getAltIndex(player.Name, players)
-                    local rows, cols, spacing = 5, 4, 2
-                    local maxAlts = 20
-                    local totalAlts = math.min(#players - 1, maxAlts)
-                    local halfWidth = (cols * spacing) / 2
-                    local halfDepth = (rows * spacing) / 2
-                    local row = math.floor(index / cols)
-                    local col = index % cols
-                    local offsetX = -halfWidth + (col * spacing) + (spacing / 2)
-                    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2)
-                    local basePosition = Vector3.new(-265, -7, -380) -- Assuming club setup as default
-                    local offsetPosition = basePosition + Vector3.new(offsetX, 0, offsetZ)
-                    local targetSetupCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1))
-                    local setupTween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetSetupCFrame})
-                    humanoidRootPart.Anchored = false -- Unanchor for return tween
-                    setupTween:Play()
-                    setupTween.Completed:Wait()
-                    humanoidRootPart.Anchored = true -- Re-anchor after return
-                    toggleNoclip(character, true) -- Keep noclip on to prevent falling
-                end
-
-                lastDropTime = currentTime
-            end
+        if not isDropping or not humanoidRootPart then
+            return
+        end
+        local currentTime = tick()
+        if currentTime - lastDropTime >= dropCooldown then
+            pcall(function()
+                mainEvent:FireServer('DropMoney', 15000)
+            end)
+            lastDropTime = currentTime
         end
     end)
+    print('Dropv2 started - alt buried and dropping continuously.')
+end
+
+local function dropCash()
+    if not mainEvent then
+        warn('MainEvent not found, cannot drop cash.')
+        return
+    end
+    if isDropping then
+        return
+    end -- Prevent double-start
+    isDropping = true
+
+    -- Start dropping loop without burying
+    connections.drop = RunService.Heartbeat:Connect(function()
+        if not isDropping or not humanoidRootPart then
+            return
+        end
+        local currentTime = tick()
+        if currentTime - lastDropTime >= dropCooldown then
+            pcall(function()
+                mainEvent:FireServer('DropMoney', 15000)
+            end)
+            lastDropTime = currentTime
+        end
+    end)
+    print('Drop started - cash dropping without burying.')
 end
 
 local function stopDrop()
+    if not isDropping then
+        return
+    end
     isDropping = false
     if connections.drop then
         connections.drop:Disconnect()
@@ -471,20 +657,29 @@ local function stopDrop()
     end
     if mainEvent then
         pcall(function()
-            mainEvent:FireServer("Block", false)
+            mainEvent:FireServer('Block', false)
         end)
     end
+    -- Only unbury if the alt was buried (from dropv2)
+    if originalPosition then
+        unburyAlt()
+    end
+    print('Drop stopped.')
 end
 
 local function kickAlt()
     pcall(function()
-        player:Kick("Kicked by your host.")
+        player:Kick('Kicked by your host.')
     end)
 end
 
 local function rejoinGame()
     pcall(function()
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
+        TeleportService:TeleportToPlaceInstance(
+            game.PlaceId,
+            game.JobId,
+            player
+        )
     end)
 end
 
@@ -497,9 +692,9 @@ end
 
 local function handleHostCharacterReset(newChar)
     if currentTarget == hostPlayer then
-        if currentMode == "swarm" then
+        if currentMode == 'swarm' then
             swarm(hostPlayer)
-        elseif currentMode == "follow" then
+        elseif currentMode == 'follow' then
             follow(hostPlayer)
         end
     end
@@ -507,81 +702,89 @@ end
 
 local function handlePlayerCharacterReset(newChar)
     character = newChar
-    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart", 5)
-    humanoid = newChar:WaitForChild("Humanoid", 5)
+    humanoidRootPart = newChar:WaitForChild('HumanoidRootPart', 5)
+    humanoid = newChar:WaitForChild('Humanoid', 5)
     if currentMode and currentTarget then
-        if currentMode == "swarm" then
+        if currentMode == 'swarm' then
             swarm(currentTarget)
-        elseif currentMode == "follow" then
+        elseif currentMode == 'follow' then
             follow(currentTarget)
-        elseif currentMode == "setup" and currentTarget == nil then
+        elseif currentMode == 'setup' and currentTarget == nil then
             setupClub()
+        end
+    end
+    if isDropping then
+        if originalPosition then
+            buryAlt() -- Re-bury if respawned during dropv2
         end
     end
 end
 
 local function handleCommands(message)
     local lowerMsg = string.lower(message)
-    if string.sub(lowerMsg, 1, 1) ~= "?" then
+    if string.sub(lowerMsg, 1, 1) ~= '?' then
         return
     end
-    local cmd = string.sub(lowerMsg, 2):match("^%s*(.-)%s*$")
-    if cmd == "" then
+    local cmd = string.sub(lowerMsg, 2):match('^%s*(.-)%s*$')
+    if cmd == '' then
         return
     end
-    if cmd == "setup host" then
+
+    if cmd == 'setup host' then
         setup(hostPlayer)
-    elseif cmd:match("^setup%s+(.+)$") then
-        local targetName = cmd:match("^setup%s+(.+)$")
-        if targetName == "club" then
+    elseif cmd:match('^setup%s+(.+)$') then
+        local targetName = cmd:match('^setup%s+(.+)$')
+        if targetName == 'club' then
             setupClub()
-        elseif targetName == "bank" then
+        elseif targetName == 'bank' then
             setupBank()
         else
             local target = Players:FindFirstChild(targetName)
             if target then
                 setup(target)
             else
-                warn("Setup failed: Player " .. targetName .. " not found")
+                warn('Setup failed: Player ' .. targetName .. ' not found')
             end
         end
-    elseif cmd == "swarm host" then
+    elseif cmd == 'swarm host' then
         swarm(hostPlayer)
-    elseif cmd:match("^swarm%s+(.+)$") then
-        local targetName = cmd:match("^swarm%s+(.+)$")
+    elseif cmd:match('^swarm%s+(.+)$') then
+        local targetName = cmd:match('^swarm%s+(.+)$')
         local target = Players:FindFirstChild(targetName)
         if target then
             swarm(target)
         else
-            warn("Swarm failed: Player " .. targetName .. " not found")
+            warn('Swarm failed: Player ' .. targetName .. ' not found')
         end
-    elseif cmd == "unswarm" then
-        unswarm()
-    elseif cmd == "follow host" then
+    elseif cmd == 'unswarm' then
+        unswarm() -- NOW WORKS!
+    elseif cmd == 'follow host' then
         follow(hostPlayer)
-    elseif cmd:match("^follow%s+(.+)$") then
-        local targetName = cmd:match("^follow%s+(.+)$")
+    elseif cmd:match('^follow%s+(.+)$') then
+        local targetName = cmd:match('^follow%s+(.+)$')
         local target = Players:FindFirstChild(targetName)
         if target then
             follow(target)
         else
-            warn("Follow failed: Player " .. targetName .. " not found")
+            warn('Follow failed: Player ' .. targetName .. ' not found')
         end
-    elseif cmd == "unfollow" then
+    elseif cmd == 'unfollow' then
         disableCurrentMode()
         setup(hostPlayer)
-    elseif cmd == "bring" then
+    elseif cmd == 'bring' then
         bring()
-    elseif cmd == "drop" then
-        dropAllCash()
-    elseif cmd == "stop" then
+    elseif cmd == 'dropv2' then
+        dropv2()
+    elseif cmd == 'drop' then
+        dropCash()
+    elseif cmd == 'stop' then
         stopDrop()
-    elseif cmd == "kick" then
+    elseif cmd == 'kick' then
         kickAlt()
-    elseif cmd == "rejoin" then
+    elseif cmd == 'rejoin' then
         rejoinGame()
     else
-        warn("Unknown command: " .. cmd)
+        warn('Unknown command: ' .. cmd)
     end
 end
 
@@ -594,18 +797,24 @@ local function cleanup()
             end
         end
         isDropping = false
+        stopDrop()
         currentMode = nil
         currentTarget = nil
-        if game.Lighting:FindFirstChild("BlurEffect") then
+        if game.Lighting:FindFirstChild('BlurEffect') then
             game.Lighting.BlurEffect:Destroy()
         end
     end
 end
 
+-- Update status in overlay (simplified, no UI update needed)
+local function updateStatus(status, altCount)
+    -- No UI update since overlay is static
+end
+
 -- Initialization
 hostPlayer = waitForHost(10)
 if not hostPlayer then
-    warn("Script cannot proceed without host player. Shutting down.")
+    warn('Script cannot proceed without host player. Shutting down.')
     return
 end
 
@@ -619,5 +828,13 @@ createOverlay()
 limitFPS()
 preventAFK()
 disableAllSeats()
+setupAnimationServerHandler()
 
-print("dhc.lmao Alt Control Script loaded for " .. player.Name .. " in Da Hood")
+saveOriginalAnimations()
+applyLevitationAnimation()
+
+print(
+    'dhc.lmao Alt Control Script (FIXED) loaded for '
+        .. player.Name
+        .. ' in Da Hood'
+)
