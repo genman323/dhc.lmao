@@ -88,7 +88,7 @@ local function createOverlay()
     screenGui.IgnoreGuiInset = true
 
     local blurEffect = Instance.new("BlurEffect")
-    blurEffect.Size = 24 -- Increased blur to make background nearly invisible
+    blurEffect.Size = 48 -- Stronger blur
     blurEffect.Parent = game.Lighting
 
     local background = Instance.new("Frame")
@@ -112,7 +112,7 @@ local function createOverlay()
     textLabel.Size = UDim2.new(1, -20, 1, -20)
     textLabel.Position = UDim2.new(0, 10, 0, 10)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao - Loaded at 11:00 PM PDT on Saturday, October 04, 2025"
+    textLabel.Text = "dhc.lmao"
     textLabel.TextColor3 = Color3.fromRGB(150, 100, 200) -- Light purple text
     textLabel.TextSize = 18
     textLabel.Font = Enum.Font.GothamBold
@@ -402,7 +402,7 @@ local function airlock()
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
     local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
     local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
-    local targetHeight = groundY + 0.5 -- Position on platform
+    local targetHeight = groundY + 13 -- Target exactly 13 studs above ground
 
     -- Create airlock platform at target height
     airlockPosition = CFrame.new(humanoidRootPart.Position.X, targetHeight, humanoidRootPart.Position.Z)
@@ -411,9 +411,9 @@ local function airlock()
     -- Move character to airlock position with smooth transition, preserving orientation
     toggleNoclip(character, true) -- Keep noclip on
     local startTime = tick()
-    local duration = 0.3 -- Quick launch
+    local duration = 1.0 -- Smoother lift
     local startCFrame = humanoidRootPart.CFrame
-    local targetCFrame = airlockPosition * CFrame.Angles(0, startCFrame:ToEulerAnglesXYZ()) -- Preserve original rotation, stand on platform
+    local targetCFrame = CFrame.new(humanoidRootPart.Position.X, targetHeight, humanoidRootPart.Position.Z) * startCFrame.Rotation -- Preserve rotation, lift vertically
     currentMode = "airlock"
     if connections.airlockMove then
         connections.airlockMove:Disconnect()
@@ -424,7 +424,7 @@ local function airlock()
     tween.Completed:Connect(function()
         if currentMode == "airlock" and humanoidRootPart then
             humanoidRootPart.Anchored = false -- Allow standing on platform
-            humanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Prevent sinking into ground
+            humanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Prevent movement
             applyLevitationAnimation()
         end
     end)
