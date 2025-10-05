@@ -87,9 +87,19 @@ local function createOverlay()
     screenGui.ResetOnSpawn = false
     screenGui.IgnoreGuiInset = true
 
+    local blurEffect = Instance.new("BlurEffect")
+    blurEffect.Size = 10
+    blurEffect.Parent = game.Lighting
+
+    local background = Instance.new("Frame")
+    background.Size = UDim2.new(1, 0, 1, 0)
+    background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    background.BackgroundTransparency = 0.7
+    background.Parent = screenGui
+
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 100)
-    frame.Position = UDim2.new(0.5, -150, 0.9, -50)
+    frame.Size = UDim2.new(0, 400, 0, 150)
+    frame.Position = UDim2.new(0.5, -200, 0.5, -75)
     frame.BackgroundColor3 = Color3.fromRGB(30, 0, 50) -- Dark purple background
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
@@ -102,9 +112,9 @@ local function createOverlay()
     textLabel.Size = UDim2.new(1, -20, 1, -20)
     textLabel.Position = UDim2.new(0, 10, 0, 10)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao - Loaded at 10:43 PM PDT on Saturday, October 04, 2025"
+    textLabel.Text = "dhc.lmao - Loaded at 10:54 PM PDT on Saturday, October 04, 2025"
     textLabel.TextColor3 = Color3.fromRGB(150, 100, 200) -- Light purple text
-    textLabel.TextSize = 16
+    textLabel.TextSize = 18
     textLabel.Font = Enum.Font.GothamBold
     textLabel.TextWrapped = true
     textLabel.Parent = frame
@@ -392,18 +402,18 @@ local function airlock()
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
     local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
     local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
-    local targetHeight = groundY + 13 -- Target 13 studs above ground
+    local targetHeight = groundY + 0.5 -- Position on platform
 
     -- Create airlock platform at target height
     airlockPosition = CFrame.new(humanoidRootPart.Position.X, targetHeight, humanoidRootPart.Position.Z)
-    airlockPlatform = createAirlockPlatform(Vector3.new(humanoidRootPart.Position.X, targetHeight - 0.5, humanoidRootPart.Position.Z))
+    airlockPlatform = createAirlockPlatform(Vector3.new(humanoidRootPart.Position.X, targetHeight, humanoidRootPart.Position.Z))
 
     -- Move character to airlock position with smooth transition, preserving orientation
     toggleNoclip(character, true) -- Keep noclip on
     local startTime = tick()
     local duration = 0.3 -- Quick launch
     local startCFrame = humanoidRootPart.CFrame
-    local targetCFrame = CFrame.new(airlockPosition.Position) * startCFrame.Rotation -- Preserve full rotation
+    local targetCFrame = airlockPosition * CFrame.Angles(0, startCFrame:ToEulerAnglesXYZ()) -- Preserve original rotation, stand on platform
     currentMode = "airlock"
     if connections.airlockMove then
         connections.airlockMove:Disconnect()
@@ -413,7 +423,7 @@ local function airlock()
     tween:Play()
     tween.Completed:Connect(function()
         if currentMode == "airlock" and humanoidRootPart then
-            humanoidRootPart.Anchored = true
+            humanoidRootPart.Anchored = false -- Allow standing on platform
             applyLevitationAnimation()
         end
     end)
@@ -647,6 +657,9 @@ local function cleanup()
         if airlockPlatform then
             airlockPlatform:Destroy()
             airlockPlatform = nil
+        end
+        if game.Lighting:FindFirstChild("BlurEffect") then
+            game.Lighting.BlurEffect:Destroy()
         end
     end
 end
