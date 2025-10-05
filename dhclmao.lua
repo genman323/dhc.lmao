@@ -211,13 +211,13 @@ end
 
 local function applyLevitationAnimation()
     local animate = character:WaitForChild("Animate")
-    animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616006778"
-    animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616008087"
-    animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616013216"
-    animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616010382"
-    animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616008936"
-    animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=616003713"
-    animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616005863"
+    animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=97171309"
+    animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=97171309"
+    animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
+    animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
+    animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
+    animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
+    animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
     humanoid.Jump = true
 end
 
@@ -394,7 +394,7 @@ local function airlock()
     originalCFrame = humanoidRootPart.CFrame
     saveOriginalAnimations()
 
-    -- Use raycasting to find the ground height for accurate positioning
+    -- Use raycasting to determine ground height
     local rayOrigin = humanoidRootPart.Position
     local rayDirection = Vector3.new(0, -1000, 0)
     local raycastParams = RaycastParams.new()
@@ -404,26 +404,17 @@ local function airlock()
     local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
     local targetHeight = groundY + 13 -- Target exactly 13 studs above ground
 
-    -- Create airlock platform at target height
-    airlockPosition = CFrame.new(humanoidRootPart.Position.X, targetHeight, humanoidRootPart.Position.Z)
-    airlockPlatform = createAirlockPlatform(Vector3.new(humanoidRootPart.Position.X, targetHeight, humanoidRootPart.Position.Z))
-
-    -- Move character to airlock position with smooth transition, preserving orientation
+    -- Use CFrame for smooth lifting without platform
     toggleNoclip(character, true) -- Keep noclip on
-    local startTime = tick()
-    local duration = 1.0 -- Smoother lift
     local startCFrame = humanoidRootPart.CFrame
-    local targetCFrame = CFrame.new(humanoidRootPart.Position.X, targetHeight, humanoidRootPart.Position.Z) * startCFrame.Rotation -- Preserve rotation, lift vertically
+    local targetCFrame = CFrame.new(startCFrame.Position.X, targetHeight, startCFrame.Position.Z) * startCFrame.Rotation -- Preserve rotation
     currentMode = "airlock"
-    if connections.airlockMove then
-        connections.airlockMove:Disconnect()
-    end
-    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out) -- Smooth lift
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
     tween:Play()
     tween.Completed:Connect(function()
         if currentMode == "airlock" and humanoidRootPart then
-            humanoidRootPart.Anchored = false -- Allow standing on platform
+            humanoidRootPart.Anchored = false
             humanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Prevent movement
             applyLevitationAnimation()
         end
