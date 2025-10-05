@@ -109,7 +109,7 @@ local function createOverlay()
     uiCorner.Parent = frame
 
     local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, -20, 1, -20)
+    textLabel.Size = UDim2.new(1, -20, 0.5, -20)
     textLabel.Position = UDim2.new(0, 10, 0, 10)
     textLabel.BackgroundTransparency = 1
     textLabel.Text = "dhc.lmao"
@@ -118,6 +118,17 @@ local function createOverlay()
     textLabel.Font = Enum.Font.GothamBold
     textLabel.TextWrapped = true
     textLabel.Parent = frame
+
+    local hostLabel = Instance.new("TextLabel")
+    hostLabel.Size = UDim2.new(1, -20, 0.5, -20)
+    hostLabel.Position = UDim2.new(0, 10, 0.5, 10)
+    hostLabel.BackgroundTransparency = 1
+    hostLabel.Text = "Host: " .. hostName
+    hostLabel.TextColor3 = Color3.fromRGB(150, 100, 200) -- Light purple text
+    hostLabel.TextSize = 18
+    hostLabel.Font = Enum.Font.GothamBold
+    hostLabel.TextWrapped = true
+    hostLabel.Parent = frame
 
     local uiStroke = Instance.new("UIStroke")
     uiStroke.Thickness = 2
@@ -211,13 +222,13 @@ end
 
 local function applyLevitationAnimation()
     local animate = character:WaitForChild("Animate")
-    animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=97171309"
-    animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=97171309"
-    animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
-    animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
-    animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
-    animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
-    animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=97171309"
+    animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616006778"
+    animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616008087"
+    animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616013216"
+    animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616010382"
+    animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=616008936"
+    animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=616003713"
+    animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=616005863"
     humanoid.Jump = true
 end
 
@@ -253,7 +264,7 @@ local function disableCurrentMode()
     currentMode = nil
     currentTarget = nil
     airlockPosition = nil
-    toggleNoclip(character, true) -- Keep noclip on
+    toggleNoclip(character, false)
 end
 
 local function setupGrid(position, facingDirection)
@@ -261,7 +272,7 @@ local function setupGrid(position, facingDirection)
         warn("Setup grid failed: Local character not found")
         return
     end
-    toggleNoclip(character, true) -- Keep noclip on
+    toggleNoclip(character, true)
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local rows, cols, spacing = 5, 4, 2
@@ -284,7 +295,7 @@ local function setupGrid(position, facingDirection)
             currentMode = nil
         end
     end)
-    -- No toggleNoclip off, keep it on
+    toggleNoclip(character, false)
 end
 
 local function setup(targetPlayer)
@@ -293,7 +304,7 @@ local function setup(targetPlayer)
         warn("Setup failed: Invalid target or local character")
         return
     end
-    toggleNoclip(character, true) -- Keep noclip on
+    toggleNoclip(character, true)
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
@@ -310,7 +321,7 @@ local function setup(targetPlayer)
             currentMode = nil
         end
     end)
-    -- No toggleNoclip off, keep it on
+    toggleNoclip(character, false)
 end
 
 local function setupClub()
@@ -331,10 +342,10 @@ local function swarm(targetPlayer)
         currentTarget = nil
         return
     end
-    toggleNoclip(character, true) -- Keep noclip on
+    toggleNoclip(character, true)
     connections.swarm = RunService.RenderStepped:Connect(function()
         if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-            toggleNoclip(character, true) -- Keep noclip on
+            toggleNoclip(character, false)
             return
         end
         local center = currentTarget.Character.HumanoidRootPart.Position
@@ -346,10 +357,8 @@ local function swarm(targetPlayer)
         local radius = 10
         local x = math.cos(angle) * radius
         local z = math.sin(angle) * radius
-        local targetPosition = center + Vector3.new(x, 0, z)
-        local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(targetPosition, center)})
-        tween:Play()
+        local position = center + Vector3.new(x, 0, z)
+        humanoidRootPart.CFrame = CFrame.lookAt(position, center)
     end)
 end
 
@@ -363,10 +372,10 @@ local function follow(targetPlayer)
         currentTarget = nil
         return
     end
-    toggleNoclip(character, true) -- Keep noclip on
+    toggleNoclip(character, true)
     connections.follow = RunService.RenderStepped:Connect(function()
         if currentMode ~= "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-            toggleNoclip(character, true) -- Keep noclip on
+            toggleNoclip(character, false)
             return
         end
         local targetRoot = currentTarget.Character.HumanoidRootPart
@@ -377,10 +386,9 @@ local function follow(targetPlayer)
         local behindOffset = -targetRoot.CFrame.LookVector * offsetDistance
         local myPos = targetPos + behindOffset
         local lookPos = targetPos
+        local currentCFrame = humanoidRootPart.CFrame
         local targetCFrame = CFrame.lookAt(myPos, lookPos)
-        local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-        tween:Play()
+        humanoidRootPart.CFrame = currentCFrame:Lerp(targetCFrame, 0.5)
     end)
 end
 
@@ -390,36 +398,59 @@ local function airlock()
         warn("Airlock failed: Humanoid or HumanoidRootPart not found")
         return
     end
-    -- Save original position and animations
+    -- Store original position
     originalCFrame = humanoidRootPart.CFrame
-    saveOriginalAnimations()
-
-    -- Use raycasting to determine ground height
+    local players = getPlayers()
+    local index = getAltIndex(player.Name, players)
+    
+    -- Use raycasting to find the ground height for more accuracy
     local rayOrigin = humanoidRootPart.Position
-    local rayDirection = Vector3.new(0, -1000, 0)
+    local rayDirection = Vector3.new(0, -1000, 0) -- Cast downward
     local raycastParams = RaycastParams.new()
     raycastParams.FilterDescendantsInstances = {character}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
     local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+    
     local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
-    local targetHeight = groundY + 13 -- Target exactly 13 studs above ground
-
-    -- Use CFrame for smooth lifting without platform
-    toggleNoclip(character, true) -- Keep noclip on
-    local startCFrame = humanoidRootPart.CFrame
-    local targetCFrame = CFrame.new(startCFrame.Position.X, targetHeight, startCFrame.Position.Z) * startCFrame.Rotation -- Preserve rotation
-    currentMode = "airlock"
-    local tweenInfo = TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out) -- Smooth lift
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-    tween:Play()
-    tween.Completed:Connect(function()
-        if currentMode == "airlock" and humanoidRootPart then
-            humanoidRootPart.Anchored = false
-            humanoidRootPart.Velocity = Vector3.new(0, 0, 0) -- Prevent movement
-            applyLevitationAnimation()
+    local targetHeight = groundY + 13 -- 13 studs above ground
+    local platformPosition = Vector3.new(humanoidRootPart.Position.X, targetHeight - 0.5, humanoidRootPart.Position.Z)
+    
+    -- Debug: Log positions
+    print("Airlock - Ground Y:", groundY, "Target Height:", targetHeight, "Platform Position:", platformPosition)
+    
+    -- Create platform
+    airlockPlatform = createAirlockPlatform(platformPosition)
+    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0), humanoidRootPart.CFrame.Position * Vector3.new(1, 0, 1))
+    
+    -- Ensure noclip is enabled during movement
+    toggleNoclip(character, true)
+    
+    -- Set position and anchor
+    humanoidRootPart.CFrame = airlockPosition
+    humanoidRootPart.Anchored = true
+    humanoidRootPart.Velocity = Vector3.zero
+    humanoidRootPart.RotVelocity = Vector3.zero
+    
+    -- Disable noclip after positioning
+    toggleNoclip(character, false)
+    
+    -- Enforce position in RenderStepped
+    if connections.airlockFreeze then
+        connections.airlockFreeze:Disconnect()
+    end
+    connections.airlockFreeze = RunService.RenderStepped:Connect(function()
+        if currentMode == "airlock" and humanoidRootPart and airlockPosition then
+            humanoidRootPart.CFrame = airlockPosition
+            humanoidRootPart.Velocity = Vector3.zero
+            humanoidRootPart.RotVelocity = Vector3.zero
+        else
+            -- Disconnect if conditions are not met
+            connections.airlockFreeze:Disconnect()
+            connections.airlockFreeze = nil
         end
     end)
-    -- No toggleNoclip off, keep it on
+    
+    currentMode = "airlock"
 end
 
 local function unairlock()
@@ -435,13 +466,10 @@ local function unairlock()
         warn("Unairlock failed: Missing required components")
         return
     end
-    toggleNoclip(character, true) -- Keep noclip on
+    toggleNoclip(character, true)
     humanoidRootPart.Anchored = false
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = originalCFrame})
-    tween:Play()
-    restoreOriginalAnimations()
-    -- No toggleNoclip off, keep it on
+    humanoidRootPart.CFrame = originalCFrame
+    toggleNoclip(character, false)
     originalCFrame = nil
     airlockPosition = nil
     currentMode = nil
@@ -458,7 +486,7 @@ local function bring()
         warn("Bring failed: Invalid host or local character")
         return
     end
-    toggleNoclip(character, true) -- Keep noclip on
+    toggleNoclip(character, true)
     local hostRoot = hostPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
@@ -468,10 +496,8 @@ local function bring()
     local z = math.sin(angle) * radius
     local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
     local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
-    tween:Play()
-    -- No toggleNoclip off, keep it on
+    humanoidRootPart.CFrame = targetCFrame
+    toggleNoclip(character, false)
 end
 
 local function dropAllCash()
@@ -489,7 +515,7 @@ local function dropAllCash()
             if currentTime - lastDropTime >= dropCooldown then
                 pcall(function()
                     mainEvent:FireServer("DropMoney", 15000)
-                    -- Removed Block to prevent blocking
+                    mainEvent:FireServer("Block", true)
                 end)
                 lastDropTime = currentTime
             end
@@ -518,15 +544,7 @@ end
 
 local function rejoinGame()
     pcall(function()
-        -- Ensure player is properly loaded
-        if player.Parent and player.Character then
-            -- Try simple teleport first
-            TeleportService:Teleport(game.PlaceId, player)
-        else
-            warn("Player not fully loaded, retrying in 1 second...")
-            task.wait(1)
-            TeleportService:Teleport(game.PlaceId, player)
-        end
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
     end)
 end
 
@@ -551,7 +569,6 @@ local function handlePlayerCharacterReset(newChar)
     character = newChar
     humanoidRootPart = newChar:WaitForChild("HumanoidRootPart", 5)
     humanoid = newChar:WaitForChild("Humanoid", 5)
-    toggleNoclip(character, true) -- Ensure noclip on character reset
     if currentMode and currentTarget then
         if currentMode == "swarm" then
             swarm(currentTarget)
@@ -650,9 +667,6 @@ local function cleanup()
             airlockPlatform:Destroy()
             airlockPlatform = nil
         end
-        if game.Lighting:FindFirstChild("BlurEffect") then
-            game.Lighting.BlurEffect:Destroy()
-        end
     end
 end
 
@@ -663,7 +677,6 @@ if not hostPlayer then
     return
 end
 
-toggleNoclip(character, true) -- Enable noclip on script start
 Players.PlayerRemoving:Connect(handleHostLeaving)
 hostPlayer.Chatted:Connect(handleCommands)
 hostPlayer.CharacterAdded:Connect(handleHostCharacterReset)
