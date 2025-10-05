@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
+local TweenService = game:GetService("TweenService")
 
 -- Local player and character setup
 local player = Players.LocalPlayer
@@ -87,21 +88,31 @@ local function createOverlay()
     screenGui.IgnoreGuiInset = true
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0
+    frame.Size = UDim2.new(0, 300, 0, 100)
+    frame.Position = UDim2.new(0.5, -150, 0.9, -50)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 0, 50) -- Dark purple background
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
 
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 15)
+    uiCorner.Parent = frame
+
     local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0, 200, 0, 50)
-    textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
+    textLabel.Size = UDim2.new(1, -20, 1, -20)
+    textLabel.Position = UDim2.new(0, 10, 0, 10)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = "dhc.lmao - Loaded at 07:33 PM PDT on Friday, October 03, 2025"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextSize = 24
-    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.Text = "dhc.lmao - Loaded at 10:43 PM PDT on Saturday, October 04, 2025"
+    textLabel.TextColor3 = Color3.fromRGB(150, 100, 200) -- Light purple text
+    textLabel.TextSize = 16
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextWrapped = true
     textLabel.Parent = frame
+
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Thickness = 2
+    uiStroke.Color = Color3.fromRGB(80, 40, 120) -- Purple outline
+    uiStroke.Parent = frame
 end
 
 local function limitFPS()
@@ -154,7 +165,7 @@ local function toggleNoclip(char, enable)
     end
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") and not part:IsA("Accessory") then
-            part.CanCollide = not enable
+            part.CanCollide = false -- Always disable collision for alts
             part.Velocity = Vector3.zero
         end
     end
@@ -232,7 +243,7 @@ local function disableCurrentMode()
     currentMode = nil
     currentTarget = nil
     airlockPosition = nil
-    toggleNoclip(character, false)
+    toggleNoclip(character, true) -- Keep noclip on
 end
 
 local function setupGrid(position, facingDirection)
@@ -240,7 +251,7 @@ local function setupGrid(position, facingDirection)
         warn("Setup grid failed: Local character not found")
         return
     end
-    toggleNoclip(character, true)
+    toggleNoclip(character, true) -- Keep noclip on
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
     local rows, cols, spacing = 5, 4, 2
@@ -254,28 +265,16 @@ local function setupGrid(position, facingDirection)
     local offsetZ = -halfDepth + (row * spacing) + (spacing / 2)
     local offsetPosition = position + Vector3.new(offsetX, 0, offsetZ)
     local targetCFrame = CFrame.new(offsetPosition, offsetPosition + facingDirection)
-    local startTime = tick()
-    local duration = 0.5
-    local startCFrame = humanoidRootPart.CFrame
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    tween:Play()
     currentMode = "setup"
-    if connections.setupMove then
-        connections.setupMove:Disconnect()
-    end
-    connections.setupMove = RunService.RenderStepped:Connect(function()
-        if currentMode ~= "setup" or not humanoidRootPart then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
-            return
-        end
-        local elapsed = tick() - startTime
-        local t = math.min(elapsed / duration, 1)
-        humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
-        if t >= 1 then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
+    tween.Completed:Connect(function()
+        if currentMode == "setup" then
+            currentMode = nil
         end
     end)
-    toggleNoclip(character, false)
+    -- No toggleNoclip off, keep it on
 end
 
 local function setup(targetPlayer)
@@ -284,7 +283,7 @@ local function setup(targetPlayer)
         warn("Setup failed: Invalid target or local character")
         return
     end
-    toggleNoclip(character, true)
+    toggleNoclip(character, true) -- Keep noclip on
     local targetRoot = targetPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
@@ -292,28 +291,16 @@ local function setup(targetPlayer)
     local behindDirection = -targetRoot.CFrame.LookVector
     local offsetPosition = targetRoot.Position + behindDirection * (spacing * (index + 1))
     local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
-    local startTime = tick()
-    local duration = 0.5
-    local startCFrame = humanoidRootPart.CFrame
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    tween:Play()
     currentMode = "setup"
-    if connections.setupMove then
-        connections.setupMove:Disconnect()
-    end
-    connections.setupMove = RunService.RenderStepped:Connect(function()
-        if currentMode ~= "setup" or not humanoidRootPart then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
-            return
-        end
-        local elapsed = tick() - startTime
-        local t = math.min(elapsed / duration, 1)
-        humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
-        if t >= 1 then
-            connections.setupMove:Disconnect()
-            connections.setupMove = nil
+    tween.Completed:Connect(function()
+        if currentMode == "setup" then
+            currentMode = nil
         end
     end)
-    toggleNoclip(character, false)
+    -- No toggleNoclip off, keep it on
 end
 
 local function setupClub()
@@ -334,10 +321,10 @@ local function swarm(targetPlayer)
         currentTarget = nil
         return
     end
-    toggleNoclip(character, true)
+    toggleNoclip(character, true) -- Keep noclip on
     connections.swarm = RunService.RenderStepped:Connect(function()
         if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-            toggleNoclip(character, false)
+            toggleNoclip(character, true) -- Keep noclip on
             return
         end
         local center = currentTarget.Character.HumanoidRootPart.Position
@@ -349,8 +336,10 @@ local function swarm(targetPlayer)
         local radius = 10
         local x = math.cos(angle) * radius
         local z = math.sin(angle) * radius
-        local position = center + Vector3.new(x, 0, z)
-        humanoidRootPart.CFrame = CFrame.lookAt(position, center)
+        local targetPosition = center + Vector3.new(x, 0, z)
+        local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.lookAt(targetPosition, center)})
+        tween:Play()
     end)
 end
 
@@ -364,10 +353,10 @@ local function follow(targetPlayer)
         currentTarget = nil
         return
     end
-    toggleNoclip(character, true)
+    toggleNoclip(character, true) -- Keep noclip on
     connections.follow = RunService.RenderStepped:Connect(function()
         if currentMode ~= "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-            toggleNoclip(character, false)
+            toggleNoclip(character, true) -- Keep noclip on
             return
         end
         local targetRoot = currentTarget.Character.HumanoidRootPart
@@ -378,9 +367,10 @@ local function follow(targetPlayer)
         local behindOffset = -targetRoot.CFrame.LookVector * offsetDistance
         local myPos = targetPos + behindOffset
         local lookPos = targetPos
-        local currentCFrame = humanoidRootPart.CFrame
         local targetCFrame = CFrame.lookAt(myPos, lookPos)
-        humanoidRootPart.CFrame = currentCFrame:Lerp(targetCFrame, 0.5)
+        local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+        tween:Play()
     end)
 end
 
@@ -409,33 +399,25 @@ local function airlock()
     airlockPlatform = createAirlockPlatform(Vector3.new(humanoidRootPart.Position.X, targetHeight - 0.5, humanoidRootPart.Position.Z))
 
     -- Move character to airlock position with smooth transition, preserving orientation
-    toggleNoclip(character, true)
+    toggleNoclip(character, true) -- Keep noclip on
     local startTime = tick()
-    local duration = 1.0
+    local duration = 0.3 -- Quick launch
     local startCFrame = humanoidRootPart.CFrame
-    local targetCFrame = CFrame.new(airlockPosition.Position) * CFrame.Angles(0, startCFrame:ToEulerAnglesXYZ()) -- Preserve original rotation
+    local targetCFrame = CFrame.new(airlockPosition.Position) * startCFrame.Rotation -- Preserve full rotation
     currentMode = "airlock"
     if connections.airlockMove then
         connections.airlockMove:Disconnect()
     end
-    connections.airlockMove = RunService.RenderStepped:Connect(function()
-        if currentMode ~= "airlock" or not humanoidRootPart then
-            connections.airlockMove:Disconnect()
-            connections.airlockMove = nil
-            return
-        end
-        local elapsed = tick() - startTime
-        local t = math.min(elapsed / duration, 1)
-        humanoidRootPart.CFrame = startCFrame:Lerp(targetCFrame, t)
-        if t >= 1 then
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    tween:Play()
+    tween.Completed:Connect(function()
+        if currentMode == "airlock" and humanoidRootPart then
             humanoidRootPart.Anchored = true
-            connections.airlockMove:Disconnect()
-            connections.airlockMove = nil
-            -- Apply levitation animation when fully up
             applyLevitationAnimation()
         end
     end)
-    toggleNoclip(character, false)
+    -- No toggleNoclip off, keep it on
 end
 
 local function unairlock()
@@ -451,11 +433,13 @@ local function unairlock()
         warn("Unairlock failed: Missing required components")
         return
     end
-    toggleNoclip(character, true)
+    toggleNoclip(character, true) -- Keep noclip on
     humanoidRootPart.Anchored = false
-    humanoidRootPart.CFrame = originalCFrame
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = originalCFrame})
+    tween:Play()
     restoreOriginalAnimations()
-    toggleNoclip(character, false)
+    -- No toggleNoclip off, keep it on
     originalCFrame = nil
     airlockPosition = nil
     currentMode = nil
@@ -472,7 +456,7 @@ local function bring()
         warn("Bring failed: Invalid host or local character")
         return
     end
-    toggleNoclip(character, true)
+    toggleNoclip(character, true) -- Keep noclip on
     local hostRoot = hostPlayer.Character.HumanoidRootPart
     local players = getPlayers()
     local index = getAltIndex(player.Name, players)
@@ -482,8 +466,10 @@ local function bring()
     local z = math.sin(angle) * radius
     local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
     local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
-    humanoidRootPart.CFrame = targetCFrame
-    toggleNoclip(character, false)
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    tween:Play()
+    -- No toggleNoclip off, keep it on
 end
 
 local function dropAllCash()
@@ -501,7 +487,7 @@ local function dropAllCash()
             if currentTime - lastDropTime >= dropCooldown then
                 pcall(function()
                     mainEvent:FireServer("DropMoney", 15000)
-                    mainEvent:FireServer("Block", true)
+                    -- Removed Block to prevent blocking
                 end)
                 lastDropTime = currentTime
             end
@@ -563,6 +549,7 @@ local function handlePlayerCharacterReset(newChar)
     character = newChar
     humanoidRootPart = newChar:WaitForChild("HumanoidRootPart", 5)
     humanoid = newChar:WaitForChild("Humanoid", 5)
+    toggleNoclip(character, true) -- Ensure noclip on character reset
     if currentMode and currentTarget then
         if currentMode == "swarm" then
             swarm(currentTarget)
@@ -671,6 +658,7 @@ if not hostPlayer then
     return
 end
 
+toggleNoclip(character, true) -- Enable noclip on script start
 Players.PlayerRemoving:Connect(handleHostLeaving)
 hostPlayer.Chatted:Connect(handleCommands)
 hostPlayer.CharacterAdded:Connect(handleHostCharacterReset)
