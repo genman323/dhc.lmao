@@ -12,7 +12,7 @@ local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
 local humanoid = character:WaitForChild("Humanoid", 5)
 
 -- Host setup
-local hostName = "Sab3r_PRO2003"
+local hostName = "HarperViperZero20033"
 local hostPlayer = nil
 
 -- State variables
