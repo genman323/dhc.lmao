@@ -393,13 +393,14 @@ local function dropAllCash()
                 local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
                 local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
 
-                -- Tween just above head (underground but above void)
+                -- Tween about 5 studs underground
                 local startY = humanoidRootPart.Position.Y
-                local targetY = math.max(groundY + 1, humanoidRootPart.Position.Y - 0.1) -- Barely above head, prevent void
+                local targetY = groundY - 5
                 local startCFrame = humanoidRootPart.CFrame
                 local targetCFrame = CFrame.new(startCFrame.X, targetY, startCFrame.Z) * startCFrame.Rotation
                 local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
                 local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+                toggleNoclip(character, true) -- Enable noclip during tween
                 tween:Play()
                 tween.Completed:Wait() -- Wait for tween to complete
 
@@ -427,6 +428,7 @@ local function dropAllCash()
                     local setupTween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetSetupCFrame})
                     setupTween:Play()
                     setupTween.Completed:Wait()
+                    toggleNoclip(character, false) -- Disable noclip after return
                 end
 
                 lastDropTime = currentTime
