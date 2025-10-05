@@ -426,12 +426,14 @@ local function dropAllCash()
                 tween:Play()
                 tween.Completed:Wait() -- Wait for tween to complete
 
+                humanoidRootPart.Anchored = true -- Freeze once underground
+
                 -- Drop cash
                 pcall(function()
                     mainEvent:FireServer("DropMoney", 15000)
                 end)
 
-                -- Return to original setup position if in setup mode and freeze
+                -- Return to original setup position if in setup mode
                 if currentMode == "setup" then
                     local players = getPlayers()
                     local index = getAltIndex(player.Name, players)
@@ -448,9 +450,10 @@ local function dropAllCash()
                     local offsetPosition = basePosition + Vector3.new(offsetX, 0, offsetZ)
                     local targetSetupCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1))
                     local setupTween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetSetupCFrame})
+                    humanoidRootPart.Anchored = false -- Unanchor for return tween
                     setupTween:Play()
                     setupTween.Completed:Wait()
-                    humanoidRootPart.Anchored = true -- Freeze position
+                    humanoidRootPart.Anchored = true -- Re-anchor after return
                     toggleNoclip(character, true) -- Keep noclip on to prevent falling
                 end
 
