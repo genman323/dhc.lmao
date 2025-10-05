@@ -12,16 +12,15 @@ local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
 local humanoid = character:WaitForChild("Humanoid", 5)
 
 -- Host setup
-local hostName = "HarperViperZero20033"
+local hostName = "Sab3r_PRO2003"
 local hostPlayer = nil
 
 -- State variables
 local isDropping = false
-local currentMode = nil -- "swarm", "follow", "airlock", "setup", nil
+local currentMode = nil -- "swarm", "follow", "setup", nil
 local currentTarget = nil
 local originalCFrame = nil
 local airlockPlatform = nil
-local airlockPosition = nil
 local lastDropTime = 0
 local dropCooldown = 0.1
 local originalAnims = nil
@@ -31,7 +30,6 @@ local connections = {
     follow = nil,
     fps = nil,
     afk = nil,
-    airlockFreeze = nil,
     setupMove = nil
 }
 
@@ -192,20 +190,6 @@ local function toggleNoclip(char, enable)
     end
 end
 
-local function createAirlockPlatform(position)
-    if airlockPlatform then
-        airlockPlatform:Destroy()
-    end
-    airlockPlatform = Instance.new("Part")
-    airlockPlatform.Size = Vector3.new(20, 0.5, 20)
-    airlockPlatform.Position = position
-    airlockPlatform.Anchored = true
-    airlockPlatform.CanCollide = true
-    airlockPlatform.Transparency = 1
-    airlockPlatform.Parent = game.Workspace
-    return airlockPlatform
-end
-
 -- Animation Management
 local function saveOriginalAnimations()
     local animate = character:WaitForChild("Animate")
@@ -257,13 +241,8 @@ local function disableCurrentMode()
             connections[key] = nil
         end
     end
-    if airlockPlatform then
-        airlockPlatform:Destroy()
-        airlockPlatform = nil
-    end
     currentMode = nil
     currentTarget = nil
-    airlockPosition = nil
     toggleNoclip(character, false)
 end
 
@@ -392,114 +371,6 @@ local function follow(targetPlayer)
     end)
 end
 
-local function airlock()
-    disableCurrentMode()
-    if not humanoidRootPart or not humanoid then
-        warn("Airlock failed: Humanoid or HumanoidRootPart not found")
-        return
-    end
-    -- Store original position
-    originalCFrame = humanoidRootPart.CFrame
-    local players = getPlayers()
-    local index = getAltIndex(player.Name, players)
-    
-    -- Use raycasting to find the ground height for more accuracy
-    local rayOrigin = humanoidRootPart.Position
-    local rayDirection = Vector3.new(0, -1000, 0) -- Cast downward
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {character}
-    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-    local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-    
-    local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
-    local targetHeight = groundY + 13 -- 13 studs above ground
-    local platformPosition = Vector3.new(humanoidRootPart.Position.X, targetHeight - 0.5, humanoidRootPart.Position.Z)
-    
-    -- Debug: Log positions
-    print("Airlock - Ground Y:", groundY, "Target Height:", targetHeight, "Platform Position:", platformPosition)
-    
-    -- Create platform
-    airlockPlatform = createAirlockPlatform(platformPosition)
-    airlockPosition = CFrame.new(platformPosition + Vector3.new(0, 1, 0), humanoidRootPart.CFrame.Position * Vector3.new(1, 0, 1))
-    
-    -- Ensure noclip is enabled during movement
-    toggleNoclip(character, true)
-    
-    -- Set position and anchor
-    humanoidRootPart.CFrame = airlockPosition
-    humanoidRootPart.Anchored = true
-    humanoidRootPart.Velocity = Vector3.zero
-    humanoidRootPart.RotVelocity = Vector3.zero
-    
-    -- Disable noclip after positioning
-    toggleNoclip(character, false)
-    
-    -- Enforce position in RenderStepped
-    if connections.airlockFreeze then
-        connections.airlockFreeze:Disconnect()
-    end
-    connections.airlockFreeze = RunService.RenderStepped:Connect(function()
-        if currentMode == "airlock" and humanoidRootPart and airlockPosition then
-            humanoidRootPart.CFrame = airlockPosition
-            humanoidRootPart.Velocity = Vector3.zero
-            humanoidRootPart.RotVelocity = Vector3.zero
-        else
-            -- Disconnect if conditions are not met
-            connections.airlockFreeze:Disconnect()
-            connections.airlockFreeze = nil
-        end
-    end)
-    
-    currentMode = "airlock"
-end
-
-local function unairlock()
-    if airlockPlatform then
-        airlockPlatform:Destroy()
-        airlockPlatform = nil
-    end
-    if connections.airlockFreeze then
-        connections.airlockFreeze:Disconnect()
-        connections.airlockFreeze = nil
-    end
-    if not humanoidRootPart or not humanoid or not originalCFrame then
-        warn("Unairlock failed: Missing required components")
-        return
-    end
-    toggleNoclip(character, true)
-    humanoidRootPart.Anchored = false
-    humanoidRootPart.CFrame = originalCFrame
-    toggleNoclip(character, false)
-    originalCFrame = nil
-    airlockPosition = nil
-    currentMode = nil
-end
-
-local function unswarm()
-    disableCurrentMode()
-    setup(hostPlayer)
-end
-
-local function bring()
-    disableCurrentMode()
-    if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Bring failed: Invalid host or local character")
-        return
-    end
-    toggleNoclip(character, true)
-    local hostRoot = hostPlayer.Character.HumanoidRootPart
-    local players = getPlayers()
-    local index = getAltIndex(player.Name, players)
-    local angle = index * (2 * math.pi / #players)
-    local radius = 2
-    local x = math.cos(angle) * radius
-    local z = math.sin(angle) * radius
-    local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
-    local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
-    humanoidRootPart.CFrame = targetCFrame
-    toggleNoclip(character, false)
-end
-
 local function dropAllCash()
     if not mainEvent then
         warn("MainEvent not found, cannot drop cash.")
@@ -510,13 +381,54 @@ local function dropAllCash()
         connections.drop:Disconnect()
     end
     connections.drop = RunService.Heartbeat:Connect(function()
-        if isDropping then
+        if isDropping and humanoidRootPart then
             local currentTime = tick()
             if currentTime - lastDropTime >= dropCooldown then
+                -- Use raycasting to find ground level and prevent void fall
+                local rayOrigin = humanoidRootPart.Position
+                local rayDirection = Vector3.new(0, -1000, 0)
+                local raycastParams = RaycastParams.new()
+                raycastParams.FilterDescendantsInstances = {character}
+                raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+                local groundY = raycastResult and raycastResult.Position.Y or humanoidRootPart.Position.Y
+
+                -- Tween just above head (underground but above void)
+                local startY = humanoidRootPart.Position.Y
+                local targetY = math.max(groundY + 1, humanoidRootPart.Position.Y - 0.1) -- Barely above head, prevent void
+                local startCFrame = humanoidRootPart.CFrame
+                local targetCFrame = CFrame.new(startCFrame.X, targetY, startCFrame.Z) * startCFrame.Rotation
+                local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+                tween:Play()
+                tween.Completed:Wait() -- Wait for tween to complete
+
+                -- Drop cash
                 pcall(function()
                     mainEvent:FireServer("DropMoney", 15000)
-                    mainEvent:FireServer("Block", true)
                 end)
+
+                -- Return to original setup position if in setup mode
+                if currentMode == "setup" then
+                    local players = getPlayers()
+                    local index = getAltIndex(player.Name, players)
+                    local rows, cols, spacing = 5, 4, 2
+                    local maxAlts = 20
+                    local totalAlts = math.min(#players - 1, maxAlts)
+                    local halfWidth = (cols * spacing) / 2
+                    local halfDepth = (rows * spacing) / 2
+                    local row = math.floor(index / cols)
+                    local col = index % cols
+                    local offsetX = -halfWidth + (col * spacing) + (spacing / 2)
+                    local offsetZ = -halfDepth + (row * spacing) + (spacing / 2)
+                    local basePosition = Vector3.new(-265, -7, -380) -- Assuming club setup as default
+                    local offsetPosition = basePosition + Vector3.new(offsetX, 0, offsetZ)
+                    local targetSetupCFrame = CFrame.new(offsetPosition, offsetPosition + Vector3.new(0, 0, -1))
+                    local setupTween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetSetupCFrame})
+                    setupTween:Play()
+                    setupTween.Completed:Wait()
+                end
+
                 lastDropTime = currentTime
             end
         end
@@ -574,8 +486,6 @@ local function handlePlayerCharacterReset(newChar)
             swarm(currentTarget)
         elseif currentMode == "follow" then
             follow(currentTarget)
-        elseif currentMode == "airlock" and airlockPosition then
-            airlock()
         elseif currentMode == "setup" and currentTarget == nil then
             setupClub()
         end
@@ -632,10 +542,6 @@ local function handleCommands(message)
     elseif cmd == "unfollow" then
         disableCurrentMode()
         setup(hostPlayer)
-    elseif cmd == "airlock" then
-        airlock()
-    elseif cmd == "unairlock" then
-        unairlock()
     elseif cmd == "bring" then
         bring()
     elseif cmd == "drop" then
@@ -662,10 +568,8 @@ local function cleanup()
         isDropping = false
         currentMode = nil
         currentTarget = nil
-        airlockPosition = nil
-        if airlockPlatform then
-            airlockPlatform:Destroy()
-            airlockPlatform = nil
+        if game.Lighting:FindFirstChild("BlurEffect") then
+            game.Lighting.BlurEffect:Destroy()
         end
     end
 end
