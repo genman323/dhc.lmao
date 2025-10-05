@@ -387,8 +387,10 @@ local function bring()
     local z = math.sin(angle) * radius
     local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
     local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
-    humanoidRootPart.CFrame = targetCFrame
-    toggleNoclip(character, false)
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    tween:Play()
+    -- No toggleNoclip off, keep it on
 end
 
 local function dropAllCash()
