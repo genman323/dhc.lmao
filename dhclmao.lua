@@ -238,7 +238,7 @@ local function setupGrid(position)
         groundY = position.Y -- Fallback if ray fails
         warn("No ground hit, using Y=" .. groundY)
     end
-    local buryDepth = 5 -- Depth below ground
+    local buryDepth = 5 -- Bury 5 studs down
     local basePosition = Vector3.new(position.X, groundY - buryDepth, position.Z)
     -- Store original position if not already set
     if not originalPosition then
@@ -262,13 +262,6 @@ local function setupGrid(position)
         local tween = TweenService:Create(altRoot, tweenInfo, { CFrame = targetCFrame })
         tween:Play()
         tween.Completed:Wait()
-        altRoot.CFrame = targetCFrame
-        -- Minimize animation interference
-        local humanoid = char:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = 0
-            humanoid.JumpPower = 0
-        end
         print("Alt " .. altIndex .. " stuffed at " .. tostring(targetPosition))
         altIndex = altIndex + 1
     end
