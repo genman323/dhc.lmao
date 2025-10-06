@@ -245,7 +245,7 @@ local function setupGrid(position)
         originalPosition = humanoidRootPart.CFrame
     end
     -- Stuff all alts into the exact same spot with identical orientation
-    local targetCFrame = CFrame.new(targetPosition) -- Use a consistent CFrame with no rotation from original
+    local targetCFrame = CFrame.new(targetPosition) -- Use a consistent CFrame with no rotation
     for _, altRoot in ipairs(alts) do
         local char = altRoot.Parent
         local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -253,6 +253,8 @@ local function setupGrid(position)
         toggleNoclip(char, true) -- Disable collisions for this alt
         tween:Play()
         tween.Completed:Wait()
+        -- Set CFrame directly to ensure exact position
+        altRoot.CFrame = targetCFrame
         altRoot.Anchored = true -- Lock them in place
         -- Disable animations to keep them completely still
         local animate = char:FindFirstChild("Animate")
