@@ -215,62 +215,42 @@ local function setupGrid(position)
         warn("No character to set up, bummer!")
         return
     end
-    -- Only control this alt, not all alts
-    toggleNoclip(character, true) -- Noclip this alt only
-    
-    -- Find the ground level for burying
-    local rayOrigin = position
-    local rayDirection = Vector3.new(0, -2000, 0)
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Include
-    raycastParams.FilterDescendantsInstances = game.Workspace:GetChildren()
-    local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-    local groundY
-    if raycastResult then
-        groundY = raycastResult.Position.Y
-        print("Ground found at Y=" .. groundY)
-    else
-        groundY = position.Y -- Fallback if ray misses
-        warn("No ground hit, using fallback Y=" .. groundY)
-    end
-    local buryDepth = 5 -- Bury 5 studs down
-    local targetY = groundY - buryDepth
-    local targetPosition = Vector3.new(position.X, targetY, position.Z)
-    
-    -- Teleport THIS ALT only to the exact spot
-    local targetCFrame = CFrame.new(targetPosition) -- Same position and rotation
-    humanoidRootPart.CFrame = targetCFrame -- Instant teleport this alt
-    humanoidRootPart.Anchored = true -- Freeze this alt in place
-    print("Alt " .. player.Name .. " teleported to " .. tostring(targetPosition) .. " with uniform facing")
-    
-    -- Leave noclip enabled on this alt to prevent collisions
-end
-
-local function bring()
-    if humanoidRootPart.Anchored then
-        warn("Alt is anchored in setup position. Use ?reset to move.")
-        return
-    end
-    disableCurrentMode()
-    if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        warn("Bring failed, check the host!")
-        return
-    end
+    -- Disable collisions for all alts
     toggleNoclip(character, true)
-    local hostRoot = hostPlayer.Character.HumanoidRootPart
-    local targetPosition = hostRoot.Position -- Same spot as host
-    local targetCFrame = CFrame.new(targetPosition) -- Uniform facing
-    humanoidRootPart.CFrame = targetCFrame -- Instant teleport this alt only
-    print("Alt " .. player.Name .. " brought to host at " .. tostring(targetPosition))
-    toggleNoclip(character, false) -- Reset local player noclip
+
+    -- Use a fixed target position for all alts (no offset)
+    local targetY = position.Y - 5 -- Bury 5 studs down from the given Y
+    local targetPosition = Vector3.new(position.X, targetY, position.Z)
+    local targetCFrame = CFrame.new(targetPosition)
+
+    -- Tween all alts to the exact same spot
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = targetCFrame})
+    tween:Play()
+    tween.Completed:Connect(function()
+        humanoidRootPart.Anchored = true -- Lock them in place
+        print("Alt " .. player.Name .. " teleported to " .. tostring(targetPosition))
+    end)
 end
 
 local function setupClub()
-    setupGrid(Vector3.new(-265, -7, -380)) -- Stuff them at club
+    setupGrid(Vector3.new(-265, -7, -380)) -- All alts go to this exact spot
 end
 
 local function setupBank()
-    setupGrid(Vector3.new(-376, 21, -283)) -- Stuff them at bank
+    setupGrid(Vector3.new(-376, 21, -283)) -- All alts go to this exact spot
+end
+
+local function toggleNoclip(char, enable)
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and not part:IsA("Accessory") then
+            part.CanCollide = not enable
+            if enable then
+                part.Velocity = Vector3.zero
+            end
+        end
+    end
 end
 
 local function swarm(targetPlayer)
