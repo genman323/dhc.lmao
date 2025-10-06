@@ -210,7 +210,7 @@ local function unswarm()
     setupClub() -- Back to the club
 end
 
-local function setupGrid(position)
+local function setupGrid(position, depth)
     if not humanoidRootPart then
         warn("No character to set up, bummer!")
         return
@@ -219,7 +219,7 @@ local function setupGrid(position)
     toggleNoclip(character, true)
 
     -- Use a fixed target position for all alts (no offset)
-    local targetY = position.Y - 5 -- Bury 5 studs down from the given Y
+    local targetY = position.Y - depth -- Bury based on specified depth
     local targetPosition = Vector3.new(position.X, targetY, position.Z)
     local targetCFrame = CFrame.new(targetPosition)
 
@@ -234,11 +234,11 @@ local function setupGrid(position)
 end
 
 local function setupClub()
-    setupGrid(Vector3.new(-265, -7, -380)) -- All alts go to this exact spot
+    setupGrid(Vector3.new(-265, -7, -380), 5) -- 5 studs down for club
 end
 
 local function setupBank()
-    setupGrid(Vector3.new(-376, 21, -283)) -- All alts go to this exact spot
+    setupGrid(Vector3.new(-376, 21, -283), 10) -- 10 studs down for bank (deeper burial)
 end
 
 local function toggleNoclip(char, enable)
