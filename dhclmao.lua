@@ -238,46 +238,43 @@ local function setupGrid(position)
         groundY = position.Y -- Fallback if ray fails
         warn("No ground hit, using Y=" .. groundY)
     end
-    local buryDepth = 5 -- Bury 5 studs down
-    local targetPosition = Vector3.new(position.X, groundY - buryDepth, position.Z)
+    local buryDepth = 5 -- Depth below ground
+    local basePosition = Vector3.new(position.X, groundY - buryDepth, position.Z)
     -- Store original position if not already set
     if not originalPosition then
         originalPosition = humanoidRootPart.CFrame
     end
-    -- Stuff all alts into the exact same spot with identical orientation
-    local targetCFrame = CFrame.new(targetPosition) -- Consistent CFrame
+    -- Create a 5x4 grid (20 slots max) underground
+    local gridSizeX = 5
+    local gridSizeZ = 4
+    local spacing = 1 -- Space between alts
+    local altIndex = 0
     for _, altRoot in ipairs(alts) do
+        if altIndex >= 20 then break end -- Limit to 20 alts
         local char = altRoot.Parent
-        -- Disable collisions for the entire character
-        toggleNoclip(char, true)
-        -- Set CFrame directly to ensure exact position
+        local gridX = altIndex % gridSizeX
+        local gridZ = math.floor(altIndex / gridSizeX)
+        local offsetX = (gridX - (gridSizeX - 1) / 2) * spacing
+        local offsetZ = (gridZ - (gridSizeZ - 1) / 2) * spacing
+        local targetPosition = basePosition + Vector3.new(offsetX, 0, offsetZ)
+        local targetCFrame = CFrame.new(targetPosition)
+        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(altRoot, tweenInfo, { CFrame = targetCFrame })
+        tween:Play()
+        tween.Completed:Wait()
         altRoot.CFrame = targetCFrame
-        altRoot.Anchored = true -- Lock in place
-        -- Disable animations and movement
-        local animate = char:FindFirstChild("Animate")
-        if animate then
-            animate.Disabled = true
-        end
+        -- Minimize animation interference
         local humanoid = char:FindFirstChild("Humanoid")
         if humanoid then
-            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
-                track:Stop()
-            end
             humanoid.WalkSpeed = 0
             humanoid.JumpPower = 0
-            humanoid.AutoRotate = false
         end
-        -- Align all parts to prevent offset due to model pivots
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") and part ~= altRoot then
-                part.CFrame = targetCFrame
-                part.Anchored = true
-            end
-        end
-        print("Alt stuffed at " .. tostring(targetPosition))
+        print("Alt " .. altIndex .. " stuffed at " .. tostring(targetPosition))
+        altIndex = altIndex + 1
     end
     toggleNoclip(character, false)
 end
+
 local function setup(targetPlayer)
     disableCurrentMode()
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
