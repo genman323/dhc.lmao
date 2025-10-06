@@ -223,7 +223,6 @@ local function setupGrid(position)
             table.insert(alts, p.Character.HumanoidRootPart)
         end
     end
-
     -- Find the ground to bury them
     local rayOrigin = position
     local rayDirection = Vector3.new(0, -2000, 0)
@@ -231,7 +230,6 @@ local function setupGrid(position)
     raycastParams.FilterType = Enum.RaycastFilterType.Include
     raycastParams.FilterDescendantsInstances = game.Workspace:GetChildren()
     local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-
     local groundY
     if raycastResult then
         groundY = raycastResult.Position.Y
@@ -240,26 +238,21 @@ local function setupGrid(position)
         groundY = position.Y -- Fallback if ray fails
         warn("No ground hit, using Y=" .. groundY)
     end
-
     local buryDepth = 5 -- Bury 5 studs down
     local targetPosition = Vector3.new(position.X, groundY - buryDepth, position.Z)
-
     -- Store original position if not already set
     if not originalPosition then
         originalPosition = humanoidRootPart.CFrame
     end
-
-    -- Stuff all alts into the exact same spot with no offset
+    -- Stuff all alts into the exact same spot with identical orientation
+    local targetCFrame = CFrame.new(targetPosition) -- Use a consistent CFrame with no rotation from original
     for _, altRoot in ipairs(alts) do
-        local startCFrame = altRoot.CFrame
-        local targetCFrame = CFrame.new(targetPosition) * startCFrame.Rotation
         local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local tween = TweenService:Create(altRoot, tweenInfo, { CFrame = targetCFrame })
         toggleNoclip(altRoot.Parent, true) -- Disable collisions for this alt
         tween:Play()
         tween.Completed:Wait()
         altRoot.Anchored = true -- Lock them in place
-        toggleNoclip(altRoot.Parent, false) -- Re-enable collisions after positioning
         print("Alt stuffed at " .. tostring(targetPosition))
     end
     toggleNoclip(character, false)
