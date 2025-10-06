@@ -254,7 +254,11 @@ local function setupGrid(position)
         tween:Play()
         tween.Completed:Wait()
         altRoot.Anchored = true -- Lock them in place
-        -- Disable all animations to keep them still
+        -- Disable animations to keep them completely still
+        local animate = char:FindFirstChild("Animate")
+        if animate then
+            animate.Disabled = true
+        end
         local humanoid = char:FindFirstChild("Humanoid")
         if humanoid then
             for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
@@ -262,6 +266,7 @@ local function setupGrid(position)
             end
             humanoid.WalkSpeed = 0
             humanoid.JumpPower = 0
+            humanoid.AutoRotate = false
         end
         print("Alt stuffed at " .. tostring(targetPosition))
     end
