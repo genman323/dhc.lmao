@@ -244,15 +244,22 @@ local function setupGrid(position)
     local buryDepth = 5 -- Bury 5 studs down
     local targetPosition = Vector3.new(position.X, groundY - buryDepth, position.Z)
 
-    -- Stuff all alts into one exact spot
+    -- Store original position if not already set
+    if not originalPosition then
+        originalPosition = humanoidRootPart.CFrame
+    end
+
+    -- Stuff all alts into the exact same spot with no offset
     for _, altRoot in ipairs(alts) do
         local startCFrame = altRoot.CFrame
         local targetCFrame = CFrame.new(targetPosition) * startCFrame.Rotation
         local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local tween = TweenService:Create(altRoot, tweenInfo, { CFrame = targetCFrame })
+        toggleNoclip(altRoot.Parent, true) -- Disable collisions for this alt
         tween:Play()
         tween.Completed:Wait()
-        altRoot.Anchored = true -- Lock them together
+        altRoot.Anchored = true -- Lock them in place
+        toggleNoclip(altRoot.Parent, false) -- Re-enable collisions after positioning
         print("Alt stuffed at " .. tostring(targetPosition))
     end
     toggleNoclip(character, false)
@@ -280,8 +287,8 @@ local function setup(targetPlayer)
         if currentMode == "setup" then
             currentMode = nil
         end
+        toggleNoclip(character, false)
     end)
-    toggleNoclip(character, false)
 end
 
 local function setupClub()
@@ -371,18 +378,22 @@ local function bring()
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = targetCFrame })
     tween:Play()
+    tween.Completed:Connect(function()
+        toggleNoclip(character, false)
+    end)
 end
 
 local function unburyAlt()
     if not humanoidRootPart then return end
     humanoidRootPart.Anchored = false
-    toggleNoclip(character, false)
+    toggleNoclip(character, true)
     if originalPosition then
         local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = originalPosition })
         tween:Play()
         tween.Completed:Wait()
         originalPosition = nil -- Clear it out
+        toggleNoclip(character, false)
     else
         warn("No starting spot, heading to club!")
         setupClub() -- Fallback
@@ -505,7 +516,7 @@ local function handlePlayerCharacterReset(newChar)
         end
     end
     if isDropping and originalPosition then
-        buryAlt() -- Re-bury if needed
+        setupClub() -- Re-bury if needed
     end
 end
 
