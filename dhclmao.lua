@@ -245,18 +245,15 @@ local function setupGrid(position)
         originalPosition = humanoidRootPart.CFrame
     end
     -- Stuff all alts into the exact same spot with identical orientation
-    local targetCFrame = CFrame.new(targetPosition) -- Use a consistent CFrame with no rotation
+    local targetCFrame = CFrame.new(targetPosition) -- Consistent CFrame
     for _, altRoot in ipairs(alts) do
         local char = altRoot.Parent
-        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(altRoot, tweenInfo, { CFrame = targetCFrame })
-        toggleNoclip(char, true) -- Disable collisions for this alt
-        tween:Play()
-        tween.Completed:Wait()
+        -- Disable collisions for the entire character
+        toggleNoclip(char, true)
         -- Set CFrame directly to ensure exact position
         altRoot.CFrame = targetCFrame
-        altRoot.Anchored = true -- Lock them in place
-        -- Disable animations to keep them completely still
+        altRoot.Anchored = true -- Lock in place
+        -- Disable animations and movement
         local animate = char:FindFirstChild("Animate")
         if animate then
             animate.Disabled = true
@@ -270,11 +267,17 @@ local function setupGrid(position)
             humanoid.JumpPower = 0
             humanoid.AutoRotate = false
         end
+        -- Align all parts to prevent offset due to model pivots
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part ~= altRoot then
+                part.CFrame = targetCFrame
+                part.Anchored = true
+            end
+        end
         print("Alt stuffed at " .. tostring(targetPosition))
     end
     toggleNoclip(character, false)
 end
-
 local function setup(targetPlayer)
     disableCurrentMode()
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
