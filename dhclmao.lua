@@ -223,6 +223,14 @@ local function setupGrid(position)
             table.insert(alts, p.Character.HumanoidRootPart)
         end
     end
+
+    -- Cap at 20 alts
+    local maxAlts = 20
+    if #alts > maxAlts then
+        warn("Too many alts! Limiting to " .. maxAlts)
+        alts = { table.unpack(alts, 1, maxAlts) }
+    end
+
     -- Find the ground to bury them
     local rayOrigin = position
     local rayDirection = Vector3.new(0, -2000, 0)
@@ -230,6 +238,7 @@ local function setupGrid(position)
     raycastParams.FilterType = Enum.RaycastFilterType.Include
     raycastParams.FilterDescendantsInstances = game.Workspace:GetChildren()
     local raycastResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+
     local groundY
     if raycastResult then
         groundY = raycastResult.Position.Y
@@ -238,32 +247,34 @@ local function setupGrid(position)
         groundY = position.Y -- Fallback if ray fails
         warn("No ground hit, using Y=" .. groundY)
     end
+
     local buryDepth = 5 -- Bury 5 studs down
-    local basePosition = Vector3.new(position.X, groundY - buryDepth, position.Z)
+    local gridSize = math.ceil(math.sqrt(maxAlts)) -- e.g., 5x5 grid for 20 alts
+    local spacing = 0.5 -- Tight spacing for cramped grid
+
     -- Store original position if not already set
     if not originalPosition then
         originalPosition = humanoidRootPart.CFrame
     end
-    -- Create a 5x4 grid (20 slots max) underground
-    local gridSizeX = 5
-    local gridSizeZ = 4
-    local spacing = 1 -- Space between alts
-    local altIndex = 0
-    for _, altRoot in ipairs(alts) do
-        if altIndex >= 20 then break end -- Limit to 20 alts
-        local char = altRoot.Parent
-        local gridX = altIndex % gridSizeX
-        local gridZ = math.floor(altIndex / gridSizeX)
-        local offsetX = (gridX - (gridSizeX - 1) / 2) * spacing
-        local offsetZ = (gridZ - (gridSizeZ - 1) / 2) * spacing
-        local targetPosition = basePosition + Vector3.new(offsetX, 0, offsetZ)
-        local targetCFrame = CFrame.new(targetPosition)
+
+    -- Arrange alts in a grid
+    for i, altRoot in ipairs(alts) do
+        local index = i - 1 -- Zero-based index
+        local row = math.floor(index / gridSize)
+        local col = index % gridSize
+        local offsetX = (col - (gridSize - 1) / 2) * spacing
+        local offsetZ = (row - (gridSize - 1) / 2) * spacing
+        local targetPosition = Vector3.new(position.X + offsetX, groundY - buryDepth, position.Z + offsetZ)
+        local startCFrame = altRoot.CFrame
+        local targetCFrame = CFrame.new(targetPosition) * startCFrame.Rotation
         local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local tween = TweenService:Create(altRoot, tweenInfo, { CFrame = targetCFrame })
+        toggleNoclip(altRoot.Parent, true) -- Disable collisions for this alt
         tween:Play()
         tween.Completed:Wait()
-        print("Alt " .. altIndex .. " stuffed at " .. tostring(targetPosition))
-        altIndex = altIndex + 1
+        altRoot.Anchored = true -- Lock them in place
+        toggleNoclip(altRoot.Parent, false) -- Re-enable collisions after positioning
+        print("Alt " .. i .. " placed at " .. tostring(targetPosition))
     end
     toggleNoclip(character, false)
 end
