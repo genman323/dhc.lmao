@@ -247,12 +247,22 @@ local function setupGrid(position)
     -- Stuff all alts into the exact same spot with identical orientation
     local targetCFrame = CFrame.new(targetPosition) -- Use a consistent CFrame with no rotation from original
     for _, altRoot in ipairs(alts) do
+        local char = altRoot.Parent
         local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local tween = TweenService:Create(altRoot, tweenInfo, { CFrame = targetCFrame })
-        toggleNoclip(altRoot.Parent, true) -- Disable collisions for this alt
+        toggleNoclip(char, true) -- Disable collisions for this alt
         tween:Play()
         tween.Completed:Wait()
         altRoot.Anchored = true -- Lock them in place
+        -- Disable all animations to keep them still
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+                track:Stop()
+            end
+            humanoid.WalkSpeed = 0
+            humanoid.JumpPower = 0
+        end
         print("Alt stuffed at " .. tostring(targetPosition))
     end
     toggleNoclip(character, false)
