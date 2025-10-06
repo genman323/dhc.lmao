@@ -215,24 +215,9 @@ local function setupGrid(position)
         warn("No character to set up, bummer!")
         return
     end
-    toggleNoclip(character, true)
-    local players = getPlayers()
-    local alts = {}
-    for _, p in ipairs(players) do
-        if p ~= hostPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            table.insert(alts, p.Character.HumanoidRootPart)
-        end
-    end
-    -- Sort alts by name to ensure consistent grid placement
-    table.sort(alts, function(a, b)
-        return a.Parent.Name < b.Parent.Name
-    end)
-    -- Limit to 20 alts
-    local maxAlts = 20
-    if #alts > maxAlts then
-        warn("Whoa, too many alts! Cutting to " .. maxAlts)
-        alts = { table.unpack(alts, 1, maxAlts) }
-    end
+    -- Only control this alt, not all alts
+    toggleNoclip(character, true) -- Noclip this alt only
+    
     -- Find the ground level for burying
     local rayOrigin = position
     local rayDirection = Vector3.new(0, -2000, 0)
@@ -250,58 +235,34 @@ local function setupGrid(position)
     end
     local buryDepth = 5 -- Bury 5 studs down
     local targetY = groundY - buryDepth
-    -- Set up a 4x5 grid
-    local gridWidth = 4
-    local gridHeight = 5
-    local spacing = 2 -- 2 studs between each alt
-    -- Calculate grid starting point (centered around the input position)
-    local startX = position.X - (gridWidth - 1) * spacing / 2
-    local startZ = position.Z - (gridHeight - 1) * spacing / 2
-    -- Place each alt in the grid
-    for i, altRoot in ipairs(alts) do
-        local row = math.floor((i - 1) / gridWidth) -- 0-based row
-        local col = (i - 1) % gridWidth -- 0-based column
-        local targetPosition = Vector3.new(
-            startX + col * spacing,
-            targetY,
-            startZ + row * spacing
-        )
-        local startCFrame = altRoot.CFrame
-        local targetCFrame = CFrame.new(targetPosition) * startCFrame.Rotation
-        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(altRoot, tweenInfo, { CFrame = targetCFrame })
-        tween:Play()
-        tween.Completed:Wait()
-        altRoot.Anchored = true -- Lock them in place
-        print("Alt " .. altRoot.Parent.Name .. " placed at grid position (" .. col .. ", " .. row .. ") at " .. tostring(targetPosition))
-    end
-    toggleNoclip(character, false)
+    local targetPosition = Vector3.new(position.X, targetY, position.Z)
+    
+    -- Teleport THIS ALT only to the exact spot
+    local targetCFrame = CFrame.new(targetPosition) -- Same position and rotation
+    humanoidRootPart.CFrame = targetCFrame -- Instant teleport this alt
+    humanoidRootPart.Anchored = true -- Freeze this alt in place
+    print("Alt " .. player.Name .. " teleported to " .. tostring(targetPosition) .. " with uniform facing")
+    
+    -- Leave noclip enabled on this alt to prevent collisions
 end
 
-local function setup(targetPlayer)
+local function bring()
+    if humanoidRootPart.Anchored then
+        warn("Alt is anchored in setup position. Use ?reset to move.")
+        return
+    end
     disableCurrentMode()
-    if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Setup failed, check the target!")
+    if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        warn("Bring failed, check the host!")
         return
     end
     toggleNoclip(character, true)
-    local targetRoot = targetPlayer.Character.HumanoidRootPart
-    local players = getPlayers()
-    local index = getAltIndex(player.Name, players)
-    local spacing = 1
-    local behindDirection = -targetRoot.CFrame.LookVector
-    local offsetPosition = targetRoot.Position + behindDirection * (spacing * (index + 1))
-    local targetCFrame = CFrame.lookAt(offsetPosition, targetRoot.Position)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = targetCFrame })
-    tween:Play()
-    currentMode = "setup"
-    tween.Completed:Connect(function()
-        if currentMode == "setup" then
-            currentMode = nil
-        end
-        toggleNoclip(character, false)
-    end)
+    local hostRoot = hostPlayer.Character.HumanoidRootPart
+    local targetPosition = hostRoot.Position -- Same spot as host
+    local targetCFrame = CFrame.new(targetPosition) -- Uniform facing
+    humanoidRootPart.CFrame = targetCFrame -- Instant teleport this alt only
+    print("Alt " .. player.Name .. " brought to host at " .. tostring(targetPosition))
+    toggleNoclip(character, false) -- Reset local player noclip
 end
 
 local function setupClub()
