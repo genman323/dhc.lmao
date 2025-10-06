@@ -609,95 +609,16 @@ local function rejoinGame()
         TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
     end)
 end
-local function mask()
-    local oldMode = currentMode
-    local oldTarget = currentTarget
-    local oldAirlockCFrame = airlockCFrame
-    disableCurrentMode()
-    if not humanoidRootPart then
-        warn("No HumanoidRootPart for mask!")
-        return
-    end
-    local oldCFrame = humanoidRootPart.CFrame
-    toggleNoclip(character, true)
-    local targetPos = Vector3.new(-271.77, 21.75, -283.39)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = CFrame.new(targetPos) })
-    tween:Play()
-    tween.Completed:Wait()
-    task.wait(0.5) -- Wait for shop load
-    local backpack = player:WaitForChild("Backpack")
-    if backpack:FindFirstChild("[Mask]") then
-        print("Already have [Mask] for " .. player.Name)
+local function sendMessage(message)
+    local textChatService = game:GetService("TextChatService")
+    if textChatService and textChatService.TextChannels and textChatService.TextChannels.RBXGeneral then
+        pcall(function()
+            textChatService.TextChannels.RBXGeneral:SendAsync(message)
+        end)
+        print("Sent message: " .. message)
     else
-        local models = {}
-        for _, v in ipairs(game.Workspace:GetDescendants()) do
-            if v:IsA("Model") and v.Name == "[Surgeon Mask] - $27" then
-                table.insert(models, v)
-            end
-        end
-        for _, model in ipairs(models) do
-            -- Move close and face it
-            local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
-            if primary then
-                local frontPos = primary.Position + primary.CFrame.LookVector * -2 -- In front, adjust if needed
-                humanoidRootPart.CFrame = CFrame.lookAt(frontPos, primary.Position)
-                task.wait(0.1)
-            end
-            -- Find ProximityPrompt
-            local prompt = model:FindFirstChildWhichIsA("ProximityPrompt", true)
-            if prompt then
-                pcall(function()
-                    fireproximityprompt(prompt)
-                end)
-            end
-            task.wait(0.5) -- Wait for purchase
-            if backpack:FindFirstChild("[Mask]") then
-                break
-            end
-        end
-        if not backpack:FindFirstChild("[Mask]") then
-            warn("Failed to acquire [Mask] for " .. player.Name)
-        end
+        warn("TextChatService or RBXGeneral channel not found!")
     end
-    -- Equip and put on
-    local maskTool = backpack:FindFirstChild("[Mask]")
-    if maskTool then
-        maskTool.Parent = character -- Equip
-        task.wait(0.1)
-        maskTool:Activate() -- Click to put on
-        task.wait(0.5) -- Wait for animation
-        print("Mask put on for " .. player.Name)
-    else
-        warn("No [Mask] to equip for " .. player.Name)
-    end
-    -- Teleport back
-    tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = oldCFrame })
-    tween:Play()
-    tween.Completed:Wait()
-    toggleNoclip(character, false)
-    -- Restore mode
-    currentMode = oldMode
-    currentTarget = oldTarget
-    airlockCFrame = oldAirlockCFrame
-    if currentMode then
-        if currentMode == "swarm" then
-            swarm(currentTarget)
-        elseif currentMode == "follow" then
-            follow(currentTarget)
-        elseif currentMode == "halo" then
-            halo(currentTarget)
-        elseif currentMode == "circle" then
-            circle(currentTarget)
-        elseif currentMode == "spin" then
-            spin()
-        elseif currentMode == "airlock" then
-            airlock()
-        elseif currentMode == "setup" then
-            setupClub() -- Assume club, or bank if needed
-        end
-    end
-    print("Mask command completed for " .. player.Name)
 end
 -- Handle player events
 local function handleHostLeaving(leavingPlayer)
@@ -738,7 +659,7 @@ local function handlePlayerCharacterReset(newChar)
             circle(currentTarget)
         elseif currentMode == "spin" then
             spin()
-        elseif currentMode == "setup" and currentTarget == nil then
+        elseif currentMode == "setup" then
             setupClub()
         end
     end
@@ -850,8 +771,9 @@ local function handleCommands(message)
             end)
         end
         print("Blocking disabled for alt " .. player.Name)
-    elseif cmd == "mask" then
-        mask()
+    elseif cmd:match("^msg%s+(.+)$") then
+        local messageText = cmd:match("^msg%s+(.+)$")
+        sendMessage(messageText)
     else
         warn("What’s that? Unknown command: " .. cmd)
     end
