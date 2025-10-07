@@ -8,8 +8,8 @@ local g = game:GetService('VirtualInputManager')
 
 local h = a.LocalPlayer
 local i = h.Character or h.CharacterAdded:Wait()
-local j = i:WaitForChild('HumanoidRootPart', 5)
-local k = i:WaitForChild('Humanoid', 5)
+local j = i and i:WaitForChild('HumanoidRootPart', 5)
+local k = i and i:WaitForChild('Humanoid', 5)
 
 local l = 'HarperViperZero20033'
 local m = nil
@@ -34,7 +34,6 @@ local z = {
     afk = nil,
     setupMove = nil,
     halo = nil,
-    circle = nil,
     airlock = nil,
     spin = nil,
     setup = nil,
@@ -49,9 +48,7 @@ local function gg(tt)
     if uu and vv then
         return vv
     end
-    pcall(function()
-        h:Kick('Host not found.')
-    end)
+    h:Kick('Host not found.')
     return nil
 end
 
@@ -69,7 +66,7 @@ end
 
 local function ll()
     local mm = Instance.new('ScreenGui')
-    mm.Parent = h:WaitForChild('PlayerGui', 5)
+    mm.Parent = h:WaitForChild('PlayerGui', 5) or game.CoreGui
     mm.Name = 'DhcOverlay'
     mm.ResetOnSpawn = false
     mm.IgnoreGuiInset = true
@@ -170,7 +167,7 @@ local function ppp()
     if k then
         k.PlatformStand = false
     end
-    local qqq = i:FindFirstChild('Animate')
+    local qqq = i and i:FindFirstChild('Animate')
     if qqq then
         qqq.Enabled = true
     end
@@ -183,7 +180,9 @@ local function ppp()
     o = nil
     p = nil
     v = nil
-    lll(i, false)
+    if i then
+        lll(i, false)
+    end
 end
 
 local function ttt()
@@ -195,13 +194,6 @@ end
 
 local function uuu()
     if o ~= 'halo' then
-        return
-    end
-    ppp()
-end
-
-local function vvv()
-    if o ~= 'circle' then
         return
     end
     ppp()
@@ -223,28 +215,30 @@ end
 
 local function yyy(zzz, aaaa)
     if not j then
+        print('Setup failed: No HumanoidRootPart')
         return
     end
     if not t then
         t = j.CFrame
     end
     lll(i, true)
-    local bbbb = i:FindFirstChild('Animate')
+    local bbbb = i and i:FindFirstChild('Animate')
     if bbbb then
         bbbb.Enabled = false
     end
     local cccc = zzz.Y - aaaa
     local dddd = Vector3.new(zzz.X, cccc, zzz.Z)
     local eeee = CFrame.new(dddd) * CFrame.Angles(0, math.pi, 0)
-    local ffff =
-        TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local ffff = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local gggg = e:Create(j, ffff, { CFrame = eeee })
     gggg:Play()
     gggg.Completed:Connect(function()
-        k.PlatformStand = true
+        if k then
+            k.PlatformStand = true
+        end
         o = 'setup'
         z.setup = c.Heartbeat:Connect(function()
-            if o == 'setup' then
+            if o == 'setup' and j then
                 j.CFrame = eeee
                 j.Velocity = Vector3.zero
                 j.AssemblyLinearVelocity = Vector3.zero
@@ -256,10 +250,14 @@ end
 
 local function hhhh()
     ppp()
-    if f and f.TextChannels and f.TextChannels.RBXGeneral then
+    if f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem) then
         pcall(function()
-            f.TextChannels.RBXGeneral:SendAsync('Setting up..')
+            local channel = f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem
+            channel:SendAsync('Setting up..')
+            print('Setup message sent: Setting up.. to ' .. channel.Name)
         end)
+    else
+        print('Setup failed: No RBXGeneral or RBXSystem channel')
     end
     task.wait(1)
     yyy(Vector3.new(-265, -7, -380), 5)
@@ -267,10 +265,14 @@ end
 
 local function iiii()
     ppp()
-    if f and f.TextChannels and f.TextChannels.RBXGeneral then
+    if f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem) then
         pcall(function()
-            f.TextChannels.RBXGeneral:SendAsync('Setting up..')
+            local channel = f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem
+            channel:SendAsync('Setting up..')
+            print('Setup message sent: Setting up.. to ' .. channel.Name)
         end)
+    else
+        print('Setup failed: No RBXGeneral or RBXSystem channel')
     end
     task.wait(1)
     yyy(Vector3.new(-376, 21, -283), 5)
@@ -278,10 +280,14 @@ end
 
 local function jjjj()
     ppp()
-    if f and f.TextChannels and f.TextChannels.RBXGeneral then
+    if f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem) then
         pcall(function()
-            f.TextChannels.RBXGeneral:SendAsync('Setting up..')
+            local channel = f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem
+            channel:SendAsync('Setting up..')
+            print('Setup message sent: Setting up.. to ' .. channel.Name)
         end)
+    else
+        print('Setup failed: No RBXGeneral or RBXSystem channel')
     end
     task.wait(1)
     yyy(Vector3.new(-261.07, 53.37, -1127.65), 5)
@@ -289,29 +295,27 @@ end
 
 local function kkkk()
     if o == 'setup' then
-        k.PlatformStand = false
+        if k then
+            k.PlatformStand = false
+        end
         if z.setup then
             z.setup:Disconnect()
             z.setup = nil
         end
-        local llll = i:FindFirstChild('Animate')
+        local llll = i and i:FindFirstChild('Animate')
         if llll then
             llll.Enabled = true
         end
         o = nil
     end
     ppp()
-    if
-        not j
-        or not m
-        or not m.Character
-        or not m.Character:FindFirstChild('HumanoidRootPart')
-    then
+    if not j or not m or not m.Character or not m.Character:FindFirstChild('HumanoidRootPart') then
+        print('Bring failed: Invalid host or character')
         return
     end
     local mmmm = m.Character.HumanoidRootPart
     lll(i, true)
-    local nnnn = i:FindFirstChild('Animate')
+    local nnnn = i and i:FindFirstChild('Animate')
     if nnnn then
         nnnn.Enabled = false
     end
@@ -324,22 +328,29 @@ local function kkkk()
     local uuuu = math.sin(rrrr) * ssss
     local vvvv = mmmm.Position + Vector3.new(tttt, 0, uuuu)
     local wwww = CFrame.lookAt(vvvv, mmmm.Position)
-    local xxxx =
-        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local xxxx = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     local yyyy = e:Create(j, xxxx, { CFrame = wwww })
     yyyy:Play()
     yyyy.Completed:Connect(function()
-        lll(i, false)
+        if i then
+            lll(i, false)
+        end
         if nnnn then
             nnnn.Enabled = true
         end
-        k.PlatformStand = false
+        if k then
+            k.PlatformStand = false
+        end
     end)
     if not w then
-        if f and f.TextChannels and f.TextChannels.RBXGeneral then
+        if f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem) then
             pcall(function()
-                f.TextChannels.RBXGeneral:SendAsync('Greetings, Master.')
+                local channel = f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem
+                channel:SendAsync('Greetings, Master.')
+                print('Bring message sent: Greetings, Master. to ' .. channel.Name)
             end)
+        else
+            print('Bring failed: No RBXGeneral or RBXSystem channel')
         end
         w = true
     end
@@ -349,37 +360,35 @@ local function zzzz(aaaaa)
     ppp()
     o = 'swarm'
     p = aaaaa
-    if
-        not p
-        or not p.Character
-        or not p.Character:FindFirstChild('HumanoidRootPart')
-        or not j
-    then
+    if not p or not p.Character or not p.Character:FindFirstChild('HumanoidRootPart') or not j then
+        print('Swarm failed: Invalid target or character')
         o = nil
         p = nil
         return
     end
+    print('Swarm started: Target ' .. p.Name)
     lll(i, true)
-    k.PlatformStand = true
-    local bbbbb = i:FindFirstChild('Animate')
+    if k then
+        k.PlatformStand = true
+    end
+    local bbbbb = i and i:FindFirstChild('Animate')
     if bbbbb then
         bbbbb.Enabled = false
     end
     local ccccc = 0
     local ddddd = y and 0.1 or 0
     z.swarm = c.Heartbeat:Connect(function()
-        if
-            o ~= 'swarm'
-            or not j
-            or not p
-            or not p.Character
-            or not p.Character:FindFirstChild('HumanoidRootPart')
-        then
-            k.PlatformStand = false
+        if o ~= 'swarm' or not j or not p or not p.Character or not p.Character:FindFirstChild('HumanoidRootPart') then
+            print('Swarm stopped: Target or character unavailable')
+            if k then
+                k.PlatformStand = false
+            end
             if bbbbb then
                 bbbbb.Enabled = true
             end
-            lll(i, false)
+            if i then
+                lll(i, false)
+            end
             return
         end
         local eeeee = tick()
@@ -397,10 +406,12 @@ local function zzzz(aaaaa)
         local jjjjj = math.cos(hhhhh) * iiiii
         local kkkkk = math.sin(hhhhh) * iiiii
         local lllll = fffff + Vector3.new(jjjjj, 0, kkkkk)
-        j.CFrame = CFrame.lookAt(lllll, fffff)
-        j.Velocity = Vector3.zero
-        j.AssemblyLinearVelocity = Vector3.zero
-        j.AssemblyAngularVelocity = Vector3.zero
+        pcall(function()
+            j.CFrame = CFrame.lookAt(lllll, fffff)
+            j.Velocity = Vector3.zero
+            j.AssemblyLinearVelocity = Vector3.zero
+            j.AssemblyAngularVelocity = Vector3.zero
+        end)
     end)
 end
 
@@ -408,37 +419,35 @@ local function mmmmm(nnnnn)
     ppp()
     o = 'halo'
     p = nnnnn
-    if
-        not p
-        or not p.Character
-        or not p.Character:FindFirstChild('HumanoidRootPart')
-        or not j
-    then
+    if not p or not p.Character or not p.Character:FindFirstChild('HumanoidRootPart') or not j then
+        print('Halo failed: Invalid target or character')
         o = nil
         p = nil
         return
     end
+    print('Halo started: Target ' .. p.Name)
     lll(i, true)
-    k.PlatformStand = true
-    local ooooo = i:FindFirstChild('Animate')
+    if k then
+        k.PlatformStand = true
+    end
+    local ooooo = i and i:FindFirstChild('Animate')
     if ooooo then
         ooooo.Enabled = false
     end
     local ppppp = 0
     local qqqqq = y and 0.1 or 0
     z.halo = c.Heartbeat:Connect(function()
-        if
-            o ~= 'halo'
-            or not j
-            or not p
-            or not p.Character
-            or not p.Character:FindFirstChild('HumanoidRootPart')
-        then
-            k.PlatformStand = false
+        if o ~= 'halo' or not j or not p or not p.Character or not p.Character:FindFirstChild('HumanoidRootPart') then
+            print('Halo stopped: Target or character unavailable')
+            if k then
+                k.PlatformStand = false
+            end
             if ooooo then
                 ooooo.Enabled = true
             end
-            lll(i, false)
+            if i then
+                lll(i, false)
+            end
             return
         end
         local rrrrr = tick()
@@ -446,8 +455,7 @@ local function mmmmm(nnnnn)
             return
         end
         ppppp = rrrrr
-        local sssss = p.Character.HumanoidRootPart.Position
-            + Vector3.new(0, 6, 0)
+        local sssss = p.Character.HumanoidRootPart.Position + Vector3.new(0, 6, 0)
         local ttttt = 0
         for uuuuu = 1, #h.Name do
             ttttt = ttttt + string.byte(h.Name, uuuuu)
@@ -457,44 +465,12 @@ local function mmmmm(nnnnn)
         local xxxxx = math.cos(vvvvv) * wwwww
         local yyyyy = math.sin(vvvvv) * wwwww
         local zzzzz = sssss + Vector3.new(xxxxx, 0, yyyyy)
-        j.CFrame = CFrame.lookAt(zzzzz, sssss)
-        j.Velocity = Vector3.zero
-        j.AssemblyLinearVelocity = Vector3.zero
-        j.AssemblyAngularVelocity = Vector3.zero
-    end)
-end
-
-local function aaaaaa(bbbbbb)
-    ppp()
-    o = 'circle'
-    p = bbbbbb
-    if
-        not p
-        or not p.Character
-        or not p.Character:FindFirstChild('HumanoidRootPart')
-        or not j
-    then
-        o = nil
-        p = nil
-        return
-    end
-    lll(i, true)
-    local cccccc = p.Character.HumanoidRootPart.Position
-    local dddddd = a:GetPlayers()
-    local eeeeee = aaa(h.Name, dddddd, p)
-    local ffffff = math.min(#dddddd - 1, 20)
-    local gggggg = eeeeee * (2 * math.pi / 20)
-    local hhhhhh = 10
-    local iiiiii = math.cos(gggggg) * hhhhhh
-    local jjjjjj = math.sin(gggggg) * hhhhhh
-    local kkkkkk = cccccc + Vector3.new(iiiii, 0, jjjjjj)
-    local llllll = CFrame.lookAt(kkkkkk, cccccc)
-    local mmmmmm =
-        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local nnnnnn = e:Create(j, mmmmmm, { CFrame = llllll })
-    nnnnnn:Play()
-    nnnnnn.Completed:Connect(function()
-        lll(i, false)
+        pcall(function()
+            j.CFrame = CFrame.lookAt(zzzzz, sssss)
+            j.Velocity = Vector3.zero
+            j.AssemblyLinearVelocity = Vector3.zero
+            j.AssemblyAngularVelocity = Vector3.zero
+        end)
     end)
 end
 
@@ -502,12 +478,16 @@ local function oooooo()
     ppp()
     o = 'spin'
     if not j then
+        print('Spin failed: No HumanoidRootPart')
         o = nil
         return
     end
+    print('Spin started')
     lll(i, true)
-    k.PlatformStand = true
-    local pppppp = i:FindFirstChild('Animate')
+    if k then
+        k.PlatformStand = true
+    end
+    local pppppp = i and i:FindFirstChild('Animate')
     if pppppp then
         pppppp.Enabled = false
     end
@@ -516,11 +496,16 @@ local function oooooo()
     local ssssss = y and 0.1 or 0
     z.spin = c.Heartbeat:Connect(function()
         if o ~= 'spin' or not j then
-            k.PlatformStand = false
+            print('Spin stopped: No HumanoidRootPart')
+            if k then
+                k.PlatformStand = false
+            end
             if pppppp then
                 pppppp.Enabled = true
             end
-            lll(i, false)
+            if i then
+                lll(i, false)
+            end
             return
         end
         local tttttt = tick()
@@ -529,10 +514,12 @@ local function oooooo()
         end
         rrrrrr = tttttt
         local uuuuuu = CFrame.Angles(0, os.clock() * 4, 0)
-        j.CFrame = qqqqqq * uuuuuu
-        j.Velocity = Vector3.zero
-        j.AssemblyLinearVelocity = Vector3.zero
-        j.AssemblyAngularVelocity = Vector3.zero
+        pcall(function()
+            j.CFrame = qqqqqq * uuuuuu
+            j.Velocity = Vector3.zero
+            j.AssemblyLinearVelocity = Vector3.zero
+            j.AssemblyAngularVelocity = Vector3.zero
+        end)
     end)
 end
 
@@ -540,12 +527,16 @@ local function vvvvvv()
     ppp()
     o = 'airlock'
     if not j then
+        print('Airlock failed: No HumanoidRootPart')
         o = nil
         return
     end
+    print('Airlock started')
     lll(i, true)
-    k.PlatformStand = true
-    local wwwwww = i:FindFirstChild('Animate')
+    if k then
+        k.PlatformStand = true
+    end
+    local wwwwww = i and i:FindFirstChild('Animate')
     if wwwwww then
         wwwwww.Enabled = false
     end
@@ -556,11 +547,16 @@ local function vvvvvv()
     local aaaaaa = y and 0.1 or 0
     z.airlock = c.Heartbeat:Connect(function()
         if o ~= 'airlock' or not j then
-            k.PlatformStand = false
+            print('Airlock stopped: No HumanoidRootPart')
+            if k then
+                k.PlatformStand = false
+            end
             if wwwwww then
                 wwwwww.Enabled = true
             end
-            lll(i, false)
+            if i then
+                lll(i, false)
+            end
             return
         end
         local bbbbbb = tick()
@@ -568,27 +564,33 @@ local function vvvvvv()
             return
         end
         zzzzzz = bbbbbb
-        j.CFrame = v
-        j.Velocity = Vector3.zero
-        j.AssemblyLinearVelocity = Vector3.zero
-        j.AssemblyAngularVelocity = Vector3.zero
+        pcall(function()
+            j.CFrame = v
+            j.Velocity = Vector3.zero
+            j.AssemblyLinearVelocity = Vector3.zero
+            j.AssemblyAngularVelocity = Vector3.zero
+        end)
     end)
 end
 
-local function cccccc(dddddd)
+local function followPlayer(dddddd)
+    i = h.Character or h.CharacterAdded:Wait()
+    j = i and i:WaitForChild('HumanoidRootPart', 5)
+    k = i and i:WaitForChild('Humanoid', 5)
+    if not i or not j or not k then
+        print('Follow failed: Local character not ready')
+        return
+    end
     ppp()
     o = 'follow'
     p = dddddd
-    if
-        not p
-        or not p.Character
-        or not p.Character:FindFirstChild('HumanoidRootPart')
-        or not j
-    then
+    if not p or not p.Character or not p.Character:FindFirstChild('HumanoidRootPart') then
+        print('Follow failed: Invalid target or target character')
         o = nil
         p = nil
         return
     end
+    print('Follow started: Target ' .. p.Name)
     lll(i, true)
     k.PlatformStand = true
     local eeeeee = i:FindFirstChild('Animate')
@@ -598,18 +600,15 @@ local function cccccc(dddddd)
     local ffffff = 0
     local gggggg = y and 0.1 or 0
     z.follow = c.Heartbeat:Connect(function()
-        if
-            o ~= 'follow'
-            or not j
-            or not p
-            or not p.Character
-            or not p.Character:FindFirstChild('HumanoidRootPart')
-        then
+        if o ~= 'follow' or not j or not p or not p.Character or not p.Character:FindFirstChild('HumanoidRootPart') or not i or not k then
+            print('Follow stopped: Target or character unavailable')
             k.PlatformStand = false
             if eeeeee then
                 eeeeee.Enabled = true
             end
             lll(i, false)
+            o = nil
+            p = nil
             return
         end
         local hhhhhh = tick()
@@ -617,58 +616,93 @@ local function cccccc(dddddd)
             return
         end
         ffffff = hhhhhh
-        local iiiiii = p.Character.HumanoidRootPart
-        local jjjjjj = iiiiii.Position
+        local iiiiii = p.Character:FindFirstChild('HumanoidRootPart')
+        local jjjjjj = iiiiii and iiiiii.Position
+        if not jjjjjj then
+            print('Follow stopped: Target position unavailable')
+            k.PlatformStand = false
+            if eeeeee then
+                eeeeee.Enabled = true
+            end
+            lll(i, false)
+            o = nil
+            p = nil
+            return
+        end
         local kkkkkk = a:GetPlayers()
         local llllll = aaa(h.Name, kkkkkk, p)
         local mmmmmm = 2 + (llllll * 1)
         local nnnnnn = -iiiiii.CFrame.LookVector * mmmmmm
         local oooooo = jjjjjj + nnnnnn
-        j.CFrame = CFrame.lookAt(oooooo, jjjjjj)
-        j.Velocity = Vector3.zero
-        j.AssemblyLinearVelocity = Vector3.zero
-        j.AssemblyAngularVelocity = Vector3.zero
+        pcall(function()
+            j.CFrame = CFrame.lookAt(oooooo, jjjjjj)
+            j.Velocity = Vector3.zero
+            j.AssemblyLinearVelocity = Vector3.zero
+            j.AssemblyAngularVelocity = Vector3.zero
+        end)
     end)
 end
 
 local function pppppp()
+    i = h.Character or h.CharacterAdded:Wait()
+    j = i and i:WaitForChild('HumanoidRootPart', 5)
+    k = i and i:WaitForChild('Humanoid', 5)
     if not k or not i then
+        print("Wallet failed: No character or humanoid")
         return
     end
-    local qqqqqq = h:WaitForChild('Backpack', 5)
-    if not qqqqqq then
+    local backpack = h:WaitForChild("Backpack", 10)
+    if not backpack then
+        print("Wallet failed: No backpack found")
         return
     end
-    local rrrrrr = 3
-    for ssssss = 1, rrrrrr do
-        local tttttt = qqqqqq:FindFirstChild('[Wallet]')
-        if tttttt then
-            tttttt.Parent = i
+    local maxAttempts = 5
+    for attempt = 1, maxAttempts do
+        local walletTool = backpack:FindFirstChild("[Wallet]")
+        if walletTool and walletTool:IsA("Tool") then
+            pcall(function()
+                walletTool.Parent = i
+                k:EquipTool(walletTool)
+                print("Wallet pulled out and equipped!")
+            end)
             return
         else
-            task.wait(0.1)
+            print("Wallet not found in backpack, attempt " .. attempt)
+            task.wait(0.2)
         end
     end
+    print("Wallet failed: [Wallet] not found after " .. maxAttempts .. " attempts")
 end
 
 local function uuuuuu()
+    i = h.Character or h.CharacterAdded:Wait()
+    j = i and i:WaitForChild('HumanoidRootPart', 5)
+    k = i and i:WaitForChild('Humanoid', 5)
     if not k or not i then
+        print("Unwallet failed: No character or humanoid")
         return
     end
-    local vvvvvv = 3
-    for wwwwww = 1, vvvvvv do
-        local xxxxxx = i:FindFirstChild('[Wallet]')
-        if xxxxxx and xxxxxx:IsA('Tool') then
-            xxxxxx.Parent = h:WaitForChild('Backpack', 5)
+    local maxAttempts = 5
+    for attempt = 1, maxAttempts do
+        local walletTool = i:FindFirstChild("[Wallet]")
+        if walletTool and walletTool:IsA("Tool") then
+            pcall(function()
+                k:UnequipTools()
+                walletTool.Parent = h:WaitForChild("Backpack", 10) or h
+                print("Wallet put away!")
+            end)
             return
         else
-            task.wait(0.1)
+            print("Wallet not equipped, attempt " .. attempt)
+            task.wait(0.2)
         end
     end
+    print("Unwallet failed: [Wallet] not found after " .. maxAttempts .. " attempts")
 end
 
 local function yyyyyy()
     if not ff then
+        print('Drop failed: No MainEvent')
         return
     end
     if n then
@@ -689,6 +723,7 @@ local function yyyyyy()
             zzzzzz = bbbbbb
         end
     end)
+    print('Drop started')
 end
 
 local function cccccc()
@@ -702,16 +737,19 @@ local function cccccc()
             ff:FireServer('Block', false)
         end)
     end
+    print('Drop stopped')
 end
 
 local function dddddd()
     g:SendKeyEvent(true, Enum.KeyCode.F, false, game)
     u = true
+    print('Block started')
 end
 
 local function eeeeee()
     g:SendKeyEvent(false, Enum.KeyCode.F, false, game)
     u = false
+    print('Block stopped')
 end
 
 local function ffffff()
@@ -722,15 +760,28 @@ end
 
 local function gggggg()
     pcall(function()
-        d:TeleportToPlaceInstance(game.PlaceId, game.JobId, h)
+        if game.PlaceId and game.JobId then
+            d:TeleportToPlaceInstance(game.PlaceId, game.JobId, h)
+            print('Rejoin attempted')
+        else
+            print('Rejoin failed: Invalid PlaceId or JobId')
+        end
     end)
 end
 
 local function hhhhhh(iiiii)
-    if f and f.TextChannels and f.TextChannels.RBXGeneral then
+    if not iiiii or type(iiiii) ~= 'string' or iiiii == '' then
+        print('Say failed: Invalid message')
+        return
+    end
+    local channel = f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem)
+    if channel then
         pcall(function()
-            f.TextChannels.RBXGeneral:SendAsync(iiiii)
+            channel:SendAsync(iiiii)
+            print('Sent message: ' .. iiiii .. ' to ' .. channel.Name)
         end)
+    else
+        print('Say failed: No RBXGeneral or RBXSystem channel')
     end
 end
 
@@ -745,11 +796,9 @@ local function llllll(mmmmm)
         if o == 'swarm' then
             zzzz(m)
         elseif o == 'follow' then
-            cccccc(m)
+            followPlayer(m)
         elseif o == 'halo' then
             mmmmm(m)
-        elseif o == 'circle' then
-            aaaaaa(m)
         elseif o == 'spin' then
             oooooo()
         end
@@ -761,17 +810,15 @@ end
 
 local function nnnnnn(ooooo)
     i = ooooo
-    j = ooooo:WaitForChild('HumanoidRootPart', 5)
-    k = ooooo:WaitForChild('Humanoid', 5)
+    j = ooooo and ooooo:WaitForChild('HumanoidRootPart', 5)
+    k = ooooo and ooooo:WaitForChild('Humanoid', 5)
     if o and p then
         if o == 'swarm' then
             zzzz(p)
         elseif o == 'follow' then
-            cccccc(p)
+            followPlayer(p)
         elseif o == 'halo' then
             mmmmm(p)
-        elseif o == 'circle' then
-            aaaaaa(p)
         elseif o == 'spin' then
             oooooo()
         elseif o == 'setup' then
@@ -787,20 +834,22 @@ local function nnnnnn(ooooo)
 end
 
 local function pppppp(qqqqq)
+    print('Received command: ' .. tostring(qqqqq))
+    if not qqqqq or type(qqqqq) ~= 'string' or qqqqq == '' then
+        print('Command failed: Invalid message - Type: ' .. type(qqqqq) .. ', Value: ' .. tostring(qqqqq))
+        return
+    end
     local rrrrr = string.lower(qqqqq)
     if string.sub(rrrrr, 1, #x) ~= x then
+        print('Command ignored: Missing prefix ? - Input: ' .. rrrrr)
         return
     end
-    local sssss = string.sub(rrrrr, #x + 1):match('^%s*(.-)%s*$')
+    local sssss = string.sub(rrrrr, #x + 1):match('^%s*(.-)%s*$') or ""
     if sssss == '' then
+        print('Command ignored: Empty command after prefix - Input: ' .. rrrrr)
         return
     end
-    if sssss:match('^prefix%s+(.+)$') then
-        local ttttt = sssss:match('^prefix%s+(.+)$')
-        x = ttttt
-        hhhhhh('Prefix Changed.')
-        return
-    end
+    print('Processing command: ' .. sssss)
     if sssss == 'lowcpu' or sssss == 'lcm' then
         y = not y
         hhhhhh('Low CPU mode ' .. (y and 'on' or 'off') .. '.')
@@ -808,7 +857,7 @@ local function pppppp(qqqqq)
             if o == 'swarm' then
                 zzzz(p)
             elseif o == 'follow' then
-                cccccc(p)
+                followPlayer(p)
             elseif o == 'halo' then
                 mmmmm(p)
             elseif o == 'spin' then
@@ -822,9 +871,7 @@ local function pppppp(qqqqq)
             task.wait(0.1)
             yyyyyy()
         end
-        return
-    end
-    if sssss:match('^setup%s+(.+)$') then
+    elseif sssss:match('^setup%s+(.+)$') then
         local vvvvv = sssss:match('^setup%s+(.+)$')
         if vvvvv == 'club' then
             hhhh()
@@ -853,16 +900,6 @@ local function pppppp(qqqqq)
         end
     elseif sssss == 'unhalo' then
         uuu()
-    elseif sssss == 'circle host' then
-        aaaaaa(m)
-    elseif sssss:match('^circle%s+(.+)$') then
-        local aaaaaa = sssss:match('^circle%s+(.+)$')
-        local bbbbbb = hh(aaaaaa)
-        if bbbbbb then
-            aaaaaa(bbbbbb)
-        end
-    elseif sssss == 'uncircle' then
-        vvv()
     elseif sssss == 'spin' then
         oooooo()
     elseif sssss == 'unspin' then
@@ -872,12 +909,14 @@ local function pppppp(qqqqq)
     elseif sssss == 'unairlock' then
         xxx()
     elseif sssss == 'follow host' then
-        cccccc(m)
+        followPlayer(m)
     elseif sssss:match('^follow%s+(.+)$') then
-        local cccccc = sssss:match('^follow%s+(.+)$')
-        local dddddd = hh(cccccc)
-        if dddddd then
-            cccccc(dddddd)
+        local targetName = sssss:match('^follow%s+(.+)$')
+        local targetPlayer = hh(targetName)
+        if targetPlayer then
+            followPlayer(targetPlayer)
+        else
+            print('Follow failed: Target player ' .. targetName .. ' not found')
         end
     elseif sssss == 'unfollow' then
         ppp()
@@ -897,33 +936,52 @@ local function pppppp(qqqqq)
         gggggg()
     elseif sssss:match('^say%s+(.+)$') then
         local eeeeee = sssss:match('^say%s+(.+)$')
-        hhhhhh(eeeee)
+        if eeeeee then
+            hhhhhh(eeeeee)
+        end
     elseif sssss == 'wallet' then
         pppppp()
     elseif sssss == 'unwallet' then
         uuuuuu()
+    else
+        print('Unknown command: ' .. sssss)
     end
 end
 
 m = gg(5)
 
-f.TextChannels.RBXGeneral.MessageReceived:Connect(function(ffffff)
-    if ffffff.TextSource then
-        local gggggg = a:GetPlayerByUserId(ffffff.TextSource.UserId)
-        if gggggg == m then
-            pppppp(ffffff.Text)
-        end
-    end
-end)
-
-a.PlayerRemoving:Connect(jjjjjj)
 if m then
+    local channel = f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem)
+    if channel then
+        channel.MessageReceived:Connect(function(ffffff)
+            if ffffff and ffffff.TextSource and ffffff.Text then
+                print('Message received from UserId: ' .. tostring(ffffff.TextSource.UserId) .. ', Text: ' .. tostring(ffffff.Text))
+                local gggggg = a:GetPlayerByUserId(ffffff.TextSource.UserId)
+                if gggggg == m then
+                    pcall(function()
+                        pppppp(ffffff.Text)
+                    end)
+                else
+                    print('Message ignored: Sender is not host ' .. l)
+                end
+            else
+                print('MessageReceived failed: Invalid message data - TextSource: ' .. tostring(ffffff and ffffff.TextSource) .. ', Text: ' .. tostring(ffffff and ffffff.Text))
+            end
+        end)
+    else
+        print('TextChatService failed: No RBXGeneral or RBXSystem channel')
+    end
     m.CharacterAdded:Connect(llllll)
 end
+
 h.CharacterAdded:Connect(nnnnnn)
 
 ll()
 jj()
 rr()
 yy()
-print('DHC.LMAO - [############]')
+
+for iii = 1, 10 do
+    print('DHC.LMAO - ' .. string.rep('#', iii) .. string.rep(' ', 10 - iii))
+    task.wait(0.2)
+end
