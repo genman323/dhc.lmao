@@ -4,24 +4,26 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local TweenService = game:GetService("TweenService")
+local TextChatService = game:GetService("TextChatService")
+local UserInputService = game:GetService("UserInputService")
 -- Grab the local player and their character
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait() -- Wait if it’s not ready
+local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
 local humanoid = character:WaitForChild("Humanoid", 5)
 -- Set up the host and some tracking vars
-local hostName = "HarperViperZero20033" -- The main player we follow
+local hostName = "HarperViperZero20033"
 local hostPlayer = nil
-local isDropping = false -- Are we dropping cash?
-local currentMode = nil -- Could be "swarm", "follow", or "setup"
+local isDropping = false
+local currentMode = nil
 local currentTarget = nil
 local originalCFrame = nil
 local lastDropTime = 0
-local dropCooldown = 0.1 -- Short pause between drops
-local originalPosition = nil -- Where the alt started
-local isBlocking = false -- Flag for blocking
-local airlockCFrame = nil -- Saved CFrame for airlock
-local connections = { -- Hold onto our connections
+local dropCooldown = 0.1
+local originalPosition = nil
+local isBlocking = false
+local airlockCFrame = nil
+local connections = {
     drop = nil,
     swarm = nil,
     follow = nil,
@@ -51,7 +53,7 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local args = { ... }
     local method = getnamecallmethod()
     if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
-        return task.wait(9e9) -- Put those checks on hold!
+        return task.wait(9e9)
     end
     return oldNamecall(self, ...)
 end)
@@ -77,7 +79,7 @@ end
 local function disableAllSeats()
     for _, seat in ipairs(game.Workspace:GetDescendants()) do
         if seat:IsA("Seat") then
-            seat.Disabled = true -- No one’s sitting down!
+            seat.Disabled = true
         end
     end
 end
@@ -102,17 +104,17 @@ local function createOverlay()
     mainText.Text = "dhc.lmao"
     mainText.TextSize = 48
     mainText.Font = Enum.Font.GothamBold
-    mainText.TextColor3 = Color3.fromRGB(120, 60, 180) -- Start with purple
+    mainText.TextColor3 = Color3.fromRGB(120, 60, 180)
     mainText.Parent = background
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 60, 180)), -- Fade from purple
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)) -- To black
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 60, 180)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
     }
     gradient.Parent = mainText
 end
 local function limitFPS()
-    local targetDeltaTime = 1 / 5 -- Keep it easy at 5 FPS
+    local targetDeltaTime = 1 / 5
     local lastTime = tick()
     connections.fps = RunService.RenderStepped:Connect(function()
         local currentTime = tick()
@@ -120,12 +122,11 @@ local function limitFPS()
         if elapsed < targetDeltaTime then
             task.wait(targetDeltaTime - elapsed)
         end
-        lastTime = currentTime
+        lastTime = tick()
     end)
 end
--- Stop us from going AFK
 local lastAFKJump = 0
-local afkInterval = 58 -- Jump every so often
+local afkInterval = 58
 local function preventAFK()
     connections.afk = RunService.Heartbeat:Connect(function()
         local currentTime = tick()
@@ -173,7 +174,6 @@ local function toggleNoclip(char, enable)
         end
     end
 end
--- Switch between modes
 local function disableCurrentMode()
     if humanoidRootPart then
         humanoidRootPart.Anchored = false
@@ -242,36 +242,43 @@ local function setupGrid(position, depth)
         warn("No character to set up, bummer!")
         return
     end
-    -- Save original position if not already saved
     if not originalPosition then
         originalPosition = humanoidRootPart.CFrame
     end
-    -- Only control this alt, not all alts
     toggleNoclip(character, true)
     local animateScript = character:FindFirstChild("Animate")
     if animateScript then
         animateScript.Enabled = false
     end
-    -- Use fixed depth without raycast to avoid positioning issues
-    local targetY = position.Y - depth
-    local players = Players:GetPlayers()
-    local index = getAltIndex(player.Name, players, hostPlayer)
-    local gridSize = math.ceil(math.sqrt(#players - 1)) -- Approximate square grid
-    local row = math.floor(index / gridSize)
-    local col = index % gridSize
-    local spacing = 0.5 -- Slight offset to make them distinguishable without overlapping too much
-    local offsetX = col * spacing - (gridSize * spacing / 2)
-    local offsetZ = row * spacing - (gridSize * spacing / 2)
-    local targetPosition = Vector3.new(position.X + offsetX, targetY, position.Z + offsetZ)
-    local targetCFrame = CFrame.new(targetPosition)
+    local targetY = position.Y - depth + 0.5
+    local targetPosition = Vector3.new(position.X, targetY, position.Z)
+    local targetCFrame = CFrame.new(targetPosition) * CFrame.Angles(0, math.pi, 0)
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = targetCFrame })
     tween:Play()
     tween.Completed:Connect(function()
-        humanoidRootPart.Anchored = true -- Freeze this alt in place (server-visible)
+        humanoidRootPart.Anchored = true
         currentMode = "setup"
         print("Alt " .. player.Name .. " stuffed underground at " .. tostring(targetPosition))
     end)
+end
+local function setupClub()
+    if TextChatService and TextChatService.TextChannels and TextChatService.TextChannels.RBXGeneral then
+        pcall(function()
+            TextChatService.TextChannels.RBXGeneral:SendAsync("Please wait..")
+        end)
+    end
+    task.wait(1)
+    setupGrid(Vector3.new(-265, -7, -380), 7)
+end
+local function setupBank()
+    if TextChatService and TextChatService.TextChannels and TextChatService.TextChannels.RBXGeneral then
+        pcall(function()
+            TextChatService.TextChannels.RBXGeneral:SendAsync("Please wait..")
+        end)
+    end
+    task.wait(1)
+    setupGrid(Vector3.new(-376, 21, -283), 9)
 end
 local function bring()
     if currentMode == "setup" then
@@ -284,37 +291,28 @@ local function bring()
         print("Alt " .. player.Name .. " unburied from setup.")
     end
     disableCurrentMode()
-    if humanoidRootPart then
-        humanoidRootPart.Anchored = false
-    end
-    if not hostPlayer or not hostPlayer.Character or not hostPlayer.Character:FindFirstChild("HumanoidRootPart") then
+    if humanoidRootPart and hostPlayer and hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        toggleNoclip(character, true)
+        local hostRoot = hostPlayer.Character.HumanoidRootPart
+        local players = Players:GetPlayers()
+        local index = getAltIndex(player.Name, players, hostPlayer)
+        local numAlts = #players - 1
+        local angle = index * (2 * math.pi / numAlts)
+        local radius = 2
+        local x = math.cos(angle) * radius
+        local z = math.sin(angle) * radius
+        local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
+        local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
+        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = targetCFrame })
+        tween:Play()
+        tween.Completed:Connect(function()
+            toggleNoclip(character, false)
+            print("Alt " .. player.Name .. " brought to host at " .. tostring(targetPosition))
+        end)
+    else
         warn("Bring failed, check the host!")
-        return
     end
-    toggleNoclip(character, true)
-    local hostRoot = hostPlayer.Character.HumanoidRootPart
-    local players = Players:GetPlayers()
-    local index = getAltIndex(player.Name, players, hostPlayer)
-    local numAlts = #players - 1
-    local angle = index * (2 * math.pi / numAlts)
-    local radius = 2
-    local x = math.cos(angle) * radius
-    local z = math.sin(angle) * radius
-    local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
-    local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = targetCFrame })
-    tween:Play()
-    tween.Completed:Connect(function()
-        toggleNoclip(character, false)
-        print("Alt " .. player.Name .. " brought to host at " .. tostring(targetPosition))
-    end)
-end
-local function setupClub()
-    setupGrid(Vector3.new(-265, -7, -380), 8) -- Increased depth for full burial
-end
-local function setupBank()
-    setupGrid(Vector3.new(-376, 21, -283), 10) -- Increased depth for full burial
 end
 local function swarm(targetPlayer)
     disableCurrentMode()
@@ -327,10 +325,10 @@ local function swarm(targetPlayer)
         return
     end
     toggleNoclip(character, true)
-    humanoid.PlatformStand = true -- Prevent humanoid from moving/falling
+    humanoid.PlatformStand = true
     local animateScript = character:FindFirstChild("Animate")
     if animateScript then
-        animateScript.Enabled = false -- Disable animations to avoid glitches
+        animateScript.Enabled = false
     end
     connections.swarm = RunService.Heartbeat:Connect(function()
         if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
@@ -346,14 +344,14 @@ local function swarm(targetPlayer)
         for i = 1, #player.Name do
             hash = hash + string.byte(player.Name, i)
         end
-        local angle = (hash % 360) / 180 * math.pi + os.clock() * 2 -- Unique spin per alt
+        local angle = (hash % 360) / 180 * math.pi + os.clock() * 2
         local radius = 10
         local x = math.cos(angle) * radius
         local z = math.sin(angle) * radius
         local targetPosition = center + Vector3.new(x, 0, z)
-        humanoidRootPart.CFrame = CFrame.lookAt(targetPosition, center) -- Direct set for smooth movement
-        humanoidRootPart.Velocity = Vector3.zero -- Kill any velocity to prevent falling/glitching
-        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero -- Extra anti-physics
+        humanoidRootPart.CFrame = CFrame.lookAt(targetPosition, center)
+        humanoidRootPart.Velocity = Vector3.zero
+        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
         humanoidRootPart.AssemblyAngularVelocity = Vector3.zero
     end)
     print("Swarm mode activated for " .. player.Name .. " around " .. currentTarget.Name)
@@ -369,10 +367,10 @@ local function halo(targetPlayer)
         return
     end
     toggleNoclip(character, true)
-    humanoid.PlatformStand = true -- Prevent humanoid from moving/falling
+    humanoid.PlatformStand = true
     local animateScript = character:FindFirstChild("Animate")
     if animateScript then
-        animateScript.Enabled = false -- Disable animations to avoid glitches
+        animateScript.Enabled = false
     end
     connections.halo = RunService.Heartbeat:Connect(function()
         if currentMode ~= "halo" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
@@ -383,19 +381,19 @@ local function halo(targetPlayer)
             toggleNoclip(character, false)
             return
         end
-        local center = currentTarget.Character.HumanoidRootPart.Position + Vector3.new(0, 6, 0) -- Above the head
+        local center = currentTarget.Character.HumanoidRootPart.Position + Vector3.new(0, 6, 0)
         local hash = 0
         for i = 1, #player.Name do
             hash = hash + string.byte(player.Name, i)
         end
-        local angle = (hash % 360) / 180 * math.pi + os.clock() * 2 -- Unique spin per alt
-        local radius = 2 -- Small radius for halo
+        local angle = (hash % 360) / 180 * math.pi + os.clock() * 2
+        local radius = 2
         local x = math.cos(angle) * radius
         local z = math.sin(angle) * radius
         local targetPosition = center + Vector3.new(x, 0, z)
-        humanoidRootPart.CFrame = CFrame.lookAt(targetPosition, center) -- Direct set for smooth movement
-        humanoidRootPart.Velocity = Vector3.zero -- Kill any velocity to prevent falling/glitching
-        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero -- Extra anti-physics
+        humanoidRootPart.CFrame = CFrame.lookAt(targetPosition, center)
+        humanoidRootPart.Velocity = Vector3.zero
+        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
         humanoidRootPart.AssemblyAngularVelocity = Vector3.zero
     end)
     print("Halo mode activated for " .. player.Name .. " around " .. currentTarget.Name)
@@ -411,13 +409,12 @@ local function circle(targetPlayer)
         return
     end
     toggleNoclip(character, true)
-    -- Position once, statically, no freezing
     local center = currentTarget.Character.HumanoidRootPart.Position
     local players = Players:GetPlayers()
     local index = getAltIndex(player.Name, players, currentTarget)
-    local numAlts = math.min(#players - 1, 20) -- Support up to 20 alts
+    local numAlts = math.min(#players - 1, 20)
     local angle = index * (2 * math.pi / numAlts)
-    local radius = 10 -- Same as swarm radius
+    local radius = 10
     local x = math.cos(angle) * radius
     local z = math.sin(angle) * radius
     local targetPosition = center + Vector3.new(x, 0, z)
@@ -439,10 +436,10 @@ local function spin()
         return
     end
     toggleNoclip(character, true)
-    humanoid.PlatformStand = true -- Prevent humanoid from moving/falling
+    humanoid.PlatformStand = true
     local animateScript = character:FindFirstChild("Animate")
     if animateScript then
-        animateScript.Enabled = false -- Disable animations to avoid glitches
+        animateScript.Enabled = false
     end
     local startCFrame = humanoidRootPart.CFrame
     connections.spin = RunService.Heartbeat:Connect(function()
@@ -454,7 +451,7 @@ local function spin()
             toggleNoclip(character, false)
             return
         end
-        local rotation = CFrame.Angles(0, os.clock() * 4, 0) -- Spin around Y axis
+        local rotation = CFrame.Angles(0, os.clock() * 4, 0)
         humanoidRootPart.CFrame = startCFrame * rotation
         humanoidRootPart.Velocity = Vector3.zero
         humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
@@ -471,15 +468,14 @@ local function airlock()
         return
     end
     toggleNoclip(character, true)
-    humanoid.PlatformStand = true -- Prevent humanoid from moving/falling
+    humanoid.PlatformStand = true
     local animateScript = character:FindFirstChild("Animate")
     if animateScript then
-        animateScript.Enabled = false -- Disable animations to avoid glitches
+        animateScript.Enabled = false
     end
-    -- Lift 13 studs up from current position, and use loop for better replication
     local currentCFrame = humanoidRootPart.CFrame
     local targetPosition = currentCFrame.Position + Vector3.new(0, 13, 0)
-    airlockCFrame = CFrame.new(targetPosition, targetPosition + currentCFrame.LookVector) -- Preserve facing
+    airlockCFrame = CFrame.new(targetPosition, targetPosition + currentCFrame.LookVector)
     connections.airlock = RunService.Heartbeat:Connect(function()
         if currentMode ~= "airlock" or not humanoidRootPart then
             humanoid.PlatformStand = false
@@ -507,10 +503,10 @@ local function follow(targetPlayer)
         return
     end
     toggleNoclip(character, true)
-    humanoid.PlatformStand = true -- Prevent humanoid from moving/falling
+    humanoid.PlatformStand = true
     local animateScript = character:FindFirstChild("Animate")
     if animateScript then
-        animateScript.Enabled = false -- Disable animations to avoid glitches
+        animateScript.Enabled = false
     end
     connections.follow = RunService.Heartbeat:Connect(function()
         if currentMode ~= "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
@@ -525,12 +521,12 @@ local function follow(targetPlayer)
         local targetPos = targetRoot.Position
         local players = Players:GetPlayers()
         local index = getAltIndex(player.Name, players, currentTarget)
-        local offsetDistance = 1 + (index * 1)
+        local offsetDistance = 2 + (index * 1)
         local behindOffset = -targetRoot.CFrame.LookVector * offsetDistance
         local targetPosition = targetPos + behindOffset
-        humanoidRootPart.CFrame = CFrame.lookAt(targetPosition, targetPos) -- Direct set for smooth movement
-        humanoidRootPart.Velocity = Vector3.zero -- Kill any velocity to prevent falling/glitching
-        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero -- Extra anti-physics
+        humanoidRootPart.CFrame = CFrame.new(targetPosition)
+        humanoidRootPart.Velocity = Vector3.zero
+        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
         humanoidRootPart.AssemblyAngularVelocity = Vector3.zero
     end)
     print("Follow mode activated for " .. player.Name .. " behind " .. currentTarget.Name)
@@ -545,33 +541,45 @@ local function wallet()
         warn("No backpack found, weird!")
         return
     end
-    local walletTool = backpack:FindFirstChild("[Wallet]")
-    if walletTool then
-        walletTool.Parent = character -- Equip the wallet
-        print("Wallet pulled out!")
-    else
-        warn("No [Wallet] tool in backpack!")
+    local maxAttempts = 3
+    for attempt = 1, maxAttempts do
+        local walletTool = backpack:FindFirstChild("[Wallet]")
+        if walletTool then
+            walletTool.Parent = character
+            print("Wallet pulled out!")
+            return
+        else
+            warn("No [Wallet] tool in backpack, attempt " .. attempt)
+            task.wait(0.1)
+        end
     end
+    warn("Failed to find [Wallet] after " .. maxAttempts .. " attempts!")
 end
 local function unwallet()
     if not humanoid or not character then
         warn("Can’t put away wallet, no character!")
         return
     end
-    local walletTool = character:FindFirstChild("[Wallet]")
-    if walletTool and walletTool:IsA("Tool") then
-        walletTool.Parent = player:WaitForChild("Backpack", 5) -- Put it back
-        print("Wallet put away!")
-    else
-        warn("No [Wallet] equipped to put away!")
+    local maxAttempts = 3
+    for attempt = 1, maxAttempts do
+        local walletTool = character:FindFirstChild("[Wallet]")
+        if walletTool and walletTool:IsA("Tool") then
+            walletTool.Parent = player:WaitForChild("Backpack", 5)
+            print("Wallet put away!")
+            return
+        else
+            warn("No [Wallet] equipped, attempt " .. attempt)
+            task.wait(0.1)
+        end
     end
+    warn("Failed to find [Wallet] to put away after " .. maxAttempts .. " attempts!")
 end
 local function dropCash()
     if not mainEvent then
         warn("No MainEvent, can’t drop cash!")
         return
     end
-    if isDropping then return end -- No double drops
+    if isDropping then return end
     isDropping = true
     connections.drop = RunService.Heartbeat:Connect(function()
         if not isDropping or not humanoidRootPart then return end
@@ -586,7 +594,6 @@ local function dropCash()
     print("Drop started, cash coming down!")
 end
 local function stopDrop()
-    if not isDropping then return end
     isDropping = false
     if connections.drop then
         connections.drop:Disconnect()
@@ -599,6 +606,41 @@ local function stopDrop()
     end
     print("Drop stopped, all clear.")
 end
+local function block()
+    if not humanoid or not character then
+        warn("Can't block, no character!")
+        return
+    end
+    if not isBlocking then
+        isBlocking = true
+        humanoid.WalkSpeed = 0
+        local animateScript = character:FindFirstChild("Animate")
+        if animateScript and animateScript:FindFirstChild("block") then
+            animateScript.block:Play()
+        end
+        UserInputService.InputBegan:Connect(function(input)
+            if input.KeyCode == Enum.KeyCode.F and isBlocking then
+                isBlocking = false
+                humanoid.WalkSpeed = 16
+                if animateScript and animateScript:FindFirstChild("block") then
+                    animateScript.block:Stop()
+                end
+            end
+        end)
+        print("Blocking activated for " .. player.Name)
+    end
+end
+local function unblock()
+    if isBlocking then
+        isBlocking = false
+        humanoid.WalkSpeed = 16
+        local animateScript = character:FindFirstChild("Animate")
+        if animateScript and animateScript:FindFirstChild("block") then
+            animateScript.block:Stop()
+        end
+        print("Blocking deactivated for " .. player.Name)
+    end
+end
 local function kickAlt()
     pcall(function()
         player:Kick("Kicked by your host.")
@@ -610,17 +652,15 @@ local function rejoinGame()
     end)
 end
 local function sendMessage(message)
-    local textChatService = game:GetService("TextChatService")
-    if textChatService and textChatService.TextChannels and textChatService.TextChannels.RBXGeneral then
+    if TextChatService and TextChatService.TextChannels and TextChatService.TextChannels.RBXGeneral then
         pcall(function()
-            textChatService.TextChannels.RBXGeneral:SendAsync(message)
+            TextChatService.TextChannels.RBXGeneral:SendAsync(message)
         end)
         print("Sent message: " .. message)
     else
         warn("TextChatService or RBXGeneral channel not found!")
     end
 end
--- Handle player events
 local function handleHostLeaving(leavingPlayer)
     if leavingPlayer == hostPlayer then
         kickAlt()
@@ -667,7 +707,7 @@ local function handlePlayerCharacterReset(newChar)
         airlock()
     end
     if isDropping and originalPosition then
-        setupClub() -- Re-bury if needed
+        setupClub()
     end
 end
 local function handleCommands(message)
@@ -745,72 +785,46 @@ local function handleCommands(message)
         bring()
     elseif cmd == "drop" then
         dropCash()
-    elseif cmd == "wallet" then
-        wallet()
-    elseif cmd == "unwallet" then
-        unwallet()
-    elseif cmd == "stop" then
+    elseif cmd == "stop" or cmd == "undrop" then
         stopDrop()
+    elseif cmd == "block" then
+        block()
+    elseif cmd == "unblock" then
+        unblock()
     elseif cmd == "kick" then
         kickAlt()
     elseif cmd == "rejoin" then
         rejoinGame()
-    elseif cmd == "block" then
-        isBlocking = true
-        if mainEvent then
-            pcall(function()
-                mainEvent:FireServer("Block", true)
-            end)
-        end
-        print("Blocking enabled for alt " .. player.Name)
-    elseif cmd == "unblock" then
-        isBlocking = false
-        if mainEvent then
-            pcall(function()
-                mainEvent:FireServer("Block", false)
-            end)
-        end
-        print("Blocking disabled for alt " .. player.Name)
-    elseif cmd:match("^msg%s+(.+)$") then
-        local messageText = cmd:match("^msg%s+(.+)$")
-        sendMessage(messageText)
-    else
-        warn("What’s that? Unknown command: " .. cmd)
+    elseif cmd:match("^say%s+(.+)$") then
+        local message = cmd:match("^say%s+(.+)$")
+        sendMessage(message)
+    elseif cmd == "wallet" then
+        wallet()
+    elseif cmd == "unwallet" then
+        unwallet()
     end
 end
-local function cleanup()
-    if not player:IsDescendantOf(game) then
-        for key, conn in pairs(connections) do
-            if conn then
-                conn:Disconnect()
-                connections[key] = nil
-            end
-        end
-        isDropping = false
-        stopDrop()
-        currentMode = nil
-        currentTarget = nil
-        if game.Lighting:FindFirstChild("BlurEffect") then
-            game.Lighting.BlurEffect:Destroy()
+hostPlayer = waitForHost(5)
+if hostPlayer then
+    print("Host found: " .. hostPlayer.Name)
+else
+    warn("No host found, commands might not work right.")
+end
+TextChatService.TextChannels.RBXGeneral.MessageReceived:Connect(function(message)
+    if message.TextSource then
+        local sender = Players:GetPlayerByUserId(message.TextSource.UserId)
+        if sender == hostPlayer then
+            handleCommands(message.Text)
         end
     end
-end
-local function updateStatus(status, altCount)
-    -- No UI update since overlay is static
-end
--- Let’s get this show on the road!
-hostPlayer = waitForHost(10)
-if not hostPlayer then
-    warn("No host found, shutting down!")
-    return
-end
+end)
 Players.PlayerRemoving:Connect(handleHostLeaving)
-hostPlayer.Chatted:Connect(handleCommands)
-hostPlayer.CharacterAdded:Connect(handleHostCharacterReset)
+if hostPlayer then
+    hostPlayer.CharacterAdded:Connect(handleHostCharacterReset)
+end
 player.CharacterAdded:Connect(handlePlayerCharacterReset)
-player.AncestryChanged:Connect(cleanup)
 createOverlay()
+disableAllSeats()
 limitFPS()
 preventAFK()
-disableAllSeats()
-print("dhc.lmao Alt Control Script (FIXED) loaded for " .. player.Name .. " in Da Hood!")
+print("Alt control script is ready for " .. player.Name)
