@@ -1,29 +1,32 @@
--- Services to get this script rolling
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local TeleportService = game:GetService("TeleportService")
-local TweenService = game:GetService("TweenService")
-local TextChatService = game:GetService("TextChatService")
-local UserInputService = game:GetService("UserInputService")
--- Grab the local player and their character
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
-local humanoid = character:WaitForChild("Humanoid", 5)
--- Set up the host and some tracking vars
-local hostName = "HarperViperZero20033"
-local hostPlayer = nil
-local isDropping = false
-local currentMode = nil
-local currentTarget = nil
-local originalCFrame = nil
-local lastDropTime = 0
-local dropCooldown = 0.1
-local originalPosition = nil
-local isBlocking = false
-local airlockCFrame = nil
-local connections = {
+local a = game:GetService("Players")
+local b = game:GetService("ReplicatedStorage")
+local c = game:GetService("RunService")
+local d = game:GetService("TeleportService")
+local e = game:GetService("TweenService")
+local f = game:GetService("TextChatService")
+local g = game:GetService("VirtualInputManager")
+
+local h = a.LocalPlayer
+local i = h.Character or h.CharacterAdded:Wait() 
+local j = i:WaitForChild("HumanoidRootPart", 5)
+local k = i:WaitForChild("Humanoid", 5)
+
+local l = "HarperViperZero20033" 
+local m = nil
+local n = false 
+local o = nil 
+local p = nil
+local q = nil
+local r = 0
+local s = 0.1 
+local t = nil 
+local u = false 
+local v = nil 
+local w = false 
+local x = "?" 
+local y = false 
+
+local z = { 
     drop = nil,
     swarm = nil,
     follow = nil,
@@ -34,797 +37,828 @@ local connections = {
     circle = nil,
     airlock = nil,
     spin = nil,
+    setup = nil,
 }
--- Quick anti-cheat trick to dodge detection
-local detectionFlags = {
-    "CHECKER_1",
-    "CHECKER",
-    "TeleportDetect",
-    "OneMoreTime",
-    "BRICKCHECK",
-    "BADREQUEST",
-    "BANREMOTE",
-    "KICKREMOTE",
-    "PERMAIDBAN",
-    "PERMABAN",
-}
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local args = { ... }
-    local method = getnamecallmethod()
-    if method == "FireServer" and self.Name == "MainEvent" and table.find(detectionFlags, args[1]) then
-        return task.wait(9e9)
-    end
-    return oldNamecall(self, ...)
-end)
--- Check for the main event to drop cash
-local mainEvent = ReplicatedStorage:WaitForChild("MainEvent", 5)
-if not mainEvent then
-    warn("Oh no, no MainEvent! Cash drops might not work.")
-end
--- Handy little helpers to keep things tidy
-local function waitForHost(timeout)
-    local success, result = pcall(function()
-        return Players:WaitForChild(hostName, timeout)
+
+local ff = b:WaitForChild("MainEvent", 5)
+
+local function gg(tt)
+    local uu, vv = pcall(function()
+        return a:WaitForChild(l, tt)
     end)
-    if success and result then
-        return result
-    end
-    warn("Host " .. hostName .. " not found after " .. timeout .. " seconds. Hmm!")
+    if uu and vv then return vv end
+    pcall(function()
+        h:Kick("Host not found.")
+    end)
     return nil
 end
-local function getPlayerByName(playerName)
-    return Players:FindFirstChild(playerName)
+
+local function hh(ii)
+    return a:FindFirstChild(ii)
 end
-local function disableAllSeats()
-    for _, seat in ipairs(game.Workspace:GetDescendants()) do
-        if seat:IsA("Seat") then
-            seat.Disabled = true
+
+local function jj()
+    for _, kk in ipairs(game.Workspace:GetDescendants()) do
+        if kk:IsA("Seat") then
+            kk.Disabled = true 
         end
     end
 end
-local function createOverlay()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = player:WaitForChild("PlayerGui", 5)
-    screenGui.Name = "DhcOverlay"
-    screenGui.ResetOnSpawn = false
-    screenGui.IgnoreGuiInset = true
-    local blurEffect = Instance.new("BlurEffect")
-    blurEffect.Size = 48
-    blurEffect.Parent = game.Lighting
-    local background = Instance.new("Frame")
-    background.Size = UDim2.new(1, 0, 1, 0)
-    background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    background.BackgroundTransparency = 0
-    background.Parent = screenGui
-    local mainText = Instance.new("TextLabel")
-    mainText.Size = UDim2.new(0, 400, 0, 100)
-    mainText.Position = UDim2.new(0.5, -200, 0.5, -50)
-    mainText.BackgroundTransparency = 1
-    mainText.Text = "dhc.lmao"
-    mainText.TextSize = 48
-    mainText.Font = Enum.Font.GothamBold
-    mainText.TextColor3 = Color3.fromRGB(120, 60, 180)
-    mainText.Parent = background
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 60, 180)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+
+local function ll()
+    local mm = Instance.new("ScreenGui")
+    mm.Parent = h:WaitForChild("PlayerGui", 5)
+    mm.Name = "DhcOverlay"
+    mm.ResetOnSpawn = false
+    mm.IgnoreGuiInset = true
+    local nn = Instance.new("BlurEffect")
+    nn.Size = 48
+    nn.Parent = game.Lighting
+    local oo = Instance.new("Frame")
+    oo.Size = UDim2.new(1, 0, 1, 0)
+    oo.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    oo.BackgroundTransparency = 0
+    oo.Parent = mm
+    local pp = Instance.new("TextLabel")
+    pp.Size = UDim2.new(0, 400, 0, 100)
+    pp.Position = UDim2.new(0.5, -200, 0.5, -50)
+    pp.BackgroundTransparency = 1
+    pp.Text = "dhc.lmao"
+    pp.TextSize = 48
+    pp.Font = Enum.Font.GothamBold
+    pp.TextColor3 = Color3.fromRGB(120, 60, 180) 
+    pp.Parent = oo
+    local qq = Instance.new("UIGradient")
+    qq.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 60, 180)), 
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)) 
     }
-    gradient.Parent = mainText
+    qq.Parent = pp
 end
-local function limitFPS()
-    local targetDeltaTime = 1 / 5
-    local lastTime = tick()
-    connections.fps = RunService.RenderStepped:Connect(function()
-        local currentTime = tick()
-        local elapsed = currentTime - lastTime
-        if elapsed < targetDeltaTime then
-            task.wait(targetDeltaTime - elapsed)
+
+local function rr()
+    local ss = 1 / 5 
+    local tt = tick()
+    z.fps = c.RenderStepped:Connect(function()
+        local uu = tick()
+        local vv = uu - tt
+        if vv < ss then
+            task.wait(ss - vv)
         end
-        lastTime = tick()
+        tt = tick()
     end)
 end
-local lastAFKJump = 0
-local afkInterval = 58
-local function preventAFK()
-    connections.afk = RunService.Heartbeat:Connect(function()
-        local currentTime = tick()
-        if currentTime - lastAFKJump >= afkInterval then
-            if humanoid then
-                humanoid.Jump = true
-                task.wait(0.1)
-                humanoid.Jump = false
-            end
-            lastAFKJump = currentTime
+
+local ww = 0
+local xx = 58 
+local function yy()
+    z.afk = c.Heartbeat:Connect(function()
+        local zz = tick()
+        if zz - ww >= xx then
+            g:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+            task.wait(0.1)
+            g:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+            ww = zz
         end
     end)
 end
-local function getAltIndex(playerName, players, exclude)
-    local alts = {}
-    for _, p in ipairs(players) do
-        if p ~= exclude then
-            table.insert(alts, p)
+
+local function aaa(bbb, ccc, ddd)
+    local eee = {}
+    for _, fff in ipairs(ccc) do
+        if fff ~= ddd then
+            table.insert(eee, fff)
         end
     end
-    table.sort(alts, function(a, b)
-        return a.Name < b.Name
+    table.sort(eee, function(ggg, hhh)
+        return ggg.Name < hhh.Name
     end)
-    local maxAlts = 20
-    if #alts > maxAlts then
-        warn("Too many alts! Cutting it to " .. maxAlts)
-        alts = { table.unpack(alts, 1, maxAlts) }
+    local iii = 20
+    if #eee > iii then
+        eee = { table.unpack(eee, 1, iii) }
     end
-    for i, p in ipairs(alts) do
-        if p.Name == playerName then
-            return i - 1
+    for jjj, kkk in ipairs(eee) do
+        if kkk.Name == bbb then
+            return jjj - 1
         end
     end
     return 0
 end
-local function toggleNoclip(char, enable)
-    if not char then return end
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") and not part:IsA("Accessory") then
-            part.CanCollide = not enable
-            if enable then
-                part.Velocity = Vector3.zero
-                part.Anchored = false
+
+local function lll(mmm, nnn)
+    if not mmm then return end
+    for _, ooo in ipairs(mmm:GetDescendants()) do
+        if ooo:IsA("BasePart") and not ooo:IsA("Accessory") then
+            ooo.CanCollide = not nnn
+            if nnn then
+                ooo.Velocity = Vector3.zero
+                ooo.Anchored = false
             end
         end
     end
 end
-local function disableCurrentMode()
-    if humanoidRootPart then
-        humanoidRootPart.Anchored = false
-        humanoidRootPart.Velocity = Vector3.zero
+
+local function ppp()
+    if j then
+        j.Anchored = false
+        j.Velocity = Vector3.zero
     end
-    if humanoid then
-        humanoid.PlatformStand = false
+    if k then
+        k.PlatformStand = false
     end
-    local animateScript = character:FindFirstChild("Animate")
-    if animateScript then
-        animateScript.Enabled = true
+    local qqq = i:FindFirstChild("Animate")
+    if qqq then
+        qqq.Enabled = true
     end
-    for key, conn in pairs(connections) do
-        if key ~= "fps" and key ~= "afk" and key ~= "drop" and conn then
-            conn:Disconnect()
-            connections[key] = nil
+    for rrr, sss in pairs(z) do
+        if rrr ~= "fps" and rrr ~= "afk" and rrr ~= "drop" and sss then
+            sss:Disconnect()
+            z[rrr] = nil
         end
     end
-    currentMode = nil
-    currentTarget = nil
-    airlockCFrame = nil
-    toggleNoclip(character, false)
+    o = nil
+    p = nil
+    v = nil
+    lll(i, false)
 end
-local function unswarm()
-    if currentMode ~= "swarm" then
-        warn("Not swarming right now!")
+
+local function ttt()
+    if o ~= "swarm" then
         return
     end
-    disableCurrentMode()
-    print("Unswarming complete.")
+    ppp()
 end
-local function unhalo()
-    if currentMode ~= "halo" then
-        warn("Not in halo mode right now!")
+
+local function uuu()
+    if o ~= "halo" then
         return
     end
-    disableCurrentMode()
-    print("Unhalo complete.")
+    ppp()
 end
-local function uncircle()
-    if currentMode ~= "circle" then
-        warn("Not in circle mode right now!")
+
+local function vvv()
+    if o ~= "circle" then
         return
     end
-    disableCurrentMode()
-    print("Uncircle complete.")
+    ppp()
 end
-local function unspin()
-    if currentMode ~= "spin" then
-        warn("Not spinning right now!")
+
+local function www()
+    if o ~= "spin" then
         return
     end
-    disableCurrentMode()
-    print("Unspin complete.")
+    ppp()
 end
-local function unairlock()
-    if currentMode ~= "airlock" then
-        warn("Not in airlock mode right now!")
+
+local function xxx()
+    if o ~= "airlock" then
         return
     end
-    disableCurrentMode()
-    print("Unairlock complete.")
+    ppp()
 end
-local function setupGrid(position, depth)
-    if not humanoidRootPart then
-        warn("No character to set up, bummer!")
+
+local function yyy(zzz, aaaa)
+    if not j then
         return
     end
-    if not originalPosition then
-        originalPosition = humanoidRootPart.CFrame
+    if not t then
+        t = j.CFrame
     end
-    toggleNoclip(character, true)
-    local animateScript = character:FindFirstChild("Animate")
-    if animateScript then
-        animateScript.Enabled = false
+    lll(i, true)
+    local bbbb = i:FindFirstChild("Animate")
+    if bbbb then
+        bbbb.Enabled = false
     end
-    local targetY = position.Y - depth + 0.5
-    local targetPosition = Vector3.new(position.X, targetY, position.Z)
-    local targetCFrame = CFrame.new(targetPosition) * CFrame.Angles(0, math.pi, 0)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = targetCFrame })
-    tween:Play()
-    tween.Completed:Connect(function()
-        humanoidRootPart.Anchored = true
-        currentMode = "setup"
-        print("Alt " .. player.Name .. " stuffed underground at " .. tostring(targetPosition))
+    local cccc = zzz.Y - aaaa
+    local dddd = Vector3.new(zzz.X, cccc, zzz.Z) 
+    local eeee = CFrame.new(dddd) * CFrame.Angles(0, math.pi, 0) 
+    local ffff = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out) 
+    local gggg = e:Create(j, ffff, { CFrame = eeee })
+    gggg:Play()
+    gggg.Completed:Connect(function()
+        k.PlatformStand = true 
+        o = "setup"
+        z.setup = c.Heartbeat:Connect(function()
+            if o == "setup" then
+                j.CFrame = eeee 
+                j.Velocity = Vector3.zero 
+                j.AssemblyLinearVelocity = Vector3.zero
+                j.AssemblyAngularVelocity = Vector3.zero
+            end
+        end)
     end)
 end
-local function setupClub()
-    if TextChatService and TextChatService.TextChannels and TextChatService.TextChannels.RBXGeneral then
+
+local function hhhh()
+    ppp() 
+    if f and f.TextChannels and f.TextChannels.RBXGeneral then
         pcall(function()
-            TextChatService.TextChannels.RBXGeneral:SendAsync("Please wait..")
+            f.TextChannels.RBXGeneral:SendAsync("Setting up..")
         end)
     end
     task.wait(1)
-    setupGrid(Vector3.new(-265, -7, -380), 7)
+    yyy(Vector3.new(-265, -7, -380), 5) 
 end
-local function setupBank()
-    if TextChatService and TextChatService.TextChannels and TextChatService.TextChannels.RBXGeneral then
+
+local function iiii()
+    ppp() 
+    if f and f.TextChannels and f.TextChannels.RBXGeneral then
         pcall(function()
-            TextChatService.TextChannels.RBXGeneral:SendAsync("Please wait..")
+            f.TextChannels.RBXGeneral:SendAsync("Setting up..")
         end)
     end
     task.wait(1)
-    setupGrid(Vector3.new(-376, 21, -283), 9)
+    yyy(Vector3.new(-376, 21, -283), 5) 
 end
-local function bring()
-    if currentMode == "setup" then
-        humanoidRootPart.Anchored = false
-        local animateScript = character:FindFirstChild("Animate")
-        if animateScript then
-            animateScript.Enabled = true
-        end
-        currentMode = nil
-        print("Alt " .. player.Name .. " unburied from setup.")
-    end
-    disableCurrentMode()
-    if humanoidRootPart and hostPlayer and hostPlayer.Character and hostPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        toggleNoclip(character, true)
-        local hostRoot = hostPlayer.Character.HumanoidRootPart
-        local players = Players:GetPlayers()
-        local index = getAltIndex(player.Name, players, hostPlayer)
-        local numAlts = #players - 1
-        local angle = index * (2 * math.pi / numAlts)
-        local radius = 2
-        local x = math.cos(angle) * radius
-        local z = math.sin(angle) * radius
-        local targetPosition = hostRoot.Position + Vector3.new(x, 0, z)
-        local targetCFrame = CFrame.lookAt(targetPosition, hostRoot.Position)
-        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = targetCFrame })
-        tween:Play()
-        tween.Completed:Connect(function()
-            toggleNoclip(character, false)
-            print("Alt " .. player.Name .. " brought to host at " .. tostring(targetPosition))
+
+local function jjjj()
+    ppp() 
+    if f and f.TextChannels and f.TextChannels.RBXGeneral then
+        pcall(function()
+            f.TextChannels.RBXGeneral:SendAsync("Setting up..")
         end)
-    else
-        warn("Bring failed, check the host!")
     end
+    task.wait(1)
+    yyy(Vector3.new(-261.07, 53.37, -1127.65), 5) 
 end
-local function swarm(targetPlayer)
-    disableCurrentMode()
-    currentMode = "swarm"
-    currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Swarm failed, bad target!")
-        currentMode = nil
-        currentTarget = nil
+
+local function kkkk()
+    if o == "setup" then
+        k.PlatformStand = false
+        if z.setup then
+            z.setup:Disconnect()
+            z.setup = nil
+        end
+        local llll = i:FindFirstChild("Animate")
+        if llll then
+            llll.Enabled = true
+        end
+        o = nil
+    end
+    ppp()
+    if not j or not m or not m.Character or not m.Character:FindFirstChild("HumanoidRootPart") then
         return
     end
-    toggleNoclip(character, true)
-    humanoid.PlatformStand = true
-    local animateScript = character:FindFirstChild("Animate")
-    if animateScript then
-        animateScript.Enabled = false
+    local mmmm = m.Character.HumanoidRootPart
+    lll(i, true) 
+    local nnnn = i:FindFirstChild("Animate")
+    if nnnn then
+        nnnn.Enabled = false 
     end
-    connections.swarm = RunService.Heartbeat:Connect(function()
-        if currentMode ~= "swarm" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-            humanoid.PlatformStand = false
-            if animateScript then
-                animateScript.Enabled = true
-            end
-            toggleNoclip(character, false)
-            return
+    local oooo = a:GetPlayers()
+    local pppp = aaa(h.Name, oooo, m)
+    local qqqq = #oooo - 1
+    local rrrr = pppp * (2 * math.pi / qqqq)
+    local ssss = 2
+    local tttt = math.cos(rrrr) * ssss
+    local uuuu = math.sin(rrrr) * ssss
+    local vvvv = mmmm.Position + Vector3.new(tttt, 0, uuuu)
+    local wwww = CFrame.lookAt(vvvv, mmmm.Position)
+    local xxxx = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local yyyy = e:Create(j, xxxx, { CFrame = wwww })
+    yyyy:Play()
+    yyyy.Completed:Connect(function()
+        lll(i, false) 
+        if nnnn then
+            nnnn.Enabled = true 
         end
-        local center = currentTarget.Character.HumanoidRootPart.Position
-        local hash = 0
-        for i = 1, #player.Name do
-            hash = hash + string.byte(player.Name, i)
-        end
-        local angle = (hash % 360) / 180 * math.pi + os.clock() * 2
-        local radius = 10
-        local x = math.cos(angle) * radius
-        local z = math.sin(angle) * radius
-        local targetPosition = center + Vector3.new(x, 0, z)
-        humanoidRootPart.CFrame = CFrame.lookAt(targetPosition, center)
-        humanoidRootPart.Velocity = Vector3.zero
-        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
-        humanoidRootPart.AssemblyAngularVelocity = Vector3.zero
+        k.PlatformStand = false 
     end)
-    print("Swarm mode activated for " .. player.Name .. " around " .. currentTarget.Name)
-end
-local function halo(targetPlayer)
-    disableCurrentMode()
-    currentMode = "halo"
-    currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Halo failed, bad target!")
-        currentMode = nil
-        currentTarget = nil
-        return
-    end
-    toggleNoclip(character, true)
-    humanoid.PlatformStand = true
-    local animateScript = character:FindFirstChild("Animate")
-    if animateScript then
-        animateScript.Enabled = false
-    end
-    connections.halo = RunService.Heartbeat:Connect(function()
-        if currentMode ~= "halo" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-            humanoid.PlatformStand = false
-            if animateScript then
-                animateScript.Enabled = true
-            end
-            toggleNoclip(character, false)
-            return
-        end
-        local center = currentTarget.Character.HumanoidRootPart.Position + Vector3.new(0, 6, 0)
-        local hash = 0
-        for i = 1, #player.Name do
-            hash = hash + string.byte(player.Name, i)
-        end
-        local angle = (hash % 360) / 180 * math.pi + os.clock() * 2
-        local radius = 2
-        local x = math.cos(angle) * radius
-        local z = math.sin(angle) * radius
-        local targetPosition = center + Vector3.new(x, 0, z)
-        humanoidRootPart.CFrame = CFrame.lookAt(targetPosition, center)
-        humanoidRootPart.Velocity = Vector3.zero
-        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
-        humanoidRootPart.AssemblyAngularVelocity = Vector3.zero
-    end)
-    print("Halo mode activated for " .. player.Name .. " around " .. currentTarget.Name)
-end
-local function circle(targetPlayer)
-    disableCurrentMode()
-    currentMode = "circle"
-    currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Circle failed, bad target!")
-        currentMode = nil
-        currentTarget = nil
-        return
-    end
-    toggleNoclip(character, true)
-    local center = currentTarget.Character.HumanoidRootPart.Position
-    local players = Players:GetPlayers()
-    local index = getAltIndex(player.Name, players, currentTarget)
-    local numAlts = math.min(#players - 1, 20)
-    local angle = index * (2 * math.pi / numAlts)
-    local radius = 10
-    local x = math.cos(angle) * radius
-    local z = math.sin(angle) * radius
-    local targetPosition = center + Vector3.new(x, 0, z)
-    local targetCFrame = CFrame.lookAt(targetPosition, center)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(humanoidRootPart, tweenInfo, { CFrame = targetCFrame })
-    tween:Play()
-    tween.Completed:Connect(function()
-        toggleNoclip(character, false)
-        print("Alt " .. player.Name .. " positioned in circle around " .. currentTarget.Name)
-    end)
-end
-local function spin()
-    disableCurrentMode()
-    currentMode = "spin"
-    if not humanoidRootPart then
-        warn("Spin failed, no HumanoidRootPart!")
-        currentMode = nil
-        return
-    end
-    toggleNoclip(character, true)
-    humanoid.PlatformStand = true
-    local animateScript = character:FindFirstChild("Animate")
-    if animateScript then
-        animateScript.Enabled = false
-    end
-    local startCFrame = humanoidRootPart.CFrame
-    connections.spin = RunService.Heartbeat:Connect(function()
-        if currentMode ~= "spin" or not humanoidRootPart then
-            humanoid.PlatformStand = false
-            if animateScript then
-                animateScript.Enabled = true
-            end
-            toggleNoclip(character, false)
-            return
-        end
-        local rotation = CFrame.Angles(0, os.clock() * 4, 0)
-        humanoidRootPart.CFrame = startCFrame * rotation
-        humanoidRootPart.Velocity = Vector3.zero
-        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
-        humanoidRootPart.AssemblyAngularVelocity = Vector3.zero
-    end)
-    print("Spin mode activated for " .. player.Name)
-end
-local function airlock()
-    disableCurrentMode()
-    currentMode = "airlock"
-    if not humanoidRootPart then
-        warn("Airlock failed, no HumanoidRootPart!")
-        currentMode = nil
-        return
-    end
-    toggleNoclip(character, true)
-    humanoid.PlatformStand = true
-    local animateScript = character:FindFirstChild("Animate")
-    if animateScript then
-        animateScript.Enabled = false
-    end
-    local currentCFrame = humanoidRootPart.CFrame
-    local targetPosition = currentCFrame.Position + Vector3.new(0, 13, 0)
-    airlockCFrame = CFrame.new(targetPosition, targetPosition + currentCFrame.LookVector)
-    connections.airlock = RunService.Heartbeat:Connect(function()
-        if currentMode ~= "airlock" or not humanoidRootPart then
-            humanoid.PlatformStand = false
-            if animateScript then
-                animateScript.Enabled = true
-            end
-            toggleNoclip(character, false)
-            return
-        end
-        humanoidRootPart.CFrame = airlockCFrame
-        humanoidRootPart.Velocity = Vector3.zero
-        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
-        humanoidRootPart.AssemblyAngularVelocity = Vector3.zero
-    end)
-    print("Airlock mode activated for " .. player.Name .. " at current position +13 studs")
-end
-local function follow(targetPlayer)
-    disableCurrentMode()
-    currentMode = "follow"
-    currentTarget = targetPlayer
-    if not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") or not humanoidRootPart then
-        warn("Follow failed, bad target!")
-        currentMode = nil
-        currentTarget = nil
-        return
-    end
-    toggleNoclip(character, true)
-    humanoid.PlatformStand = true
-    local animateScript = character:FindFirstChild("Animate")
-    if animateScript then
-        animateScript.Enabled = false
-    end
-    connections.follow = RunService.Heartbeat:Connect(function()
-        if currentMode ~= "follow" or not humanoidRootPart or not currentTarget or not currentTarget.Character or not currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-            humanoid.PlatformStand = false
-            if animateScript then
-                animateScript.Enabled = true
-            end
-            toggleNoclip(character, false)
-            return
-        end
-        local targetRoot = currentTarget.Character.HumanoidRootPart
-        local targetPos = targetRoot.Position
-        local players = Players:GetPlayers()
-        local index = getAltIndex(player.Name, players, currentTarget)
-        local offsetDistance = 2 + (index * 1)
-        local behindOffset = -targetRoot.CFrame.LookVector * offsetDistance
-        local targetPosition = targetPos + behindOffset
-        humanoidRootPart.CFrame = CFrame.new(targetPosition)
-        humanoidRootPart.Velocity = Vector3.zero
-        humanoidRootPart.AssemblyLinearVelocity = Vector3.zero
-        humanoidRootPart.AssemblyAngularVelocity = Vector3.zero
-    end)
-    print("Follow mode activated for " .. player.Name .. " behind " .. currentTarget.Name)
-end
-local function wallet()
-    if not humanoid or not character then
-        warn("Can’t pull out wallet, no character!")
-        return
-    end
-    local backpack = player:WaitForChild("Backpack", 5)
-    if not backpack then
-        warn("No backpack found, weird!")
-        return
-    end
-    local maxAttempts = 3
-    for attempt = 1, maxAttempts do
-        local walletTool = backpack:FindFirstChild("[Wallet]")
-        if walletTool then
-            walletTool.Parent = character
-            print("Wallet pulled out!")
-            return
-        else
-            warn("No [Wallet] tool in backpack, attempt " .. attempt)
-            task.wait(0.1)
-        end
-    end
-    warn("Failed to find [Wallet] after " .. maxAttempts .. " attempts!")
-end
-local function unwallet()
-    if not humanoid or not character then
-        warn("Can’t put away wallet, no character!")
-        return
-    end
-    local maxAttempts = 3
-    for attempt = 1, maxAttempts do
-        local walletTool = character:FindFirstChild("[Wallet]")
-        if walletTool and walletTool:IsA("Tool") then
-            walletTool.Parent = player:WaitForChild("Backpack", 5)
-            print("Wallet put away!")
-            return
-        else
-            warn("No [Wallet] equipped, attempt " .. attempt)
-            task.wait(0.1)
-        end
-    end
-    warn("Failed to find [Wallet] to put away after " .. maxAttempts .. " attempts!")
-end
-local function dropCash()
-    if not mainEvent then
-        warn("No MainEvent, can’t drop cash!")
-        return
-    end
-    if isDropping then return end
-    isDropping = true
-    connections.drop = RunService.Heartbeat:Connect(function()
-        if not isDropping or not humanoidRootPart then return end
-        local currentTime = tick()
-        if currentTime - lastDropTime >= dropCooldown then
+    if not w then
+        if f and f.TextChannels and f.TextChannels.RBXGeneral then
             pcall(function()
-                mainEvent:FireServer("DropMoney", 15000)
+                f.TextChannels.RBXGeneral:SendAsync("Greetings, Master.")
             end)
-            lastDropTime = currentTime
         end
-    end)
-    print("Drop started, cash coming down!")
-end
-local function stopDrop()
-    isDropping = false
-    if connections.drop then
-        connections.drop:Disconnect()
-        connections.drop = nil
+        w = true
     end
-    if mainEvent then
-        pcall(function()
-            mainEvent:FireServer("Block", false)
-        end)
-    end
-    print("Drop stopped, all clear.")
 end
-local function block()
-    if not humanoid or not character then
-        warn("Can't block, no character!")
+
+local function zzzz(aaaaa)
+    ppp()
+    o = "swarm"
+    p = aaaaa
+    if not p or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") or not j then
+        o = nil
+        p = nil
         return
     end
-    if not isBlocking then
-        isBlocking = true
-        humanoid.WalkSpeed = 0
-        local animateScript = character:FindFirstChild("Animate")
-        if animateScript and animateScript:FindFirstChild("block") then
-            animateScript.block:Play()
-        end
-        UserInputService.InputBegan:Connect(function(input)
-            if input.KeyCode == Enum.KeyCode.F and isBlocking then
-                isBlocking = false
-                humanoid.WalkSpeed = 16
-                if animateScript and animateScript:FindFirstChild("block") then
-                    animateScript.block:Stop()
-                end
+    lll(i, true)
+    k.PlatformStand = true 
+    local bbbbb = i:FindFirstChild("Animate")
+    if bbbbb then
+        bbbbb.Enabled = false 
+    end
+    local ccccc = 0
+    local ddddd = y and 0.1 or 0 
+    z.swarm = c.Heartbeat:Connect(function()
+        if o ~= "swarm" or not j or not p or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then
+            k.PlatformStand = false
+            if bbbbb then
+                bbbbb.Enabled = true
             end
-        end)
-        print("Blocking activated for " .. player.Name)
-    end
-end
-local function unblock()
-    if isBlocking then
-        isBlocking = false
-        humanoid.WalkSpeed = 16
-        local animateScript = character:FindFirstChild("Animate")
-        if animateScript and animateScript:FindFirstChild("block") then
-            animateScript.block:Stop()
+            lll(i, false)
+            return
         end
-        print("Blocking deactivated for " .. player.Name)
+        local eeeee = tick()
+        if eeeee - ccccc < ddddd then return end
+        ccccc = eeeee
+        local fffff = p.Character.HumanoidRootPart.Position
+        local ggggg = 0
+        for iiiii = 1, #h.Name do
+            ggggg = ggggg + string.byte(h.Name, iiiii)
+        end
+        local hhhhh = (ggggg % 360) / 180 * math.pi + os.clock() * 2 
+        local iiiii = 10 
+        local jjjjj = math.cos(hhhhh) * iiiii
+        local kkkkk = math.sin(hhhhh) * iiiii
+        local lllll = fffff + Vector3.new(jjjjj, 0, kkkkk)
+        j.CFrame = CFrame.lookAt(lllll, fffff) 
+        j.Velocity = Vector3.zero 
+        j.AssemblyLinearVelocity = Vector3.zero 
+        j.AssemblyAngularVelocity = Vector3.zero
+    end)
+end
+
+local function mmmmm(nnnnn)
+    ppp()
+    o = "halo"
+    p = nnnnn
+    if not p or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") or not j then
+        o = nil
+        p = nil
+        return
+    end
+    lll(i, true)
+    k.PlatformStand = true 
+    local ooooo = i:FindFirstChild("Animate")
+    if ooooo then
+        ooooo.Enabled = false 
+    end
+    local ppppp = 0
+    local qqqqq = y and 0.1 or 0 
+    z.halo = c.Heartbeat:Connect(function()
+        if o ~= "halo" or not j or not p or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then
+            k.PlatformStand = false
+            if ooooo then
+                ooooo.Enabled = true
+            end
+            lll(i, false)
+            return
+        end
+        local rrrrr = tick()
+        if rrrrr - ppppp < qqqqq then return end
+        ppppp = rrrrr
+        local sssss = p.Character.HumanoidRootPart.Position + Vector3.new(0, 6, 0) 
+        local ttttt = 0
+        for uuuuu = 1, #h.Name do
+            ttttt = ttttt + string.byte(h.Name, uuuuu)
+        end
+        local vvvvv = (ttttt % 360) / 180 * math.pi + os.clock() * 2 
+        local wwwww = 2 
+        local xxxxx = math.cos(vvvvv) * wwwww
+        local yyyyy = math.sin(vvvvv) * wwwww
+        local zzzzz = sssss + Vector3.new(xxxxx, 0, yyyyy)
+        j.CFrame = CFrame.lookAt(zzzzz, sssss) 
+        j.Velocity = Vector3.zero 
+        j.AssemblyLinearVelocity = Vector3.zero 
+        j.AssemblyAngularVelocity = Vector3.zero
+    end)
+end
+
+local function aaaaaa(bbbbbb)
+    ppp()
+    o = "circle"
+    p = bbbbbb
+    if not p or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") or not j then
+        o = nil
+        p = nil
+        return
+    end
+    lll(i, true)
+    local cccccc = p.Character.HumanoidRootPart.Position
+    local dddddd = a:GetPlayers()
+    local eeeeee = aaa(h.Name, dddddd, p)
+    local ffffff = math.min(#dddddd - 1, 20) 
+    local gggggg = eeeeee * (2 * math.pi / 20) 
+    local hhhhhh = 10 
+    local iiiiii = math.cos(gggggg) * hhhhhh
+    local jjjjjj = math.sin(gggggg) * hhhhhh
+    local kkkkkk = cccccc + Vector3.new(iiiii, 0, jjjjjj)
+    local llllll = CFrame.lookAt(kkkkkk, cccccc)
+    local mmmmmm = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local nnnnnn = e:Create(j, mmmmmm, { CFrame = llllll })
+    nnnnnn:Play()
+    nnnnnn.Completed:Connect(function()
+        lll(i, false)
+    end)
+end
+
+local function oooooo()
+    ppp()
+    o = "spin"
+    if not j then
+        o = nil
+        return
+    end
+    lll(i, true)
+    k.PlatformStand = true 
+    local pppppp = i:FindFirstChild("Animate")
+    if pppppp then
+        pppppp.Enabled = false 
+    end
+    local qqqqqq = j.CFrame
+    local rrrrrr = 0
+    local ssssss = y and 0.1 or 0 
+    z.spin = c.Heartbeat:Connect(function()
+        if o ~= "spin" or not j then
+            k.PlatformStand = false
+            if pppppp then
+                pppppp.Enabled = true
+            end
+            lll(i, false)
+            return
+        end
+        local tttttt = tick()
+        if tttttt - rrrrrr < ssssss then return end
+        rrrrrr = tttttt
+        local uuuuuu = CFrame.Angles(0, os.clock() * 4, 0) 
+        j.CFrame = qqqqqq * uuuuuu
+        j.Velocity = Vector3.zero
+        j.AssemblyLinearVelocity = Vector3.zero
+        j.AssemblyAngularVelocity = Vector3.zero
+    end)
+end
+
+local function vvvvvv()
+    ppp()
+    o = "airlock"
+    if not j then
+        o = nil
+        return
+    end
+    lll(i, true)
+    k.PlatformStand = true 
+    local wwwwww = i:FindFirstChild("Animate")
+    if wwwwww then
+        wwwwww.Enabled = false 
+    end
+    local xxxxxx = j.CFrame
+    local yyyyyy = xxxxxx.Position + Vector3.new(0, 13, 0)
+    v = CFrame.new(yyyyyy, yyyyyy + xxxxxx.LookVector) 
+    local zzzzzz = 0
+    local aaaaaa = y and 0.1 or 0 
+    z.airlock = c.Heartbeat:Connect(function()
+        if o ~= "airlock" or not j then
+            k.PlatformStand = false
+            if wwwwww then
+                wwwwww.Enabled = true
+            end
+            lll(i, false)
+            return
+        end
+        local bbbbbb = tick()
+        if bbbbbb - zzzzzz < aaaaaa then return end
+        zzzzzz = bbbbbb
+        j.CFrame = v
+        j.Velocity = Vector3.zero
+        j.AssemblyLinearVelocity = Vector3.zero
+        j.AssemblyAngularVelocity = Vector3.zero
+    end)
+end
+
+local function cccccc(dddddd)
+    ppp()
+    o = "follow"
+    p = dddddd
+    if not p or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") or not j then
+        o = nil
+        p = nil
+        return
+    end
+    lll(i, true)
+    k.PlatformStand = true 
+    local eeeeee = i:FindFirstChild("Animate")
+    if eeeeee then
+        eeeeee.Enabled = false 
+    end
+    local ffffff = 0
+    local gggggg = y and 0.1 or 0 
+    z.follow = c.Heartbeat:Connect(function()
+        if o ~= "follow" or not j or not p or not p.Character or not p.Character:FindFirstChild("HumanoidRootPart") then
+            k.PlatformStand = false
+            if eeeeee then
+                eeeeee.Enabled = true
+            end
+            lll(i, false)
+            return
+        end
+        local hhhhhh = tick()
+        if hhhhhh - ffffff < gggggg then return end
+        ffffff = hhhhhh
+        local iiiiii = p.Character.HumanoidRootPart
+        local jjjjjj = iiiiii.Position
+        local kkkkkk = a:GetPlayers()
+        local llllll = aaa(h.Name, kkkkkk, p)
+        local mmmmmm = 2 + (llllll * 1) 
+        local nnnnnn = -iiiiii.CFrame.LookVector * mmmmmm 
+        local oooooo = jjjjjj + nnnnnn
+        j.CFrame = CFrame.lookAt(oooooo, jjjjjj) 
+        j.Velocity = Vector3.zero 
+        j.AssemblyLinearVelocity = Vector3.zero 
+        j.AssemblyAngularVelocity = Vector3.zero
+    end)
+end
+
+local function pppppp()
+    if not k or not i then
+        return
+    end
+    local qqqqqq = h:WaitForChild("Backpack", 5)
+    if not qqqqqq then
+        return
+    end
+    local rrrrrr = 3
+    for ssssss = 1, rrrrrr do
+        local tttttt = qqqqqq:FindFirstChild("[Wallet]")
+        if tttttt then
+            tttttt.Parent = i 
+            return
+        else
+            task.wait(0.1) 
+        end
     end
 end
-local function kickAlt()
-    pcall(function()
-        player:Kick("Kicked by your host.")
+
+local function uuuuuu()
+    if not k or not i then
+        return
+    end
+    local vvvvvv = 3
+    for wwwwww = 1, vvvvvv do
+        local xxxxxx = i:FindFirstChild("[Wallet]")
+        if xxxxxx and xxxxxx:IsA("Tool") then
+            xxxxxx.Parent = h:WaitForChild("Backpack", 5) 
+            return
+        else
+            task.wait(0.1) 
+        end
+    end
+end
+
+local function yyyyyy()
+    if not ff then
+        return
+    end
+    if n then return end 
+    n = true
+    local zzzzzz = 0
+    local aaaaaa = y and 0.2 or s 
+    z.drop = c.Heartbeat:Connect(function()
+        if not n or not j then return end
+        local bbbbbb = tick()
+        if bbbbbb - zzzzzz >= aaaaaa then
+            pcall(function()
+                ff:FireServer("DropMoney", 15000)
+            end)
+            zzzzzz = bbbbbb
+        end
     end)
 end
-local function rejoinGame()
-    pcall(function()
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, player)
-    end)
-end
-local function sendMessage(message)
-    if TextChatService and TextChatService.TextChannels and TextChatService.TextChannels.RBXGeneral then
+
+local function cccccc()
+    n = false
+    if z.drop then
+        z.drop:Disconnect()
+        z.drop = nil
+    end
+    if ff then
         pcall(function()
-            TextChatService.TextChannels.RBXGeneral:SendAsync(message)
+            ff:FireServer("Block", false)
         end)
-        print("Sent message: " .. message)
-    else
-        warn("TextChatService or RBXGeneral channel not found!")
     end
 end
-local function handleHostLeaving(leavingPlayer)
-    if leavingPlayer == hostPlayer then
-        kickAlt()
+
+local function dddddd()
+    g:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+    u = true
+end
+
+local function eeeeee()
+    g:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+    u = false
+end
+
+local function ffffff()
+    pcall(function()
+        h:Kick("Kicked by your host.")
+    end)
+end
+
+local function gggggg()
+    pcall(function()
+        d:TeleportToPlaceInstance(game.PlaceId, game.JobId, h)
+    end)
+end
+
+local function hhhhhh(iiiii)
+    if f and f.TextChannels and f.TextChannels.RBXGeneral then
+        pcall(function()
+            f.TextChannels.RBXGeneral:SendAsync(iiiii)
+        end)
     end
 end
-local function handleHostCharacterReset(newChar)
-    if currentTarget == hostPlayer then
-        if currentMode == "swarm" then
-            swarm(hostPlayer)
-        elseif currentMode == "follow" then
-            follow(hostPlayer)
-        elseif currentMode == "halo" then
-            halo(hostPlayer)
-        elseif currentMode == "circle" then
-            circle(hostPlayer)
-        elseif currentMode == "spin" then
-            spin()
-        end
-    end
-    if currentMode == "airlock" then
-        airlock()
+
+local function jjjjjj(kkkkk)
+    if kkkkk == m then
+        ffffff()
     end
 end
-local function handlePlayerCharacterReset(newChar)
-    character = newChar
-    humanoidRootPart = newChar:WaitForChild("HumanoidRootPart", 5)
-    humanoid = newChar:WaitForChild("Humanoid", 5)
-    if currentMode and currentTarget then
-        if currentMode == "swarm" then
-            swarm(currentTarget)
-        elseif currentMode == "follow" then
-            follow(currentTarget)
-        elseif currentMode == "halo" then
-            halo(currentTarget)
-        elseif currentMode == "circle" then
-            circle(currentTarget)
-        elseif currentMode == "spin" then
-            spin()
-        elseif currentMode == "setup" then
-            setupClub()
+
+local function llllll(mmmmm)
+    if p == m then
+        if o == "swarm" then
+            zzzz(m)
+        elseif o == "follow" then
+            cccccc(m)
+        elseif o == "halo" then
+            mmmmm(m)
+        elseif o == "circle" then
+            aaaaaa(m)
+        elseif o == "spin" then
+            oooooo()
         end
     end
-    if currentMode == "airlock" then
-        airlock()
-    end
-    if isDropping and originalPosition then
-        setupClub()
+    if o == "airlock" then
+        vvvvvv()
     end
 end
-local function handleCommands(message)
-    local lowerMsg = string.lower(message)
-    if string.sub(lowerMsg, 1, 1) ~= "?" then return end
-    local cmd = string.sub(lowerMsg, 2):match("^%s*(.-)%s*$")
-    if cmd == "" then return end
-    if cmd:match("^setup%s+(.+)$") then
-        local targetName = cmd:match("^setup%s+(.+)$")
-        if targetName == "club" then
-            setupClub()
-        elseif targetName == "bank" then
-            setupBank()
-        else
-            warn("Setup failed, only 'club' or 'bank' allowed")
+
+local function nnnnnn(ooooo)
+    i = ooooo
+    j = ooooo:WaitForChild("HumanoidRootPart", 5)
+    k = ooooo:WaitForChild("Humanoid", 5)
+    if o and p then
+        if o == "swarm" then
+            zzzz(p)
+        elseif o == "follow" then
+            cccccc(p)
+        elseif o == "halo" then
+            mmmmm(p)
+        elseif o == "circle" then
+            aaaaaa(p)
+        elseif o == "spin" then
+            oooooo()
+        elseif o == "setup" then
+            hhhh()
         end
-    elseif cmd == "swarm host" then
-        swarm(hostPlayer)
-    elseif cmd:match("^swarm%s+(.+)$") then
-        local targetName = cmd:match("^swarm%s+(.+)$")
-        local target = getPlayerByName(targetName)
-        if target then
-            swarm(target)
-        else
-            warn("Swarm failed, no player named " .. targetName)
-        end
-    elseif cmd == "unswarm" then
-        unswarm()
-    elseif cmd == "halo host" then
-        halo(hostPlayer)
-    elseif cmd:match("^halo%s+(.+)$") then
-        local targetName = cmd:match("^halo%s+(.+)$")
-        local target = getPlayerByName(targetName)
-        if target then
-            halo(target)
-        else
-            warn("Halo failed, no player named " .. targetName)
-        end
-    elseif cmd == "unhalo" then
-        unhalo()
-    elseif cmd == "circle host" then
-        circle(hostPlayer)
-    elseif cmd:match("^circle%s+(.+)$") then
-        local targetName = cmd:match("^circle%s+(.+)$")
-        local target = getPlayerByName(targetName)
-        if target then
-            circle(target)
-        else
-            warn("Circle failed, no player named " .. targetName)
-        end
-    elseif cmd == "uncircle" then
-        uncircle()
-    elseif cmd == "spin" then
-        spin()
-    elseif cmd == "unspin" then
-        unspin()
-    elseif cmd == "airlock" then
-        airlock()
-    elseif cmd == "unairlock" then
-        unairlock()
-    elseif cmd == "follow host" then
-        follow(hostPlayer)
-    elseif cmd:match("^follow%s+(.+)$") then
-        local targetName = cmd:match("^follow%s+(.+)$")
-        local target = getPlayerByName(targetName)
-        if target then
-            follow(target)
-        else
-            warn("Follow failed, no player named " .. targetName)
-        end
-    elseif cmd == "unfollow" then
-        disableCurrentMode()
-        print("Unfollow complete.")
-    elseif cmd == "bring" then
-        bring()
-    elseif cmd == "drop" then
-        dropCash()
-    elseif cmd == "stop" or cmd == "undrop" then
-        stopDrop()
-    elseif cmd == "block" then
-        block()
-    elseif cmd == "unblock" then
-        unblock()
-    elseif cmd == "kick" then
-        kickAlt()
-    elseif cmd == "rejoin" then
-        rejoinGame()
-    elseif cmd:match("^say%s+(.+)$") then
-        local message = cmd:match("^say%s+(.+)$")
-        sendMessage(message)
-    elseif cmd == "wallet" then
-        wallet()
-    elseif cmd == "unwallet" then
-        unwallet()
+    end
+    if o == "airlock" then
+        vvvvvv()
+    end
+    if n and t then
+        hhhh() 
     end
 end
-hostPlayer = waitForHost(5)
-if hostPlayer then
-    print("Host found: " .. hostPlayer.Name)
-else
-    warn("No host found, commands might not work right.")
+
+local function pppppp(qqqqq)
+    local rrrrr = string.lower(qqqqq)
+    if string.sub(rrrrr, 1, #x) ~= x then return end
+    local sssss = string.sub(rrrrr, #x + 1):match("^%s*(.-)%s*$")
+    if sssss == "" then return end
+    if sssss:match("^prefix%s+(.+)$") then
+        local ttttt = sssss:match("^prefix%s+(.+)$")
+        x = ttttt
+        hhhhhh("Prefix Changed.")
+        return
+    end
+    if sssss == "lowcpu" or sssss == "lcm" then
+        y = not y
+        hhhhhh("Low CPU mode " .. (y and "on" or "off") .. ".")
+        if o and p then
+            if o == "swarm" then
+                zzzz(p)
+            elseif o == "follow" then
+                cccccc(p)
+            elseif o == "halo" then
+                mmmmm(p)
+            elseif o == "spin" then
+                oooooo()
+            elseif o == "airlock" then
+                vvvvvv()
+            end
+        end
+        if n then
+            cccccc()
+            task.wait(0.1)
+            yyyyyy()
+        end
+        return
+    end
+    if sssss:match("^setup%s+(.+)$") then
+        local vvvvv = sssss:match("^setup%s+(.+)$")
+        if vvvvv == "club" then
+            hhhh()
+        elseif vvvvv == "bank" then
+            iiii()
+        elseif vvvvv == "boxingclub" then
+            jjjj()
+        end
+    elseif sssss == "swarm host" then
+        zzzz(m)
+    elseif sssss:match("^swarm%s+(.+)$") then
+        local wwwww = sssss:match("^swarm%s+(.+)$")
+        local xxxxx = hh(wwwww)
+        if xxxxx then
+            zzzz(xxxxx)
+        end
+    elseif sssss == "unswarm" then
+        ttt()
+    elseif sssss == "halo host" then
+        mmmmm(m)
+    elseif sssss:match("^halo%s+(.+)$") then
+        local yyyyy = sssss:match("^halo%s+(.+)$")
+        local zzzzz = hh(yyyyy)
+        if zzzzz then
+            mmmmm(zzzzz)
+        end
+    elseif sssss == "unhalo" then
+        uuu()
+    elseif sssss == "circle host" then
+        aaaaaa(m)
+    elseif sssss:match("^circle%s+(.+)$") then
+        local aaaaaa = sssss:match("^circle%s+(.+)$")
+        local bbbbbb = hh(aaaaaa)
+        if bbbbbb then
+            aaaaaa(bbbbbb)
+        end
+    elseif sssss == "uncircle" then
+        vvv()
+    elseif sssss == "spin" then
+        oooooo()
+    elseif sssss == "unspin" then
+        www()
+    elseif sssss == "airlock" then
+        vvvvvv()
+    elseif sssss == "unairlock" then
+        xxx()
+    elseif sssss == "follow host" then
+        cccccc(m)
+    elseif sssss:match("^follow%s+(.+)$") then
+        local cccccc = sssss:match("^follow%s+(.+)$")
+        local dddddd = hh(cccccc)
+        if dddddd then
+            cccccc(dddddd)
+        end
+    elseif sssss == "unfollow" then
+        ppp()
+    elseif sssss == "bring" then
+        kkkk()
+    elseif sssss == "drop" then
+        yyyyyy()
+    elseif sssss == "stop" or sssss == "undrop" then
+        cccccc()
+    elseif sssss == "block" then
+        dddddd()
+    elseif sssss == "unblock" then
+        eeeeee()
+    elseif sssss == "kick" then
+        ffffff()
+    elseif sssss == "rejoin" then
+        gggggg()
+    elseif sssss:match("^say%s+(.+)$") then
+        local eeeeee = sssss:match("^say%s+(.+)$")
+        hhhhhh(eeeee)
+    elseif sssss == "wallet" then
+        pppppp()
+    elseif sssss == "unwallet" then
+        uuuuuu()
+    end
 end
-TextChatService.TextChannels.RBXGeneral.MessageReceived:Connect(function(message)
-    if message.TextSource then
-        local sender = Players:GetPlayerByUserId(message.TextSource.UserId)
-        if sender == hostPlayer then
-            handleCommands(message.Text)
+
+m = gg(5)
+
+f.TextChannels.RBXGeneral.MessageReceived:Connect(function(ffffff)
+    if ffffff.TextSource then
+        local gggggg = a:GetPlayerByUserId(ffffff.TextSource.UserId)
+        if gggggg == m then
+            pppppp(ffffff.Text)
         end
     end
 end)
-Players.PlayerRemoving:Connect(handleHostLeaving)
-if hostPlayer then
-    hostPlayer.CharacterAdded:Connect(handleHostCharacterReset)
+
+a.PlayerRemoving:Connect(jjjjjj)
+if m then
+    m.CharacterAdded:Connect(llllll)
 end
-player.CharacterAdded:Connect(handlePlayerCharacterReset)
-createOverlay()
-disableAllSeats()
-limitFPS()
-preventAFK()
-print("Alt control script is ready for " .. player.Name)
+h.CharacterAdded:Connect(nnnnnn)
+
+ll()
+jj()
+rr()
+yy()
+
+for iii = 1, 11 do
+    print("DHC.LMAO - [" .. string.rep("#", iii) .. string.rep(" ", 11 - iii) .. "]")
+    task.wait(0.2)
+end
