@@ -22,7 +22,6 @@ local u = false
 local v = nil
 local w = false
 local x = '?'
-local y = false
 local z = {
     drop = nil,
     fps = nil,
@@ -57,6 +56,8 @@ local function ll()
     mm.Name = 'DhcOverlay'
     mm.ResetOnSpawn = false
     mm.IgnoreGuiInset = true
+    mm.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    mm.DisplayOrder = 10
     local nn = Instance.new('BlurEffect')
     nn.Size = 48
     nn.Parent = game.Lighting
@@ -65,21 +66,29 @@ local function ll()
     oo.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     oo.BackgroundTransparency = 0
     oo.Parent = mm
-    local pp = Instance.new('TextLabel')
-    pp.Size = UDim2.new(0, 400, 0, 100)
-    pp.Position = UDim2.new(0.5, -200, 0.5, -50)
-    pp.BackgroundTransparency = 1
-    pp.Text = 'dhc.lmao'
-    pp.TextSize = 48
-    pp.Font = Enum.Font.GothamBold
-    pp.TextColor3 = Color3.fromRGB(120, 60, 180)
-    pp.Parent = oo
-    local qq = Instance.new('UIGradient')
-    qq.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 60, 180)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)),
-    })
-    qq.Parent = pp
+    oo.ZIndex = 10
+
+    local dotCount = 30
+    for i = 1, dotCount do
+        local dot = Instance.new('Frame')
+        dot.Size = UDim2.new(0, 5, 0, 5)
+        dot.BackgroundColor3 = Color3.fromRGB(120, 60, 180)
+        dot.BorderSizePixel = 0
+        dot.Parent = oo
+        dot.Position = UDim2.new(math.random(), 0, math.random(), 0)
+        local tweenInfo = TweenInfo.new(
+            math.random(15, 60) / 10,
+            Enum.EasingStyle.Sine,
+            Enum.EasingDirection.InOut,
+            -1,
+            true
+        )
+        local goal = {
+            Position = UDim2.new(math.random(), 0, math.random(), 0)
+        }
+        local tween = e:Create(dot, tweenInfo, goal)
+        tween:Play()
+    end
 end
 
 local function rr()
@@ -247,7 +256,7 @@ local function yyyyyy()
     end
     n = true
     local zzzzzz = 0
-    local aaaaaa = y and 0.2 or s
+    local aaaaaa = s
     z.drop = c.Heartbeat:Connect(function()
         if not n or not j then
             return
@@ -275,23 +284,9 @@ local function cccccc()
     end
 end
 
-local function ffffff()
-    pcall(function()
-        h:Kick('Kicked by your host.')
-    end)
-end
-
-local function gggggg()
-    pcall(function()
-        if game.PlaceId and game.JobId then
-            d:TeleportToPlaceInstance(game.PlaceId, game.JobId, h)
-        end
-    end)
-end
-
 local function jjjjjj(kkkkk)
     if kkkkk == m then
-        ffffff()
+        h:Kick('Kicked by your host.')
     end
 end
 
@@ -319,9 +314,7 @@ local function pppppp(qqqqq)
     if sssss == '' then
         return
     end
-    if sssss == 'lowcpu' or sssss == 'lcm' then
-        y = not y
-    elseif sssss:match('^setup%s+(.+)$') then
+    if sssss:match('^setup%s+(.+)$') then
         local vvvvv = sssss:match('^setup%s+(.+)$')
         if vvvvv == 'club' then
             hhhh()
@@ -336,10 +329,6 @@ local function pppppp(qqqqq)
         yyyyyy()
     elseif sssss == 'stop' or sssss == 'undrop' then
         cccccc()
-    elseif sssss == 'kick' then
-        ffffff()
-    elseif sssss == 'rejoin' then
-        gggggg()
     end
 end
 
