@@ -211,6 +211,36 @@ local function jjjj()
     yyy(Vector3.new(-261.07, 53.37, -1127.65), 5)
 end
 
+local function kkkkk()
+    ppp()
+    task.wait(1)
+    yyy(Vector3.new(-932, 21 - 5, -483), 5)
+end
+
+local function lllll()
+    ppp()
+    task.wait(1)
+    yyy(Vector3.new(-749, 22 - 5, -485), 5)
+end
+
+local function mmmmm()
+    ppp()
+    task.wait(1)
+    yyy(Vector3.new(-295, 21 - 5, -111), 5)
+end
+
+local function nnnnn()
+    ppp()
+    task.wait(1)
+    yyy(Vector3.new(-295, 22 - 5, -68), 5)
+end
+
+local function ooooo()
+    ppp()
+    task.wait(1)
+    yyy(Vector3.new(-654, 21 - 5, 256), 5)
+end
+
 local function kkkk()
     ppp()
     if not j or not m or not m.Character or not m.Character:FindFirstChild('HumanoidRootPart') then
@@ -322,6 +352,16 @@ local function pppppp(qqqqq)
             iiii()
         elseif vvvvv == 'boxingclub' then
             jjjj()
+        elseif vvvvv == 'basketball' then
+            kkkkk()
+        elseif vvvvv == 'soccer' then
+            lllll()
+        elseif vvvvv == 'cell' then
+            mmmmm()
+        elseif vvvvv == 'cell2' then
+            nnnnn()
+        elseif vvvvv == 'school' then
+            ooooo()
         end
     elseif sssss == 'bring' then
         kkkk()
