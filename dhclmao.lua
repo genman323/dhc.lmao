@@ -644,34 +644,88 @@ local function followPlayer(dddddd)
 end
 
 local function pppppp()
+    print("[Wallet Command] Started on alt: " .. h.Name)
+    
+    -- Ensure character and humanoid are ready
     i = h.Character or h.CharacterAdded:Wait()
-    j = i and i:WaitForChild('HumanoidRootPart', 5)
-    k = i and i:WaitForChild('Humanoid', 5)
-    if not k or not i then
-        print("Wallet failed: No character or humanoid")
+    j = i and i:WaitForChild('HumanoidRootPart', 15) -- Longer timeout for Da Hood alt lag
+    k = i and i:WaitForChild('Humanoid', 15)
+    print("[Wallet Command] Alt character: i=" .. tostring(i) .. ", j=" .. tostring(j) .. ", k=" .. tostring(k) .. ", PlatformStand=" .. tostring(k and k.PlatformStand))
+    
+    if not k or not i or not j then
+        print("[Wallet Command] Failed: No character, humanoid, or root part on alt")
         return
     end
-    local backpack = h:WaitForChild("Backpack", 10)
-    if not backpack then
-        print("Wallet failed: No backpack found")
+    
+    -- Reset conflicting states from other modes (swarm, follow, etc.)
+    if k.PlatformStand then
+        k.PlatformStand = false
+        print("[Wallet Command] Reset PlatformStand on alt")
+        task.wait(0.1) -- Brief delay to ensure state update
+    end
+    
+    -- Check for Animate script conflicts
+    local animate = i:FindFirstChild('Animate')
+    if animate and not animate.Enabled then
+        animate.Enabled = true
+        print("[Wallet Command] Re-enabled Animate script")
+    end
+    
+    -- Wait for Backpack and StarterGear
+    local backpack = h:WaitForChild("Backpack", 15)
+    local starterGear = h:WaitForChild("StarterGear", 15)
+    if not backpack or not starterGear then
+        print("[Wallet Command] Failed: No Backpack (" .. tostring(backpack) .. ") or StarterGear (" .. tostring(starterGear) .. ")")
         return
     end
-    local maxAttempts = 5
+    
+    -- Debug inventory contents
+    print("[Wallet Command] Backpack contents: ", table.concat({(function() local t = {}; for _, v in ipairs(backpack:GetChildren()) do table.insert(t, v.Name) end return t end)()}, ", "))
+    print("[Wallet Command] StarterGear contents: ", table.concat({(function() local t = {}; for _, v in ipairs(starterGear:GetChildren()) do table.insert(t, v.Name) end return t end)()}, ", "))
+    
+    -- Search for [Wallet] in StarterGear, Backpack, or character
+    local maxAttempts = 10 -- More retries for Da Hood's load times
     for attempt = 1, maxAttempts do
-        local walletTool = backpack:FindFirstChild("[Wallet]")
+        local walletTool = starterGear:FindFirstChild("[Wallet]") -- Prioritize StarterGear for Da Hood
+            or backpack:FindFirstChild("[Wallet]")
+            or i:FindFirstChild("[Wallet]")
+        print("[Wallet Command] Attempt " .. attempt .. " - Wallet: " .. tostring(walletTool) .. ", IsTool: " .. tostring(walletTool and walletTool:IsA("Tool")))
+        
         if walletTool and walletTool:IsA("Tool") then
             pcall(function()
-                walletTool.Parent = i
+                -- Verify tool has Handle
+                if not walletTool:FindFirstChild("Handle") then
+                    print("[Wallet Command] Warning: [Wallet] has no Handle, may fail to equip")
+                end
+                -- Move to character if needed
+                if walletTool.Parent ~= i then
+                    walletTool.Parent = i
+                    print("[Wallet Command] Moved [Wallet] to character")
+                    task.wait(0.1) -- Brief delay for Da Hood's server sync
+                end
+                -- Ensure humanoid is in valid state
+                if k.Health <= 0 then
+                    print("[Wallet Command] Failed: Humanoid is dead")
+                    return
+                end
+                -- Equip the tool
                 k:EquipTool(walletTool)
-                print("Wallet pulled out and equipped!")
+                print("[Wallet Command] [Wallet] equipped successfully on alt: " .. h.Name)
+                
+                -- Notify host via chat (mimics your original script)
+                local channel = f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem)
+                if channel then
+                    channel:SendAsync("Wallet equipped on " .. h.Name)
+                    print("[Wallet Command] Sent confirmation to chat")
+                end
             end)
             return
         else
-            print("Wallet not found in backpack, attempt " .. attempt)
-            task.wait(0.2)
+            print("[Wallet Command] [Wallet] not found, attempt " .. attempt)
+            task.wait(0.5) -- Slower retry for Da Hood's potential lag
         end
     end
-    print("Wallet failed: [Wallet] not found after " .. maxAttempts .. " attempts")
+    print("[Wallet Command] Failed: [Wallet] not found after " .. maxAttempts .. " attempts")
 end
 
 local function uuuuuu()
