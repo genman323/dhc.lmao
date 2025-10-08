@@ -5,12 +5,10 @@ local d = game:GetService('TeleportService')
 local e = game:GetService('TweenService')
 local f = game:GetService('TextChatService')
 local g = game:GetService('VirtualInputManager')
-
 local h = a.LocalPlayer
 local i = h.Character or h.CharacterAdded:Wait()
 local j = i and i:WaitForChild('HumanoidRootPart', 5)
 local k = i and i:WaitForChild('Humanoid', 5)
-
 local l = 'HarperViperZero20033'
 local m = nil
 local n = false
@@ -25,7 +23,6 @@ local v = nil
 local w = false
 local x = '?'
 local y = false
-
 local z = {
     drop = nil,
     swarm = nil,
@@ -38,9 +35,7 @@ local z = {
     spin = nil,
     setup = nil,
 }
-
 local ff = b:WaitForChild('MainEvent', 5)
-
 local function gg(tt)
     local uu, vv = pcall(function()
         return a:WaitForChild(l, tt)
@@ -51,11 +46,9 @@ local function gg(tt)
     h:Kick('Host not found.')
     return nil
 end
-
 local function hh(ii)
     return a:FindFirstChild(ii)
 end
-
 local function jj()
     for _, kk in ipairs(game.Workspace:GetDescendants()) do
         if kk:IsA('Seat') then
@@ -63,7 +56,6 @@ local function jj()
         end
     end
 end
-
 local function ll()
     local mm = Instance.new('ScreenGui')
     mm.Parent = h:WaitForChild('PlayerGui', 5) or game.CoreGui
@@ -94,7 +86,6 @@ local function ll()
     })
     qq.Parent = pp
 end
-
 local function rr()
     local ss = 1 / 5
     local tt = tick()
@@ -107,7 +98,6 @@ local function rr()
         tt = tick()
     end)
 end
-
 local ww = 0
 local xx = 58
 local function yy()
@@ -121,7 +111,6 @@ local function yy()
         end
     end)
 end
-
 local function aaa(bbb, ccc, ddd)
     local eee = {}
     for _, fff in ipairs(ccc) do
@@ -143,7 +132,6 @@ local function aaa(bbb, ccc, ddd)
     end
     return 0
 end
-
 local function lll(mmm, nnn)
     if not mmm then
         return
@@ -158,7 +146,6 @@ local function lll(mmm, nnn)
         end
     end
 end
-
 local function ppp()
     if j then
         j.Anchored = false
@@ -184,35 +171,30 @@ local function ppp()
         lll(i, false)
     end
 end
-
 local function ttt()
     if o ~= 'swarm' then
         return
     end
     ppp()
 end
-
 local function uuu()
     if o ~= 'halo' then
         return
     end
     ppp()
 end
-
 local function www()
     if o ~= 'spin' then
         return
     end
     ppp()
 end
-
 local function xxx()
     if o ~= 'airlock' then
         return
     end
     ppp()
 end
-
 local function yyy(zzz, aaaa)
     if not j then
         print('Setup failed: No HumanoidRootPart')
@@ -247,7 +229,6 @@ local function yyy(zzz, aaaa)
         end)
     end)
 end
-
 local function hhhh()
     ppp()
     if f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem) then
@@ -262,7 +243,6 @@ local function hhhh()
     task.wait(1)
     yyy(Vector3.new(-265, -7, -380), 5)
 end
-
 local function iiii()
     ppp()
     if f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem) then
@@ -277,7 +257,6 @@ local function iiii()
     task.wait(1)
     yyy(Vector3.new(-376, 21, -283), 5)
 end
-
 local function jjjj()
     ppp()
     if f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem) then
@@ -292,7 +271,6 @@ local function jjjj()
     task.wait(1)
     yyy(Vector3.new(-261.07, 53.37, -1127.65), 5)
 end
-
 local function kkkk()
     if o == 'setup' then
         if k then
@@ -355,7 +333,6 @@ local function kkkk()
         w = true
     end
 end
-
 local function zzzz(aaaaa)
     ppp()
     o = 'swarm'
@@ -414,7 +391,6 @@ local function zzzz(aaaaa)
         end)
     end)
 end
-
 local function mmmmm(nnnnn)
     ppp()
     o = 'halo'
@@ -473,7 +449,6 @@ local function mmmmm(nnnnn)
         end)
     end)
 end
-
 local function oooooo()
     ppp()
     o = 'spin'
@@ -522,7 +497,6 @@ local function oooooo()
         end)
     end)
 end
-
 local function vvvvvv()
     ppp()
     o = 'airlock'
@@ -572,7 +546,6 @@ local function vvvvvv()
         end)
     end)
 end
-
 local function followPlayer(dddddd)
     i = h.Character or h.CharacterAdded:Wait()
     j = i and i:WaitForChild('HumanoidRootPart', 5)
@@ -642,118 +615,6 @@ local function followPlayer(dddddd)
         end)
     end)
 end
-
-local function pppppp()
-    print("[Wallet Command] Started on alt: " .. h.Name)
-    
-    -- Ensure character and humanoid are ready
-    i = h.Character or h.CharacterAdded:Wait()
-    j = i and i:WaitForChild('HumanoidRootPart', 15) -- Longer timeout for Da Hood alt lag
-    k = i and i:WaitForChild('Humanoid', 15)
-    print("[Wallet Command] Alt character: i=" .. tostring(i) .. ", j=" .. tostring(j) .. ", k=" .. tostring(k) .. ", PlatformStand=" .. tostring(k and k.PlatformStand))
-    
-    if not k or not i or not j then
-        print("[Wallet Command] Failed: No character, humanoid, or root part on alt")
-        return
-    end
-    
-    -- Reset conflicting states from other modes (swarm, follow, etc.)
-    if k.PlatformStand then
-        k.PlatformStand = false
-        print("[Wallet Command] Reset PlatformStand on alt")
-        task.wait(0.1) -- Brief delay to ensure state update
-    end
-    
-    -- Check for Animate script conflicts
-    local animate = i:FindFirstChild('Animate')
-    if animate and not animate.Enabled then
-        animate.Enabled = true
-        print("[Wallet Command] Re-enabled Animate script")
-    end
-    
-    -- Wait for Backpack and StarterGear
-    local backpack = h:WaitForChild("Backpack", 15)
-    local starterGear = h:WaitForChild("StarterGear", 15)
-    if not backpack or not starterGear then
-        print("[Wallet Command] Failed: No Backpack (" .. tostring(backpack) .. ") or StarterGear (" .. tostring(starterGear) .. ")")
-        return
-    end
-    
-    -- Debug inventory contents
-    print("[Wallet Command] Backpack contents: ", table.concat({(function() local t = {}; for _, v in ipairs(backpack:GetChildren()) do table.insert(t, v.Name) end return t end)()}, ", "))
-    print("[Wallet Command] StarterGear contents: ", table.concat({(function() local t = {}; for _, v in ipairs(starterGear:GetChildren()) do table.insert(t, v.Name) end return t end)()}, ", "))
-    
-    -- Search for [Wallet] in StarterGear, Backpack, or character
-    local maxAttempts = 10 -- More retries for Da Hood's load times
-    for attempt = 1, maxAttempts do
-        local walletTool = starterGear:FindFirstChild("[Wallet]") -- Prioritize StarterGear for Da Hood
-            or backpack:FindFirstChild("[Wallet]")
-            or i:FindFirstChild("[Wallet]")
-        print("[Wallet Command] Attempt " .. attempt .. " - Wallet: " .. tostring(walletTool) .. ", IsTool: " .. tostring(walletTool and walletTool:IsA("Tool")))
-        
-        if walletTool and walletTool:IsA("Tool") then
-            pcall(function()
-                -- Verify tool has Handle
-                if not walletTool:FindFirstChild("Handle") then
-                    print("[Wallet Command] Warning: [Wallet] has no Handle, may fail to equip")
-                end
-                -- Move to character if needed
-                if walletTool.Parent ~= i then
-                    walletTool.Parent = i
-                    print("[Wallet Command] Moved [Wallet] to character")
-                    task.wait(0.1) -- Brief delay for Da Hood's server sync
-                end
-                -- Ensure humanoid is in valid state
-                if k.Health <= 0 then
-                    print("[Wallet Command] Failed: Humanoid is dead")
-                    return
-                end
-                -- Equip the tool
-                k:EquipTool(walletTool)
-                print("[Wallet Command] [Wallet] equipped successfully on alt: " .. h.Name)
-                
-                -- Notify host via chat (mimics your original script)
-                local channel = f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem)
-                if channel then
-                    channel:SendAsync("Wallet equipped on " .. h.Name)
-                    print("[Wallet Command] Sent confirmation to chat")
-                end
-            end)
-            return
-        else
-            print("[Wallet Command] [Wallet] not found, attempt " .. attempt)
-            task.wait(0.5) -- Slower retry for Da Hood's potential lag
-        end
-    end
-    print("[Wallet Command] Failed: [Wallet] not found after " .. maxAttempts .. " attempts")
-end
-
-local function uuuuuu()
-    i = h.Character or h.CharacterAdded:Wait()
-    j = i and i:WaitForChild('HumanoidRootPart', 5)
-    k = i and i:WaitForChild('Humanoid', 5)
-    if not k or not i then
-        print("Unwallet failed: No character or humanoid")
-        return
-    end
-    local maxAttempts = 5
-    for attempt = 1, maxAttempts do
-        local walletTool = i:FindFirstChild("[Wallet]")
-        if walletTool and walletTool:IsA("Tool") then
-            pcall(function()
-                k:UnequipTools()
-                walletTool.Parent = h:WaitForChild("Backpack", 10) or h
-                print("Wallet put away!")
-            end)
-            return
-        else
-            print("Wallet not equipped, attempt " .. attempt)
-            task.wait(0.2)
-        end
-    end
-    print("Unwallet failed: [Wallet] not found after " .. maxAttempts .. " attempts")
-end
-
 local function yyyyyy()
     if not ff then
         print('Drop failed: No MainEvent')
@@ -779,7 +640,6 @@ local function yyyyyy()
     end)
     print('Drop started')
 end
-
 local function cccccc()
     n = false
     if z.drop then
@@ -793,25 +653,21 @@ local function cccccc()
     end
     print('Drop stopped')
 end
-
 local function dddddd()
     g:SendKeyEvent(true, Enum.KeyCode.F, false, game)
     u = true
     print('Block started')
 end
-
 local function eeeeee()
     g:SendKeyEvent(false, Enum.KeyCode.F, false, game)
     u = false
     print('Block stopped')
 end
-
 local function ffffff()
     pcall(function()
         h:Kick('Kicked by your host.')
     end)
 end
-
 local function gggggg()
     pcall(function()
         if game.PlaceId and game.JobId then
@@ -822,7 +678,6 @@ local function gggggg()
         end
     end)
 end
-
 local function hhhhhh(iiiii)
     if not iiiii or type(iiiii) ~= 'string' or iiiii == '' then
         print('Say failed: Invalid message')
@@ -838,13 +693,11 @@ local function hhhhhh(iiiii)
         print('Say failed: No RBXGeneral or RBXSystem channel')
     end
 end
-
 local function jjjjjj(kkkkk)
     if kkkkk == m then
         ffffff()
     end
 end
-
 local function llllll(mmmmm)
     if p == m then
         if o == 'swarm' then
@@ -861,7 +714,6 @@ local function llllll(mmmmm)
         vvvvvv()
     end
 end
-
 local function nnnnnn(ooooo)
     i = ooooo
     j = ooooo and ooooo:WaitForChild('HumanoidRootPart', 5)
@@ -886,7 +738,6 @@ local function nnnnnn(ooooo)
         hhhh()
     end
 end
-
 local function pppppp(qqqqq)
     print('Received command: ' .. tostring(qqqqq))
     if not qqqqq or type(qqqqq) ~= 'string' or qqqqq == '' then
@@ -994,16 +845,18 @@ local function pppppp(qqqqq)
             hhhhhh(eeeeee)
         end
     elseif sssss == 'wallet' then
-        pppppp()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/genman323/dhc.lmao/refs/heads/main/extra/wallet.lua"))()
+        end)
     elseif sssss == 'unwallet' then
-        uuuuuu()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/genman323/dhc.lmao/refs/heads/main/extra/walletx.lua"))()
+        end)
     else
         print('Unknown command: ' .. sssss)
     end
 end
-
 m = gg(5)
-
 if m then
     local channel = f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem)
     if channel then
@@ -1027,14 +880,11 @@ if m then
     end
     m.CharacterAdded:Connect(llllll)
 end
-
 h.CharacterAdded:Connect(nnnnnn)
-
 ll()
 jj()
 rr()
 yy()
-
 for iii = 1, 10 do
     print('DHC.LMAO - ' .. string.rep('#', iii) .. string.rep(' ', 10 - iii))
     task.wait(0.2)
