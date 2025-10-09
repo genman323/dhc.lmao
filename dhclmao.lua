@@ -84,7 +84,7 @@ local function ll()
             true
         )
         local goal = {
-            Position = UDim2.new(math.random(), 0, math.random(), 0)
+            Position = UDim2.new(math.random(), 0, math.random(), 0),
         }
         local tween = e:Create(dot, tweenInfo, goal)
         tween:Play()
@@ -174,7 +174,8 @@ local function yyy(zzz, aaaa)
     local cccc = zzz.Y - aaaa
     local dddd = Vector3.new(zzz.X, cccc, zzz.Z)
     local eeee = CFrame.new(dddd) * CFrame.Angles(0, math.pi, 0)
-    local ffff = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local ffff =
+        TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local gggg = e:Create(j, ffff, { CFrame = eeee })
     gggg:Play()
     gggg.Completed:Connect(function()
@@ -208,7 +209,7 @@ end
 local function jjjj()
     ppp()
     task.wait(1)
-    yyy(Vector3.new(-261.07, 53.37, -1127.65), 5)
+    yyy(Vector3.new(-261.07, 53.37 - 5.2, -1127.65), 5)
 end
 
 local function kkkkk()
@@ -226,24 +227,35 @@ end
 local function mmmmm()
     ppp()
     task.wait(1)
-    yyy(Vector3.new(-295, 21 - 3, -111), 5) -- Adjusted to 3 studs underground
+    yyy(Vector3.new(-295, 21 - 3, -111), 5)
 end
 
 local function nnnnn()
     ppp()
     task.wait(1)
-    yyy(Vector3.new(-295, 22 - 3, -68), 5) -- Adjusted to 3 studs underground
+    yyy(Vector3.new(-295, 22 - 3, -68), 5)
 end
 
 local function ooooo()
     ppp()
     task.wait(1)
-    yyy(Vector3.new(-654, 21 - 3, 256), 5) -- Adjusted to 3 studs underground
+    yyy(Vector3.new(-654, 21 - 3, 256), 5)
+end
+
+local function ppppp()
+    ppp()
+    task.wait(1)
+    yyy(Vector3.new(636, 47 - 5, -80), 5)
 end
 
 local function kkkk()
     ppp()
-    if not j or not m or not m.Character or not m.Character:FindFirstChild('HumanoidRootPart') then
+    if
+        not j
+        or not m
+        or not m.Character
+        or not m.Character:FindFirstChild('HumanoidRootPart')
+    then
         return
     end
     local mmmm = m.Character.HumanoidRootPart
@@ -261,7 +273,8 @@ local function kkkk()
     local uuuu = math.sin(rrrr) * ssss
     local vvvv = mmmm.Position + Vector3.new(tttt, 0, uuuu)
     local wwww = CFrame.lookAt(vvvv, mmmm.Position)
-    local xxxx = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local xxxx =
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     local yyyy = e:Create(j, xxxx, { CFrame = wwww })
     yyyy:Play()
     yyyy.Completed:Connect(function()
@@ -314,6 +327,19 @@ local function cccccc()
     end
 end
 
+local function aaa(playerName, playerList, host)
+    local index = 0
+    for i, player in ipairs(playerList) do
+        if player ~= host then
+            index = index + 1
+            if player.Name == playerName then
+                return index
+            end
+        end
+    end
+    return 1 -- Default to first position if not found
+end
+
 local function jjjjjj(kkkkk)
     if kkkkk == m then
         h:Kick('Kicked by your host.')
@@ -340,7 +366,7 @@ local function pppppp(qqqqq)
     if string.sub(rrrrr, 1, #x) ~= x then
         return
     end
-    local sssss = string.sub(rrrrr, #x + 1):match('^%s*(.-)%s*$') or ""
+    local sssss = string.sub(rrrrr, #x + 1):match('^%s*(.-)%s*$') or ''
     if sssss == '' then
         return
     end
@@ -362,19 +388,23 @@ local function pppppp(qqqqq)
             nnnnn()
         elseif vvvvv == 'school' then
             ooooo()
+        elseif vvvvv == 'train' then
+            ppppp()
         end
     elseif sssss == 'bring' then
         kkkk()
     elseif sssss == 'drop' then
         yyyyyy()
-    elseif sssss == 'stop' or sssss == 'undrop' then
+    elseif sssss == 'stop' then
         cccccc()
     end
 end
 
 m = gg(5)
 if m then
-    local channel = f and f.TextChannels and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem)
+    local channel = f
+        and f.TextChannels
+        and (f.TextChannels.RBXGeneral or f.TextChannels.RBXSystem)
     if channel then
         channel.MessageReceived:Connect(function(ffffff)
             if ffffff and ffffff.TextSource and ffffff.Text then
