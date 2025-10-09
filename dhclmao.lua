@@ -226,19 +226,19 @@ end
 local function mmmmm()
     ppp()
     task.wait(1)
-    yyy(Vector3.new(-295, 21 - 5, -111), 5)
+    yyy(Vector3.new(-295, 21 - 3, -111), 5) -- Adjusted to 3 studs underground
 end
 
 local function nnnnn()
     ppp()
     task.wait(1)
-    yyy(Vector3.new(-295, 22 - 5, -68), 5)
+    yyy(Vector3.new(-295, 22 - 3, -68), 5) -- Adjusted to 3 studs underground
 end
 
 local function ooooo()
     ppp()
     task.wait(1)
-    yyy(Vector3.new(-654, 21 - 5, 256), 5)
+    yyy(Vector3.new(-654, 21 - 3, 256), 5) -- Adjusted to 3 studs underground
 end
 
 local function kkkk()
