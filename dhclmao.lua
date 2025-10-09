@@ -29,6 +29,7 @@ local z = {
     setupMove = nil,
     setup = nil,
 }
+
 local ff = b:WaitForChild('MainEvent', 5)
 
 local function gg(tt)
@@ -68,10 +69,22 @@ local function ll()
     oo.Parent = mm
     oo.ZIndex = 10
 
+    -- Add themed text label
+    local textLabel = Instance.new('TextLabel')
+    textLabel.Size = UDim2.new(0, 200, 0, 50)
+    textLabel.Position = UDim2.new(0.5, -100, 0.5, -25)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = 'DHC.LMAO'
+    textLabel.TextColor3 = Color3.fromRGB(120, 60, 180)
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextSize = 24
+    textLabel.TextStrokeTransparency = 0.5
+    textLabel.Parent = oo
+
     local dotCount = 30
     for i = 1, dotCount do
         local dot = Instance.new('Frame')
-        dot.Size = UDim2.new(0, 5, 0, 5)
+        dot.Size = UDim2.new(0, 2, 0, 2)
         dot.BackgroundColor3 = Color3.fromRGB(120, 60, 180)
         dot.BorderSizePixel = 0
         dot.Parent = oo
@@ -175,7 +188,7 @@ local function yyy(zzz, aaaa)
     local dddd = Vector3.new(zzz.X, cccc, zzz.Z)
     local eeee = CFrame.new(dddd) * CFrame.Angles(0, math.pi, 0)
     local ffff =
-        TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+        TweenInfo.new(0, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local gggg = e:Create(j, ffff, { CFrame = eeee })
     gggg:Play()
     gggg.Completed:Connect(function()
@@ -196,88 +209,70 @@ end
 
 local function hhhh()
     ppp()
-    task.wait(1)
     yyy(Vector3.new(-265, -7, -380), 5)
 end
 
 local function iiii()
     ppp()
-    task.wait(1)
-    yyy(Vector3.new(-376, 21, -283), 5)
+    yyy(Vector3.new(-375, 21 - 5, -286), 5)
 end
 
 local function jjjj()
     ppp()
-    task.wait(1)
-    yyy(Vector3.new(-261.07, 53.37 - 5.2, -1127.65), 5)
+    yyy(Vector3.new(-263, 53 - 2.8, -1129), 2.8)
 end
 
 local function kkkkk()
     ppp()
-    task.wait(1)
-    yyy(Vector3.new(-932, 21 - 5, -483), 5)
+    yyy(Vector3.new(-932, 21 - 5 + 0.3 + 0.6, -483), 5) -- Increased by 0.6 studs
 end
 
 local function lllll()
     ppp()
-    task.wait(1)
-    yyy(Vector3.new(-749, 22 - 5, -485), 5)
+    yyy(Vector3.new(-749, 22 - 5 + 1.2, -485), 5)
 end
 
 local function mmmmm()
     ppp()
-    task.wait(1)
     yyy(Vector3.new(-295, 21 - 3, -111), 5)
 end
 
 local function nnnnn()
     ppp()
-    task.wait(1)
     yyy(Vector3.new(-295, 22 - 3, -68), 5)
 end
 
 local function ooooo()
     ppp()
-    task.wait(1)
     yyy(Vector3.new(-654, 21 - 3, 256), 5)
 end
 
 local function ppppp()
     ppp()
-    task.wait(1)
     yyy(Vector3.new(636, 47 - 5, -80), 5)
 end
 
 local function kkkk()
     ppp()
     if
-        not j
-        or not m
+        not m
         or not m.Character
         or not m.Character:FindFirstChild('HumanoidRootPart')
     then
         return
     end
     local mmmm = m.Character.HumanoidRootPart
+    local targetPosition = mmmm.CFrame
     lll(i, true)
     local nnnn = i and i:FindFirstChild('Animate')
     if nnnn then
         nnnn.Enabled = false
     end
-    local oooo = a:GetPlayers()
-    local pppp = aaa(h.Name, oooo, m)
-    local qqqq = #oooo - 1
-    local rrrr = pppp * (2 * math.pi / qqqq)
-    local ssss = 2
-    local tttt = math.cos(rrrr) * ssss
-    local uuuu = math.sin(rrrr) * ssss
-    local vvvv = mmmm.Position + Vector3.new(tttt, 0, uuuu)
-    local wwww = CFrame.lookAt(vvvv, mmmm.Position)
-    local xxxx =
-        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local yyyy = e:Create(j, xxxx, { CFrame = wwww })
-    yyyy:Play()
-    yyyy.Completed:Connect(function()
+    local ffff =
+        TweenInfo.new(0, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local gggg = e:Create(j, ffff, { CFrame = targetPosition })
+    gggg:Play()
+    gggg.Completed:Connect(function()
         if i then
             lll(i, false)
         end
@@ -325,19 +320,6 @@ local function cccccc()
             ff:FireServer('Block', false)
         end)
     end
-end
-
-local function aaa(playerName, playerList, host)
-    local index = 0
-    for i, player in ipairs(playerList) do
-        if player ~= host then
-            index = index + 1
-            if player.Name == playerName then
-                return index
-            end
-        end
-    end
-    return 1 -- Default to first position if not found
 end
 
 local function jjjjjj(kkkkk)
@@ -412,6 +394,10 @@ if m then
                 if gggggg == m then
                     pcall(function()
                         pppppp(ffffff.Text)
+                    end)
+                else
+                    pcall(function()
+                        pppppp(ffffff.Text) -- Allow local commands
                     end)
                 end
             end
