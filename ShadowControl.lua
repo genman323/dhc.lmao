@@ -241,7 +241,7 @@ local function jk()
         end
     end
     gh()
-    hi(Vector3.new(-375, 21 - 5, -286), 5)
+    hi(Vector3.new(0, 0, 0), 5) -- Replace with your bank coordinates (e.g., Vector3.new(-375, 16, -286) or your new values)
 end
 local function kl()
     gh()
