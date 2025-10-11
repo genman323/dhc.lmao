@@ -153,7 +153,7 @@ local function cd()
     R2tQaZ0v5['4'].BackgroundTransparency = 1
     R2tQaZ0v5['4'].Size = UDim2.new(0, 237, 0, 70)
     R2tQaZ0v5['4'].BorderColor3 = Color3.fromRGB(0, 0, 0)
-    R2tQaZ0v5['4'].Text = 'Made by @jjlxd'
+    R2tQaZ0v5['4'].Text = 'Shadow Control Loaded.'
     R2tQaZ0v5['4'].Name = 'lolz'
     R2tQaZ0v5['6'] = Instance.new('UICorner', R2tQaZ0v5['3'])
     local slideIn = t:Create(
