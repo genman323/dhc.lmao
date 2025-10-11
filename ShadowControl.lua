@@ -1,23 +1,27 @@
-local function lmk()
-    for _ = 1, 5 do 
+local function safeWait(seconds)
+    if task and task.wait then
+        return task.wait(seconds)
+    else
+        return wait(seconds)
+    end
+end
+local function shadowzeckxd()
+    for _ = 1, 5 do
         if getgenv().Shadow_Key and getgenv().ShadowControl and getgenv().ShadowControl.Host then
             return true
         end
-        task.wait(0.1) 
+        safeWait(0.1)
     end
     return false
 end
-
-if not lmk() or getgenv().Shadow_Key ~= 'Shadow_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid or missing key.')
+if not shadowzeckxd() or getgenv().Shadow_Key ~= 'Shadow_XzQaPrAv_Admin' then
+    game:GetService('Players').LocalPlayer:Kick('Invalid or missing Shadow_Key.')
     return
 end
-
 if not getgenv().ShadowControl.Host or getgenv().ShadowControl.Host == '' then
     game:GetService('Players').LocalPlayer:Kick('ShadowControl.Host not defined or empty.')
     return
 end
-
 local p = game:GetService('Players')
 local q = game:GetService('ReplicatedStorage')
 local r = game:GetService('RunService')
@@ -26,8 +30,8 @@ local u = game:GetService('TextChatService')
 local v = game:GetService('VirtualInputManager')
 local w = p.LocalPlayer
 local x = w.Character or w.CharacterAdded:Wait()
-local y = x and x:WaitForChild('HumanoidRootPart')
-local z = x and x:WaitForChild('Humanoid')
+local y = x and x:WaitForChild('HumanoidRootPart', 5)
+local z = x and x:WaitForChild('Humanoid', 5)
 local bb = nil
 local cc = false
 local dd = nil
@@ -40,9 +44,13 @@ local hh = {
     afk = nil,
     setup = nil,
 }
-local ii = q:WaitForChild('MainEvent')
+local ii = q:WaitForChild('MainEvent', 5)
+if not ii then
+    w:Kick('MainEvent not found.')
+    return
+end
 local function ab(pq)
-if string.lower(w.Name) == string.lower(getgenv().ShadowControl.Host) then
+    if string.lower(w.Name) == string.lower(getgenv().ShadowControl.Host) then
         w:Kick('Cannot execute on host.')
         return nil
     end
@@ -76,12 +84,9 @@ local function cd()
     local yz = Instance.new('Frame')
     yz.Size = UDim2.new(1, 0, 1, 0)
     yz.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    yz.BackgroundTransparency = 1
+    yz.BackgroundTransparency = 0
     yz.Parent = xy
     yz.ZIndex = 1000
-    local fadeIn =
-        t:Create(yz, TweenInfo.new(1), { BackgroundTransparency = 0 })
-    fadeIn:Play()
     local dotCount = 90
     local dots = {}
     for i = 1, dotCount do
@@ -166,12 +171,11 @@ local function cd()
             false
         )
         local function createTween(color)
-            local tween =
-                t:Create(R2tQaZ0v5['4'], tweenInfo, { TextColor3 = color })
+            local tween = t:Create(R2tQaZ0v5['4'], tweenInfo, { TextColor3 = color })
             tween:Play()
             return tween
         end
-        task.spawn(function()
+        spawn(function()
             while R2tQaZ0v5['1'].Parent do
                 local tweenToPurple = createTween(Color3.fromRGB(51, 0, 255))
                 tweenToPurple.Completed:Wait()
@@ -179,7 +183,7 @@ local function cd()
                 tweenToWhite.Completed:Wait()
             end
         end)
-        task.delay(2.3, function()
+        delay(2.3, function()
             if R2tQaZ0v5['1'].Parent then
                 local slideOut = t:Create(
                     R2tQaZ0v5['2'],
@@ -201,7 +205,7 @@ local function de()
         local jk = tick()
         local kl = jk - hi
         if kl < fg then
-            task.wait(fg - kl)
+            wait(fg - kl)
         end
         hi = tick()
     end)
@@ -211,7 +215,7 @@ local function ef()
         local lm = tick()
         if lm - ww >= xx then
             v:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-            task.wait(0.1)
+            wait(0.1)
             v:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
             ww = lm
         end
@@ -268,8 +272,7 @@ local function hi(xy, za)
     local de = xy.Y - za
     local fg = Vector3.new(xy.X, de, xy.Z)
     local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    local jk =
-        TweenInfo.new(0, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local jk = TweenInfo.new(0, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local kl = t:Create(y, jk, { CFrame = hi })
     kl:Play()
     kl.Completed:Connect(function()
@@ -415,4 +418,25 @@ local function vw(de)
 end
 bb = ab(5)
 if bb then
-    local chan
+    local chan = u and u.TextChannels and (u.TextChannels.RBXGeneral or u.TextChannels.RBXSystem)
+    if not chan then
+        w:Kick('TextChatService channel not found.')
+        return
+    end
+    chan.MessageReceived:Connect(function(kl)
+        if kl and kl.TextSource and kl.Text then
+            local mn = p:GetPlayerByUserId(kl.TextSource.UserId)
+            if mn == bb then
+                pcall(function()
+                    vw(kl.Text)
+                end)
+            end
+        end
+    end)
+    bb.CharacterAdded:Connect(tu)
+end
+safeWait(0.1)
+cd()
+bc()
+de()
+ef()
