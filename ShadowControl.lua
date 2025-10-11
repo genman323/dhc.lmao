@@ -141,7 +141,7 @@ local function cd()
     R2tQaZ0v5['3'].BackgroundTransparency = 0.7
     R2tQaZ0v5['4'] = Instance.new('TextLabel', R2tQaZ0v5['3'])
     R2tQaZ0v5['4'].BorderSizePixel = 0
-    R2tQaZ0v5['4'].TextSize = 30
+    R2tQaZ0v5['4'].TextSize = 22
     R2tQaZ0v5['4'].TextTransparency = 0.8
     R2tQaZ0v5['4'].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     R2tQaZ0v5['4'].FontFace = Font.new(
