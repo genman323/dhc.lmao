@@ -1,5 +1,5 @@
 if not getgenv().Shadow_Key or getgenv().Shadow_Key ~= 'Shadow_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid key.')
+    game:GetService('Players').LocalPlayer:Kick('Invalid key or executed on host.')
     return
 end
 
