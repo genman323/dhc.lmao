@@ -163,6 +163,10 @@ local function cd()
     )
     slideIn:Play()
     slideIn.Completed:Connect(function()
+        safeWait(2) -- Wait 2 seconds after overlay appears
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/genman323/dhc.lmao/refs/heads/main/Extra/Notification/hi.lua"))()
+        end)
         local tweenInfo = TweenInfo.new(
             1,
             Enum.EasingStyle.Sine,
