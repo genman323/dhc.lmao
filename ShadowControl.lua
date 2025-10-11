@@ -5,6 +5,11 @@ local function safeWait(seconds)
         return wait(seconds)
     end
 end
+if game.PlaceId ~= 2788229376 then
+    game:GetService('Players').LocalPlayer:Kick('wrong game retard')
+    return
+end
+
 local function shadowzeckxd()
     for _ = 1, 5 do
         if getgenv().Shadow_Key and getgenv().ShadowControl and getgenv().ShadowControl.Host then
