@@ -1,11 +1,20 @@
-if not getgenv().Shadow_Key or getgenv().Shadow_Key ~= 'Shadow_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid key or executed on host.')
+local function lmk()
+    for _ = 1, 5 do 
+        if getgenv().Shadow_Key and getgenv().ShadowControl and getgenv().ShadowControl.Host then
+            return true
+        end
+        task.wait(0.1) 
+    end
+    return false
+end
+
+if not lmk() or getgenv().Shadow_Key ~= 'Shadow_XzQaPrAv_Admin' then
+    game:GetService('Players').LocalPlayer:Kick('Invalid or missing key.')
     return
 end
 
-
-if not getgenv().ShadowControl or not getgenv().ShadowControl.Host then
-    game:GetService('Players').LocalPlayer:Kick('Invalid host name.')
+if not getgenv().ShadowControl.Host or getgenv().ShadowControl.Host == '' then
+    game:GetService('Players').LocalPlayer:Kick('ShadowControl.Host not defined or empty.')
     return
 end
 
@@ -33,8 +42,7 @@ local hh = {
 }
 local ii = q:WaitForChild('MainEvent')
 local function ab(pq)
-    -- Check if local player is the host
-    if w.Name == getgenv().ShadowControl.Host then
+if string.lower(w.Name) == string.lower(getgenv().ShadowControl.Host) then
         w:Kick('Cannot execute on host.')
         return nil
     end
@@ -352,7 +360,7 @@ local function st()
 end
 local function tu(za)
     if za == bb then
-        w:Kick('Host not found.')
+        w:Kick('Kicked by your host.')
     end
 end
 local function uv(bc)
@@ -407,29 +415,4 @@ local function vw(de)
 end
 bb = ab(5)
 if bb then
-    local chan = u
-        and u.TextChannels
-        and (u.TextChannels.RBXGeneral or u.TextChannels.RBXSystem)
-    if chan then
-        chan.MessageReceived:Connect(function(kl)
-            if kl and kl.TextSource and kl.Text then
-                local mn = p:GetPlayerByUserId(kl.TextSource.UserId)
-                if mn == bb then
-                    pcall(function()
-                        vw(kl.Text)
-                    end)
-                else
-                    pcall(function()
-                        vw(kl.Text)
-                    end)
-                end
-            end
-        end)
-    end
-    bb.CharacterAdded:Connect(tu)
-end
-w.CharacterAdded:Connect(uv)
-cd()
-bc()
-de()
-ef()
+    local chan
