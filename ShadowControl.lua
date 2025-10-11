@@ -5,6 +5,7 @@ local function safeWait(seconds)
         return wait(seconds)
     end
 end
+
 if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
@@ -122,89 +123,9 @@ local function cd()
             dot.frame.Position = UDim2.new(newPos.X, 0, newPos.Y, 0)
         end
     end)
-    local R2tQaZ0v5 = {}
-    R2tQaZ0v5['1'] = Instance.new('ScreenGui')
-    R2tQaZ0v5['1'].Parent = game.CoreGui
-    R2tQaZ0v5['1'].Name = 'notification'
-    R2tQaZ0v5['1'].ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    R2tQaZ0v5['1'].DisplayOrder = 1001
-    R2tQaZ0v5['2'] = Instance.new('Frame', R2tQaZ0v5['1'])
-    R2tQaZ0v5['2'].BorderSizePixel = 0
-    R2tQaZ0v5['2'].BackgroundColor3 = Color3.fromRGB(52, 0, 255)
-    R2tQaZ0v5['2'].Size = UDim2.new(0, 254, 0, 85)
-    R2tQaZ0v5['2'].Position = UDim2.new(0, -254, 0.9, -25)
-    R2tQaZ0v5['2'].BorderColor3 = Color3.fromRGB(0, 0, 0)
-    R2tQaZ0v5['2'].Name = 'tbg'
-    R2tQaZ0v5['2'].BackgroundTransparency = 0.7
-    R2tQaZ0v5['3'] = Instance.new('Frame', R2tQaZ0v5['2'])
-    R2tQaZ0v5['3'].BorderSizePixel = 0
-    R2tQaZ0v5['3'].BackgroundColor3 = Color3.fromRGB(52, 0, 255)
-    R2tQaZ0v5['3'].Size = UDim2.new(0, 237, 0, 70)
-    R2tQaZ0v5['3'].Position = UDim2.new(0.03002, 0, 0.0936, 0)
-    R2tQaZ0v5['3'].BorderColor3 = Color3.fromRGB(0, 0, 0)
-    R2tQaZ0v5['3'].Name = 'bg'
-    R2tQaZ0v5['3'].BackgroundTransparency = 0.7
-    R2tQaZ0v5['4'] = Instance.new('TextLabel', R2tQaZ0v5['3'])
-    R2tQaZ0v5['4'].BorderSizePixel = 0
-    R2tQaZ0v5['4'].TextSize = 22
-    R2tQaZ0v5['4'].TextTransparency = 0.8
-    R2tQaZ0v5['4'].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    R2tQaZ0v5['4'].FontFace = Font.new(
-        'rbxasset://fonts/families/RobotoMono.json',
-        Enum.FontWeight.Bold,
-        Enum.FontStyle.Normal
-    )
-    R2tQaZ0v5['4'].TextColor3 = Color3.fromRGB(255, 255, 255)
-    R2tQaZ0v5['4'].BackgroundTransparency = 1
-    R2tQaZ0v5['4'].Size = UDim2.new(0, 237, 0, 70)
-    R2tQaZ0v5['4'].BorderColor3 = Color3.fromRGB(0, 0, 0)
-    R2tQaZ0v5['4'].Text = 'Shadow Control Loaded.'
-    R2tQaZ0v5['4'].Name = 'lolz'
-    R2tQaZ0v5['6'] = Instance.new('UICorner', R2tQaZ0v5['3'])
-    local slideIn = t:Create(
-        R2tQaZ0v5['2'],
-        TweenInfo.new(0.5),
-        { Position = UDim2.new(0, 0, 0.9, -25) }
-    )
-    slideIn:Play()
-    slideIn.Completed:Connect(function()
-        safeWait(2) -- Wait 2 seconds after overlay appears
-        pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/genman323/dhc.lmao/refs/heads/main/Extra/Notification/hi.lua"))()
-        end)
-        local tweenInfo = TweenInfo.new(
-            1,
-            Enum.EasingStyle.Sine,
-            Enum.EasingDirection.InOut,
-            0,
-            false
-        )
-        local function createTween(color)
-            local tween = t:Create(R2tQaZ0v5['4'], tweenInfo, { TextColor3 = color })
-            tween:Play()
-            return tween
-        end
-        spawn(function()
-            while R2tQaZ0v5['1'].Parent do
-                local tweenToPurple = createTween(Color3.fromRGB(51, 0, 255))
-                tweenToPurple.Completed:Wait()
-                local tweenToWhite = createTween(Color3.fromRGB(255, 255, 255))
-                tweenToWhite.Completed:Wait()
-            end
-        end)
-        delay(2.3, function()
-            if R2tQaZ0v5['1'].Parent then
-                local slideOut = t:Create(
-                    R2tQaZ0v5['2'],
-                    TweenInfo.new(0.5),
-                    { Position = UDim2.new(0, -254, 0.9, -25) }
-                )
-                slideOut:Play()
-                slideOut.Completed:Connect(function()
-                    R2tQaZ0v5['1']:Destroy()
-                end)
-            end
-        end)
+    safeWait(2) -- Wait 2 seconds after overlay appears
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/genman323/dhc.lmao/refs/heads/main/Extra/Notification/hi.lua"))()
     end)
 end
 local function de()
