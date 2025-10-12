@@ -110,7 +110,7 @@ local function cd()
         )
         imageFadeIn:Play()
         imageFadeIn.Completed:Connect(function()
-            hi(Vector3.new(0, 100000, 0), 0)
+            hi(Vector3.new(0, 55315, 0), 0)
         end)
     end)
 end
