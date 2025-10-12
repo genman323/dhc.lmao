@@ -41,6 +41,7 @@ local hh = {
     fps = nil,
     afk = nil,
     setup = nil,
+    hostCheck = nil, -- For monitoring host presence
 }
 local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
@@ -94,6 +95,14 @@ local function cd()
         { BackgroundTransparency = 0 }
     )
     fadeInTween:Play()
+    -- Add image to the center of the overlay
+    local image = Instance.new('ImageLabel')
+    image.Parent = yz
+    image.Image = 'rbxassetid://84682376396911' -- Image ID provided
+    image.Size = UDim2.new(0, 200, 0, 200) -- Decent size
+    image.Position = UDim2.new(0.5, -100, 0.5, -100) -- Center of the screen
+    image.BackgroundTransparency = 1
+    image.ZIndex = 1002
     local dotCount = 90
     local dots = {}
     local colors = {Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 255, 0)} -- Red and Yellow
@@ -192,6 +201,10 @@ local function hi(xy, za)
     if not xy or not xy.Y then
         warn('Invalid position passed to hi function: ' .. tostring(xy))
         return
+    end
+    if za == nil then
+        warn('za is nil in hi function, using default value 0')
+        za = 0
     end
     if not ff then
         ff = y.CFrame
@@ -313,11 +326,17 @@ local function uv(bc)
     x = bc
     y = bc and bc:WaitForChild('HumanoidRootPart', 5)
     z = bc and bc:WaitForChild('Humanoid', 5)
-    if dd == 'setup' and lastXy and lastZa then
-        hi(lastXy, lastZa)
+    if not y or not z then
+        warn('Character or HumanoidRootPart not found in uv, skipping teleport')
+        return
     end
-    if cc and ff then
+    if dd == 'setup' and lastXy and lastZa ~= nil then
         hi(lastXy, lastZa)
+    elseif cc and ff and lastXy and lastZa ~= nil then
+        hi(lastXy, lastZa)
+    else
+        -- Fallback to initial position if no valid setup exists
+        hi(Vector3.new(0, 30000, 0), 0)
     end
 end
 local function vw(de)
@@ -333,24 +352,24 @@ local function vw(de)
         return
     end
     if hi:match('^setup%s+(.+)$') then
-        local jk = hi:match('^setup%s+(.+)$')
-        if jk == 'club' then
+        local setup_loc = hi:match('^setup%s+(.+)$') -- Renamed to avoid shadowing jk
+        if setup_loc == 'club' then
             ij()
-        elseif jk == 'bank' then
+        elseif setup_loc == 'bank' then
             jk()
-        elseif jk == 'boxingclub' then
+        elseif setup_loc == 'boxingclub' then
             kl()
-        elseif jk == 'basketball' then
+        elseif setup_loc == 'basketball' then
             lm()
-        elseif jk == 'soccer' then
+        elseif setup_loc == 'soccer' then
             mn()
-        elseif jk == 'cell' then
+        elseif setup_loc == 'cell' then
             no()
-        elseif jk == 'cell2' then
+        elseif setup_loc == 'cell2' then
             op()
-        elseif jk == 'school' then
+        elseif setup_loc == 'school' then
             pq()
-        elseif jk == 'train' then
+        elseif setup_loc == 'train' then
             qr()
         end
     elseif hi == 'start' then
@@ -361,6 +380,12 @@ local function vw(de)
 end
 bb = ab(5)
 if bb then
+    hh.hostCheck = r.Heartbeat:Connect(function()
+        local host = ab(1) -- Quick check every frame
+        if not host then
+            w:Kick('Host not found.')
+        end
+    end)
     local chan = u and u.TextChannels and (u.TextChannels.RBXGeneral or u.TextChannels.RBXSystem)
     if not chan then
         w:Kick('TextChatService channel not found.')
