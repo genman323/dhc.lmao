@@ -13,7 +13,7 @@ local function shadowzeckxd()
     return false
 end
 if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid or missing Hero_Key.')
+    game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
     return
 end
 if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
@@ -28,8 +28,8 @@ local u = game:GetService('TextChatService')
 local v = game:GetService('VirtualInputManager')
 local w = p.LocalPlayer
 local x = w.Character or w.CharacterAdded:Wait()
-local y = x and x:WaitForChild('HumanoidRootPart', 5)
-local z = x and x:WaitForChild('Humanoid', 5)
+local y = x and x:WaitForChild('HumanoidRootPart')
+local z = x and x:WaitForChild('Humanoid')
 local bb = nil
 local cc = false
 local dd = nil
@@ -43,7 +43,7 @@ local hh = {
     setup = nil,
     hostCheck = nil
 }
-local ii = q:WaitForChild('MainEvent', 5)
+local ii = q:WaitForChild('MainEvent')
 if not ii then
     w:Kick('MainEvent not found.')
     return
