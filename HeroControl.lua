@@ -28,8 +28,8 @@ local u = game:GetService('TextChatService')
 local v = game:GetService('VirtualInputManager')
 local w = p.LocalPlayer
 local x = w.Character or w.CharacterAdded:Wait()
-local y = x and x:WaitForChild('HumanoidRootPart')
-local z = x and x:WaitForChild('Humanoid')
+local y = x and x:WaitForChild('HumanoidRootPart', 5)
+local z = x and x:WaitForChild('Humanoid', 5)
 local bb = nil
 local cc = false
 local dd = nil
@@ -43,7 +43,7 @@ local hh = {
     setup = nil,
     hostCheck = nil
 }
-local ii = q:WaitForChild('MainEvent')
+local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
     w:Kick('MainEvent not found.')
     return
@@ -310,7 +310,7 @@ local function uv(bc)
     elseif cc and ff and lastXy and lastZa ~= nil then
         hi(lastXy, lastZa)
     else
-        hi(Vector3.new(0, 30000, 0), 0)
+        hi(Vector3.new(0, 100000, 0), 0)
     end
 end
 local function vw(de)
