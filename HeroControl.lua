@@ -2,7 +2,8 @@ if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
-print("Loading Hero Control")
+print("Loading Hero Control..")
+print(" ")
 local function shadowzeckxd()
     for _ = 1, 5 do
         if getgenv().Hero_Key and getgenv().HeroControl and getgenv().HeroControl.Host then
@@ -13,11 +14,11 @@ local function shadowzeckxd()
     return false
 end
 print("Validating Key..")
+task.wait(1)
 if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
     game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
     return
 end
-print("Key Validated.")
 if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
     game:GetService('Players').LocalPlayer:Kick('HeroControl.Host not defined or empty.')
     return
@@ -73,6 +74,24 @@ local function bc()
         end
     end
 end
+local function stopRendering()
+    for _, obj in ipairs(game.Workspace:GetDescendants()) do
+        if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
+            obj.Transparency = 1
+        elseif obj:IsA('Model') or obj:IsA('Folder') then
+            for _, child in ipairs(obj:GetDescendants()) do
+                if child:IsA('BasePart') or child:IsA('Decal') or child:IsA('Texture') then
+                    child.Transparency = 1
+                end
+            end
+        end
+    end
+    game.Workspace.DescendantAdded:Connect(function(obj)
+        if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
+            obj.Transparency = 1
+        end
+    end)
+end
 local function cd()
     local xy = Instance.new('ScreenGui')
     xy.Parent = game.CoreGui
@@ -96,22 +115,6 @@ local function cd()
         { BackgroundTransparency = 0 }
     )
     fadeInTween:Play()
-    for _, obj in ipairs(game.Workspace:GetDescendants()) do
-        if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
-            obj.Transparency = 1
-        elseif obj:IsA('Model') or obj:IsA('Folder') then
-            for _, child in ipairs(obj:GetDescendants()) do
-                if child:IsA('BasePart') or child:IsA('Decal') or child:IsA('Texture') then
-                    child.Transparency = 1
-                end
-            end
-        end
-    end
-    game.Workspace.DescendantAdded:Connect(function(obj)
-        if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
-            obj.Transparency = 1
-        end
-    end)
 end
 local function de()
     local fg = 1 / 5
@@ -383,10 +386,15 @@ cd()
 bc()
 de()
 ef()
-print("Protecting alt")
+print(" ")
+task.wait(0.1)
+print("Protecting alt..")
 task.delay(2.5, function()
-    hi(Vector3.new(0, 10000000, 0), 0)
-    print("Protected")
+    stopRendering()
+    hi(Vector3.new(0, 1000000, 0), 0)
+    task.wait(0.3)
+    print(" ")
 end)
-print("Hero Control Loaded")
+task.wait(0.5)
+print("Hero Control Loaded.")
 print("made by hardst_yle with <3")
