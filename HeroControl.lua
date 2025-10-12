@@ -314,10 +314,10 @@ local function uv(bc)
     if not y or not z then
         return
     end
-    if dd == 'setup' and lastXy and lastZa ~= nil then
-        hi(lastXy, lastZa)
-    elseif cc and ff and lastXy and lastZa ~= nil then
-        hi(lastXy, lastZa)
+    if dd == 'setup' and lastXy then
+        hi(lastXy, lastZa or 0)
+    elseif cc and ff and lastXy then
+        hi(lastXy, lastZa or 0)
     else
         hi(Vector3.new(0, 100000, 0), 0)
     end
