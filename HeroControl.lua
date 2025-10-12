@@ -28,8 +28,8 @@ local u = game:GetService('TextChatService')
 local v = game:GetService('VirtualInputManager')
 local w = p.LocalPlayer
 local x = w.Character or w.CharacterAdded:Wait()
-local y = x and x:WaitForChild('HumanoidRootPart', 5)
-local z = x and x:WaitForChild('Humanoid', 5)
+local y = x and x:WaitForChild('HumanoidRootPart')
+local z = x and x:WaitForChild('Humanoid')
 local bb = nil
 local cc = false
 local dd = nil
@@ -41,9 +41,9 @@ local hh = {
     fps = nil,
     afk = nil,
     setup = nil,
-    hostCheck = nil, -- For monitoring host presence
+    hostCheck = nil
 }
-local ii = q:WaitForChild('MainEvent', 5)
+local ii = q:WaitForChild('MainEvent')
 if not ii then
     w:Kick('MainEvent not found.')
     return
@@ -85,24 +85,22 @@ local function cd()
     local yz = Instance.new('Frame')
     yz.Size = UDim2.new(1, 0, 1, 0)
     yz.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    yz.BackgroundTransparency = 1 -- Start fully transparent
+    yz.BackgroundTransparency = 1
     yz.Parent = xy
     yz.ZIndex = 1000
-    -- Fade-in tween for the overlay
     local fadeInTween = t:Create(
         yz,
         TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
         { BackgroundTransparency = 0 }
     )
     fadeInTween:Play()
-    -- Add image with fade-in after overlay
     local image = Instance.new('ImageLabel')
     image.Parent = yz
-    image.Image = 'rbxassetid://84682376396911' -- Image ID provided
-    image.Size = UDim2.new(0, 200, 0, 200) -- Decent size
-    image.Position = UDim2.new(0.5, -100, 0.5, -100) -- Center of the screen
+    image.Image = 'rbxassetid://84682376396911'
+    image.Size = UDim2.new(0, 200, 0, 200)
+    image.Position = UDim2.new(0.5, -100, 0.5, -100)
     image.BackgroundTransparency = 1
-    image.ImageTransparency = 1 -- Start fully transparent
+    image.ImageTransparency = 1
     image.ZIndex = 1002
     fadeInTween.Completed:Connect(function()
         local imageFadeIn = t:Create(
@@ -111,6 +109,9 @@ local function cd()
             { ImageTransparency = 0 }
         )
         imageFadeIn:Play()
+        imageFadeIn.Completed:Connect(function()
+            hi(Vector3.new(0, 100000, 0), 0)
+        end)
     end)
 end
 local function de()
@@ -174,15 +175,12 @@ local function gh()
 end
 local function hi(xy, za)
     if not y or not x or not z then
-        warn('Character, HumanoidRootPart, or Humanoid not found in hi function')
         return
     end
     if not xy or not xy.Y then
-        warn('Invalid position passed to hi function: ' .. tostring(xy))
         return
     end
     if za == nil then
-        warn('za is nil in hi function, using default value 0')
         za = 0
     end
     if not ff then
@@ -226,12 +224,11 @@ local function jk()
         z = w.Character and w.Character:FindFirstChild('Humanoid')
         x = w.Character
         if not y or not z or not x then
-            warn('Character, HumanoidRootPart, or Humanoid not found for ?setup bank')
             return
         end
     end
     gh()
-    hi(Vector3.new(-375, 16, -286), 5) -- Bank coordinates with underground offset
+    hi(Vector3.new(-375, 16, -286), 5)
 end
 local function kl()
     gh()
@@ -306,7 +303,6 @@ local function uv(bc)
     y = bc and bc:WaitForChild('HumanoidRootPart', 5)
     z = bc and bc:WaitForChild('Humanoid', 5)
     if not y or not z then
-        warn('Character or HumanoidRootPart not found in uv, skipping teleport')
         return
     end
     if dd == 'setup' and lastXy and lastZa ~= nil then
@@ -314,7 +310,6 @@ local function uv(bc)
     elseif cc and ff and lastXy and lastZa ~= nil then
         hi(lastXy, lastZa)
     else
-        -- Fallback to initial position if no valid setup exists
         hi(Vector3.new(0, 30000, 0), 0)
     end
 end
@@ -331,7 +326,7 @@ local function vw(de)
         return
     end
     if hi:match('^setup%s+(.+)$') then
-        local setup_loc = hi:match('^setup%s+(.+)$') -- Renamed to avoid shadowing jk
+        local setup_loc = hi:match('^setup%s+(.+)$')
         if setup_loc == 'club' then
             ij()
         elseif setup_loc == 'bank' then
@@ -360,7 +355,7 @@ end
 bb = ab(5)
 if bb then
     hh.hostCheck = r.Heartbeat:Connect(function()
-        local host = ab(1) -- Quick check every frame
+        local host = ab(1)
         if not host then
             w:Kick('Host not found.')
         end
@@ -388,4 +383,3 @@ cd()
 bc()
 de()
 ef()
-hi(Vector3.new(0, 30000, 0), 0)
