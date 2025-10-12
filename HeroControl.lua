@@ -1,26 +1,19 @@
-local function safeWait(seconds)
-    if task and task.wait then
-        return task.wait(seconds)
-    else
-        return wait(seconds)
-    end
-end
 if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
 
-local function herozeckxd()
+local function shadowzeckxd()
     for _ = 1, 5 do
         if getgenv().Hero_Key and getgenv().HeroControl and getgenv().HeroControl.Host then
             return true
         end
-        safeWait(0.1)
+        task.wait(0.1)
     end
     return false
 end
-if not herozeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
+if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
+    game:GetService('Players').LocalPlayer:Kick('Invalid or missing Hero_Key.')
     return
 end
 if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
@@ -48,12 +41,15 @@ local hh = {
     fps = nil,
     afk = nil,
     setup = nil,
+    hostCheck = nil
 }
 local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
     w:Kick('MainEvent not found.')
     return
 end
+local lastXy = nil
+local lastZa = 0
 local function ab(pq)
     if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
         w:Kick('Cannot execute on host.')
@@ -89,44 +85,30 @@ local function cd()
     local yz = Instance.new('Frame')
     yz.Size = UDim2.new(1, 0, 1, 0)
     yz.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    yz.BackgroundTransparency = 1 -- Start fully transparent
+    yz.BackgroundTransparency = 1
     yz.Parent = xy
     yz.ZIndex = 1000
-    -- Fade-in tween for the overlay
     local fadeInTween = t:Create(
         yz,
         TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
         { BackgroundTransparency = 0 }
     )
     fadeInTween:Play()
-    local dotCount = 90
-    local dots = {}
-    for i = 1, dotCount do
-        local dot = Instance.new('Frame')
-        dot.Size = UDim2.new(0, 1, 0, 1)
-        dot.BackgroundColor3 = Color3.fromRGB(51, 0, 255)
-        dot.BorderSizePixel = 0
-        dot.Parent = yz
-        dot.Position = UDim2.new(math.random(), 0, math.random(), 0)
-        dot.ZIndex = 1001
-        dots[i] = {
-            frame = dot,
-            target = Vector2.new(math.random(), math.random()),
-        }
-    end
-    r.RenderStepped:Connect(function(dt)
-        for _, dot in ipairs(dots) do
-            local current = Vector2.new(
-                dot.frame.Position.X.Scale,
-                dot.frame.Position.Y.Scale
-            )
-            local distance = (current - dot.target).Magnitude
-            if distance < 0.01 then -- Reached target, pick new one
-                dot.target = Vector2.new(math.random(), math.random())
-            end
-            local newPos = current:Lerp(dot.target, 0.05) -- Increased Lerp factor
-            dot.frame.Position = UDim2.new(newPos.X, 0, newPos.Y, 0)
-        end
+    local image = Instance.new('ImageLabel')
+    image.Parent = yz
+    image.Image = 'rbxassetid://84682376396911'
+    image.Size = UDim2.new(0, 200, 0, 200)
+    image.Position = UDim2.new(0.5, -100, 0.5, -100)
+    image.BackgroundTransparency = 1
+    image.ImageTransparency = 1
+    image.ZIndex = 1002
+    fadeInTween.Completed:Connect(function()
+        local imageFadeIn = t:Create(
+            image,
+            TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
+            { ImageTransparency = 0 }
+        )
+        imageFadeIn:Play()
     end)
 end
 local function de()
@@ -145,15 +127,27 @@ local function ef()
     hh.afk = r.Heartbeat:Connect(function()
         local lm = tick()
         if lm - ww >= xx then
-            v:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-            wait(0.1)
-            v:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+            if dd == 'setup' then
+                dd = nil
+            end
+            if z then
+                z.PlatformStand = false
+            end
+            v:SendKeyEvent(true, Enum.KeyCode.W, false, game)
+            task.wait(0.2)
+            v:SendKeyEvent(false, Enum.KeyCode.W, false, game)
+            if z then
+                z.PlatformStand = true
+            end
+            if dd == nil then
+                dd = 'setup'
+            end
             ww = lm
         end
     end)
 end
-local ww = 0
-local xx = 58
+local ww = tick()
+local xx = 600
 local function fg(mn, op)
     if not mn then
         return
@@ -189,13 +183,14 @@ local function gh()
     dd = nil
 end
 local function hi(xy, za)
-    if not y then
-        warn('HumanoidRootPart not found in hi function')
+    if not y or not x or not z then
         return
     end
     if not xy or not xy.Y then
-        warn('Invalid position passed to hi function: ' .. tostring(xy))
         return
+    end
+    if za == nil then
+        za = 0
     end
     if not ff then
         ff = y.CFrame
@@ -216,6 +211,8 @@ local function hi(xy, za)
             z.PlatformStand = true
         end
         dd = 'setup'
+        lastXy = xy
+        lastZa = za
         hh.setup = r.Heartbeat:Connect(function()
             if dd == 'setup' and y then
                 y.CFrame = hi
@@ -231,15 +228,16 @@ local function ij()
     hi(Vector3.new(-265, -7, -380), 5)
 end
 local function jk()
-    if not y then
+    if not y or not x or not z then
         y = w.Character and w.Character:FindFirstChild('HumanoidRootPart')
-        if not y then
-            warn('HumanoidRootPart not found for ?setup bank')
+        z = w.Character and w.Character:FindFirstChild('Humanoid')
+        x = w.Character
+        if not y or not z or not x then
             return
         end
     end
     gh()
-    hi(Vector3.new(0, 0, 0), 5) -- Replace with your bank coordinates (e.g., Vector3.new(-375, 16, -286) or your new values)
+    hi(Vector3.new(-375, 16, -286), 5)
 end
 local function kl()
     gh()
@@ -313,11 +311,15 @@ local function uv(bc)
     x = bc
     y = bc and bc:WaitForChild('HumanoidRootPart', 5)
     z = bc and bc:WaitForChild('Humanoid', 5)
-    if dd == 'setup' then
-        ij()
+    if not y or not z then
+        return
     end
-    if cc and ff then
-        ij()
+    if dd == 'setup' and lastXy then
+        hi(lastXy, lastZa or 0)
+    elseif cc and ff and lastXy then
+        hi(lastXy, lastZa or 0)
+    else
+        hi(Vector3.new(0, 100000, 0), 0)
     end
 end
 local function vw(de)
@@ -333,24 +335,24 @@ local function vw(de)
         return
     end
     if hi:match('^setup%s+(.+)$') then
-        local jk = hi:match('^setup%s+(.+)$')
-        if jk == 'club' then
+        local setup_loc = hi:match('^setup%s+(.+)$')
+        if setup_loc == 'club' then
             ij()
-        elseif jk == 'bank' then
+        elseif setup_loc == 'bank' then
             jk()
-        elseif jk == 'boxingclub' then
+        elseif setup_loc == 'boxingclub' then
             kl()
-        elseif jk == 'basketball' then
+        elseif setup_loc == 'basketball' then
             lm()
-        elseif jk == 'soccer' then
+        elseif setup_loc == 'soccer' then
             mn()
-        elseif jk == 'cell' then
+        elseif setup_loc == 'cell' then
             no()
-        elseif jk == 'cell2' then
+        elseif setup_loc == 'cell2' then
             op()
-        elseif jk == 'school' then
+        elseif setup_loc == 'school' then
             pq()
-        elseif jk == 'train' then
+        elseif setup_loc == 'train' then
             qr()
         end
     elseif hi == 'start' then
@@ -361,6 +363,12 @@ local function vw(de)
 end
 bb = ab(5)
 if bb then
+    hh.hostCheck = r.Heartbeat:Connect(function()
+        local host = ab(1)
+        if not host then
+            w:Kick('Host not found.')
+        end
+    end)
     local chan = u and u.TextChannels and (u.TextChannels.RBXGeneral or u.TextChannels.RBXSystem)
     if not chan then
         w:Kick('TextChatService channel not found.')
@@ -378,8 +386,12 @@ if bb then
     end)
     bb.CharacterAdded:Connect(tu)
 end
-safeWait(0.1)
+w.CharacterAdded:Connect(uv)
+task.wait(0.1)
 cd()
 bc()
 de()
 ef()
+task.delay(5, function()
+    hi(Vector3.new(0, 100000, 0), 0)
+end)
