@@ -14,7 +14,7 @@ local function shadowzeckxd()
 end
 print("Validating Key..")
 if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid or missing Hero_Key.')
+    game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
     return
 end
 print("Key Validated.")
