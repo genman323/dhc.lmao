@@ -3,7 +3,9 @@ if game.PlaceId ~= 2788229376 then
     return
 end
 print("Loading Hero Control..")
+task.wait(1)
 print("[] Checking Coordinates")
+task.wait(1)
 local function shadowzeckxd()
     for _ = 1, 5 do
         if getgenv().Hero_Key and getgenv().HeroControl and getgenv().HeroControl.Host then
@@ -386,11 +388,11 @@ cd()
 bc()
 de()
 ef()
-task.wait(0.25)
+task.wait(1)
 print("[] Protecting Alt")
 task.delay(2.5, function()
     stopRendering()
     hi(Vector3.new(0, 1000000, 0), 0)
 end)
-task.wait(0.5)
+task.wait(1)
 print("made by hardst_yle with <3")
