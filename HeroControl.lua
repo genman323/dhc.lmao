@@ -2,7 +2,7 @@ if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
-print("Loading Hero Control..")
+print("Loading Hero Control")
 local function shadowzeckxd()
     for _ = 1, 5 do
         if getgenv().Hero_Key and getgenv().HeroControl and getgenv().HeroControl.Host then
@@ -96,15 +96,6 @@ local function cd()
         { BackgroundTransparency = 0 }
     )
     fadeInTween:Play()
-    fadeInTween.Completed:Connect(function()
-        task.wait(1)
-        local fadeOutTween = t:Create(
-            yz,
-            TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
-            { BackgroundTransparency = 1 }
-        )
-        fadeOutTween:Play()
-    end)
     for _, obj in ipairs(game.Workspace:GetDescendants()) do
         if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
             obj.Transparency = 1
@@ -392,9 +383,10 @@ cd()
 bc()
 de()
 ef()
-print("Protecting alt..")
+print("Protecting alt")
 task.delay(2.5, function()
-    hi(Vector3.new(0, 1000000, 0), 0)
-    print("Protected.")
+    hi(Vector3.new(0, 10000000, 0), 0)
+    print("Protected")
 end)
-print("Hero Control Loaded.")
+print("Hero Control Loaded")
+print("made by hardst_yle with <3")
