@@ -18,6 +18,7 @@ task.wait(1)
 if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
     game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
     return
+    print("✔")
 end
 if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
     game:GetService('Players').LocalPlayer:Kick('HeroControl.Host not defined or empty.')
@@ -393,7 +394,7 @@ task.delay(2.5, function()
     stopRendering()
     hi(Vector3.new(0, 1000000, 0), 0)
     task.wait(0.3)
-    print(" ")
+    print("✔")
 end)
 task.wait(0.5)
 print("Hero Control Loaded.")
