@@ -1,5 +1,5 @@
 if game.PlaceId ~= 2788229376 then
-    game:GetService('Players').LocalPlayer:Kick('wrong game retard')
+    game:GetService('Players').LocalPlayer:Kick('wrong gamsard')
     return
 end
 
