@@ -13,7 +13,7 @@ local function shadowzeckxd()
     return false
 end
 if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid key.')
+    game:GetService('Players').LocalPlayer:Kick('Invalid or missing Hero_Key.')
     return
 end
 if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
@@ -109,9 +109,6 @@ local function cd()
             { ImageTransparency = 0 }
         )
         imageFadeIn:Play()
-        imageFadeIn.Completed:Connect(function()
-            hi(Vector3.new(0, 55315, 0), 0)
-        end)
     end)
 end
 local function de()
@@ -395,3 +392,6 @@ cd()
 bc()
 de()
 ef()
+task.delay(5, function()
+    hi(Vector3.new(0, 100000, 0), 0)
+end)
