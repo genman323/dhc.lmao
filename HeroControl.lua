@@ -2,7 +2,7 @@ if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
-print("Loading Hero Control..")
+print("[] Loading Hero Control..")
 task.wait(1)
 print("[] Checking Coordinates")
 task.wait(1)
@@ -395,4 +395,4 @@ task.delay(2.5, function()
     hi(Vector3.new(0, 1000000, 0), 0)
 end)
 task.wait(1)
-print("made by hardst_yle with <3")
+print("[] Made By hardst_yle With <3")
