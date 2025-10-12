@@ -13,7 +13,7 @@ local function shadowzeckxd()
     return false
 end
 if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid or missing Hero_Key.')
+    game:GetService('Players').LocalPlayer:Kick('Invalid key.')
     return
 end
 if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
@@ -49,7 +49,7 @@ if not ii then
     return
 end
 local lastXy = nil
-local lastZa = nil
+local lastZa = 0
 local function ab(pq)
     if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
         w:Kick('Cannot execute on host.')
@@ -130,15 +130,27 @@ local function ef()
     hh.afk = r.Heartbeat:Connect(function()
         local lm = tick()
         if lm - ww >= xx then
-            v:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-            wait(0.1)
-            v:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+            if dd == 'setup' then
+                dd = nil
+            end
+            if z then
+                z.PlatformStand = false
+            end
+            v:SendKeyEvent(true, Enum.KeyCode.W, false, game)
+            task.wait(0.2)
+            v:SendKeyEvent(false, Enum.KeyCode.W, false, game)
+            if z then
+                z.PlatformStand = true
+            end
+            if dd == nil then
+                dd = 'setup'
+            end
             ww = lm
         end
     end)
 end
-local ww = 0
-local xx = 58
+local ww = tick()
+local xx = 600
 local function fg(mn, op)
     if not mn then
         return
