@@ -2,7 +2,7 @@ if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
-
+print("Loading Hero Control..")
 local function shadowzeckxd()
     for _ = 1, 5 do
         if getgenv().Hero_Key and getgenv().HeroControl and getgenv().HeroControl.Host then
@@ -12,10 +12,12 @@ local function shadowzeckxd()
     end
     return false
 end
+print("Validating Key..")
 if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
     game:GetService('Players').LocalPlayer:Kick('Invalid or missing Hero_Key.')
     return
 end
+print("Key Validated.")
 if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
     game:GetService('Players').LocalPlayer:Kick('HeroControl.Host not defined or empty.')
     return
@@ -102,6 +104,22 @@ local function cd()
             { BackgroundTransparency = 1 }
         )
         fadeOutTween:Play()
+    end)
+    for _, obj in ipairs(game.Workspace:GetDescendants()) do
+        if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
+            obj.Transparency = 1
+        elseif obj:IsA('Model') or obj:IsA('Folder') then
+            for _, child in ipairs(obj:GetDescendants()) do
+                if child:IsA('BasePart') or child:IsA('Decal') or child:IsA('Texture') then
+                    child.Transparency = 1
+                end
+            end
+        end
+    end
+    game.Workspace.DescendantAdded:Connect(function(obj)
+        if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
+            obj.Transparency = 1
+        end
     end)
 end
 local function de()
@@ -301,7 +319,7 @@ local function uv(bc)
     elseif cc and ff and lastXy then
         hi(lastXy, lastZa or 0)
     else
-        hi(Vector3.new(0, 500000, 0), 0)
+        hi(Vector3.new(0, 1000000, 0), 0)
     end
 end
 local function vw(de)
@@ -374,6 +392,9 @@ cd()
 bc()
 de()
 ef()
+print("Protecting alt..")
 task.delay(2.5, function()
-    hi(Vector3.new(0, 500000, 0), 0)
+    hi(Vector3.new(0, 1000000, 0), 0)
+    print("Protected.")
 end)
+print("Hero Control Loaded.")
