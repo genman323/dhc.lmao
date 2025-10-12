@@ -1,32 +1,23 @@
-local function safeWait(seconds)
-    if task and task.wait then
-        return task.wait(seconds)
-    else
-        return wait(seconds)
-    end
-end
-
--- Check if the game ID matches 2788229376
 if game.PlaceId ~= 2788229376 then
-    game:GetService('Players').LocalPlayer:Kick('Wrong game.')
+    game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
 
 local function shadowzeckxd()
     for _ = 1, 5 do
-        if getgenv().Shadow_Key and getgenv().ShadowControl and getgenv().ShadowControl.Host then
+        if getgenv().Hero_Key and getgenv().HeroControl and getgenv().HeroControl.Host then
             return true
         end
-        safeWait(0.1)
+        task.wait(0.1)
     end
     return false
 end
-if not shadowzeckxd() or getgenv().Shadow_Key ~= 'Shadow_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid or missing Shadow_Key.')
+if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
+    game:GetService('Players').LocalPlayer:Kick('Invalid or missing Hero_Key.')
     return
 end
-if not getgenv().ShadowControl.Host or getgenv().ShadowControl.Host == '' then
-    game:GetService('Players').LocalPlayer:Kick('ShadowControl.Host not defined or empty.')
+if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
+    game:GetService('Players').LocalPlayer:Kick('HeroControl.Host not defined or empty.')
     return
 end
 local p = game:GetService('Players')
@@ -56,13 +47,15 @@ if not ii then
     w:Kick('MainEvent not found.')
     return
 end
+local lastXy = nil
+local lastZa = nil
 local function ab(pq)
-    if string.lower(w.Name) == string.lower(getgenv().ShadowControl.Host) then
+    if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
         w:Kick('Cannot execute on host.')
         return nil
     end
     local rs, tu = pcall(function()
-        return p:WaitForChild(getgenv().ShadowControl.Host, pq)
+        return p:WaitForChild(getgenv().HeroControl.Host, pq)
     end)
     if rs and tu then
         return tu
@@ -103,10 +96,11 @@ local function cd()
     fadeInTween:Play()
     local dotCount = 90
     local dots = {}
+    local colors = {Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 255, 0)} -- Red and Yellow
     for i = 1, dotCount do
         local dot = Instance.new('Frame')
         dot.Size = UDim2.new(0, 1, 0, 1)
-        dot.BackgroundColor3 = Color3.fromRGB(51, 0, 255)
+        dot.BackgroundColor3 = colors[math.random(1, 2)] -- Randomly assign red or yellow
         dot.BorderSizePixel = 0
         dot.Parent = yz
         dot.Position = UDim2.new(math.random(), 0, math.random(), 0)
@@ -191,8 +185,8 @@ local function gh()
     dd = nil
 end
 local function hi(xy, za)
-    if not y then
-        warn('HumanoidRootPart not found in hi function')
+    if not y or not x or not z then
+        warn('Character, HumanoidRootPart, or Humanoid not found in hi function')
         return
     end
     if not xy or not xy.Y then
@@ -218,6 +212,8 @@ local function hi(xy, za)
             z.PlatformStand = true
         end
         dd = 'setup'
+        lastXy = xy
+        lastZa = za
         hh.setup = r.Heartbeat:Connect(function()
             if dd == 'setup' and y then
                 y.CFrame = hi
@@ -233,15 +229,17 @@ local function ij()
     hi(Vector3.new(-265, -7, -380), 5)
 end
 local function jk()
-    if not y then
+    if not y or not x or not z then
         y = w.Character and w.Character:FindFirstChild('HumanoidRootPart')
-        if not y then
-            warn('HumanoidRootPart not found for ?setup bank')
+        z = w.Character and w.Character:FindFirstChild('Humanoid')
+        x = w.Character
+        if not y or not z or not x then
+            warn('Character, HumanoidRootPart, or Humanoid not found for ?setup bank')
             return
         end
     end
     gh()
-    hi(Vector3.new(0, 0, 0), 5) -- Replace with your bank coordinates (e.g., Vector3.new(-375, 16, -286) or your new values)
+    hi(Vector3.new(-375, 16, -286), 5) -- Bank coordinates with underground offset
 end
 local function kl()
     gh()
@@ -315,11 +313,11 @@ local function uv(bc)
     x = bc
     y = bc and bc:WaitForChild('HumanoidRootPart', 5)
     z = bc and bc:WaitForChild('Humanoid', 5)
-    if dd == 'setup' then
-        ij()
+    if dd == 'setup' and lastXy and lastZa then
+        hi(lastXy, lastZa)
     end
     if cc and ff then
-        ij()
+        hi(lastXy, lastZa)
     end
 end
 local function vw(de)
@@ -380,8 +378,10 @@ if bb then
     end)
     bb.CharacterAdded:Connect(tu)
 end
-safeWait(0.1)
+w.CharacterAdded:Connect(uv)
+task.wait(0.1)
 cd()
 bc()
 de()
 ef()
+hi(Vector3.new(0, 30000, 0), 0)
