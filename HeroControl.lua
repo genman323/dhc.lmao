@@ -95,44 +95,21 @@ local function cd()
         { BackgroundTransparency = 0 }
     )
     fadeInTween:Play()
-    -- Add image to the center of the overlay
+    -- Add image with fade-in
     local image = Instance.new('ImageLabel')
     image.Parent = yz
     image.Image = 'rbxassetid://84682376396911' -- Image ID provided
     image.Size = UDim2.new(0, 200, 0, 200) -- Decent size
     image.Position = UDim2.new(0.5, -100, 0.5, -100) -- Center of the screen
     image.BackgroundTransparency = 1
+    image.ImageTransparency = 1 -- Start fully transparent
     image.ZIndex = 1002
-    local dotCount = 90
-    local dots = {}
-    local colors = {Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 255, 0)} -- Red and Yellow
-    for i = 1, dotCount do
-        local dot = Instance.new('Frame')
-        dot.Size = UDim2.new(0, 1, 0, 1)
-        dot.BackgroundColor3 = colors[math.random(1, 2)] -- Randomly assign red or yellow
-        dot.BorderSizePixel = 0
-        dot.Parent = yz
-        dot.Position = UDim2.new(math.random(), 0, math.random(), 0)
-        dot.ZIndex = 1001
-        dots[i] = {
-            frame = dot,
-            target = Vector2.new(math.random(), math.random()),
-        }
-    end
-    r.RenderStepped:Connect(function(dt)
-        for _, dot in ipairs(dots) do
-            local current = Vector2.new(
-                dot.frame.Position.X.Scale,
-                dot.frame.Position.Y.Scale
-            )
-            local distance = (current - dot.target).Magnitude
-            if distance < 0.01 then -- Reached target, pick new one
-                dot.target = Vector2.new(math.random(), math.random())
-            end
-            local newPos = current:Lerp(dot.target, 0.05) -- Increased Lerp factor
-            dot.frame.Position = UDim2.new(newPos.X, 0, newPos.Y, 0)
-        end
-    end)
+    local imageFadeIn = t:Create(
+        image,
+        TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
+        { ImageTransparency = 0 }
+    )
+    imageFadeIn:Play()
 end
 local function de()
     local fg = 1 / 5
