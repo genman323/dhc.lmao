@@ -94,21 +94,14 @@ local function cd()
         { BackgroundTransparency = 0 }
     )
     fadeInTween:Play()
-    local image = Instance.new('ImageLabel')
-    image.Parent = yz
-    image.Image = 'rbxassetid://84682376396911'
-    image.Size = UDim2.new(0, 200, 0, 200)
-    image.Position = UDim2.new(0.5, -100, 0.5, -100)
-    image.BackgroundTransparency = 1
-    image.ImageTransparency = 1
-    image.ZIndex = 1002
     fadeInTween.Completed:Connect(function()
-        local imageFadeIn = t:Create(
-            image,
+        task.wait(1)
+        local fadeOutTween = t:Create(
+            yz,
             TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
-            { ImageTransparency = 0 }
+            { BackgroundTransparency = 1 }
         )
-        imageFadeIn:Play()
+        fadeOutTween:Play()
     end)
 end
 local function de()
@@ -203,24 +196,21 @@ local function hi(xy, za)
     local de = xy.Y - za
     local fg = Vector3.new(xy.X, de, xy.Z)
     local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    local jk = TweenInfo.new(0, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local kl = t:Create(y, jk, { CFrame = hi })
-    kl:Play()
-    kl.Completed:Connect(function()
-        if z then
-            z.PlatformStand = true
+    y.CFrame = hi
+    y.Velocity = Vector3.zero
+    if z then
+        z.PlatformStand = true
+    end
+    dd = 'setup'
+    lastXy = xy
+    lastZa = za
+    hh.setup = r.Heartbeat:Connect(function()
+        if dd == 'setup' and y then
+            y.CFrame = hi
+            y.Velocity = Vector3.zero
+            y.AssemblyLinearVelocity = Vector3.zero
+            y.AssemblyAngularVelocity = Vector3.zero
         end
-        dd = 'setup'
-        lastXy = xy
-        lastZa = za
-        hh.setup = r.Heartbeat:Connect(function()
-            if dd == 'setup' and y then
-                y.CFrame = hi
-                y.Velocity = Vector3.zero
-                y.AssemblyLinearVelocity = Vector3.zero
-                y.AssemblyAngularVelocity = Vector3.zero
-            end
-        end)
     end)
 end
 local function ij()
@@ -228,14 +218,6 @@ local function ij()
     hi(Vector3.new(-265, -7, -380), 5)
 end
 local function jk()
-    if not y or not x or not z then
-        y = w.Character and w.Character:FindFirstChild('HumanoidRootPart')
-        z = w.Character and w.Character:FindFirstChild('Humanoid')
-        x = w.Character
-        if not y or not z or not x then
-            return
-        end
-    end
     gh()
     hi(Vector3.new(-375, 16, -286), 5)
 end
@@ -319,7 +301,7 @@ local function uv(bc)
     elseif cc and ff and lastXy then
         hi(lastXy, lastZa or 0)
     else
-        hi(Vector3.new(0, 100000, 0), 0)
+        hi(Vector3.new(0, 500000, 0), 0)
     end
 end
 local function vw(de)
@@ -392,6 +374,6 @@ cd()
 bc()
 de()
 ef()
-task.delay(5, function()
-    hi(Vector3.new(0, 100000, 0), 0)
+task.delay(2.5, function()
+    hi(Vector3.new(0, 500000, 0), 0)
 end)
