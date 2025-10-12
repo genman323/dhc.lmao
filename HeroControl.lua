@@ -1,5 +1,5 @@
 if game.PlaceId ~= 2788229376 then
-    game:GetService('Players').LocalPlayer:Kick('wrong gamsard')
+    game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
 
@@ -95,7 +95,7 @@ local function cd()
         { BackgroundTransparency = 0 }
     )
     fadeInTween:Play()
-    -- Add image with fade-in
+    -- Add image with fade-in after overlay
     local image = Instance.new('ImageLabel')
     image.Parent = yz
     image.Image = 'rbxassetid://84682376396911' -- Image ID provided
@@ -104,12 +104,14 @@ local function cd()
     image.BackgroundTransparency = 1
     image.ImageTransparency = 1 -- Start fully transparent
     image.ZIndex = 1002
-    local imageFadeIn = t:Create(
-        image,
-        TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
-        { ImageTransparency = 0 }
-    )
-    imageFadeIn:Play()
+    fadeInTween.Completed:Connect(function()
+        local imageFadeIn = t:Create(
+            image,
+            TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
+            { ImageTransparency = 0 }
+        )
+        imageFadeIn:Play()
+    end)
 end
 local function de()
     local fg = 1 / 5
