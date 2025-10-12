@@ -2,8 +2,8 @@ if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
-print("Loading Hero Control..")
-print(" ")
+print("[ ]Loading Hero Control..")
+print("[] Checking Coordinates")
 local function shadowzeckxd()
     for _ = 1, 5 do
         if getgenv().Hero_Key and getgenv().HeroControl and getgenv().HeroControl.Host then
@@ -13,7 +13,7 @@ local function shadowzeckxd()
     end
     return false
 end
-print("Validating Key..")
+print("[] Validating Key")
 task.wait(1)
 if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
     game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
@@ -389,13 +389,11 @@ de()
 ef()
 print(" ")
 task.wait(0.1)
-print("Protecting alt..")
+print("[] Protecting Alt")
 task.delay(2.5, function()
     stopRendering()
     hi(Vector3.new(0, 1000000, 0), 0)
-    task.wait(0.3)
-    print("✔")
 end)
 task.wait(0.5)
-print("Hero Control Loaded.")
+print("[ ]Hero Control Loaded.")
 print("made by hardst_yle with <3")
