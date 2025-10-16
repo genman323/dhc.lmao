@@ -6,7 +6,7 @@ print("[] Loading Hero Control..")
 task.wait(1)
 print("[] Checking Coordinates")
 task.wait(1)
-local function shadowzeckxd()
+local function zXqW7kP()
     for _ = 1, 5 do
         if getgenv().Hero_Key and getgenv().HeroControl and getgenv().HeroControl.Host then
             return true
@@ -17,7 +17,7 @@ local function shadowzeckxd()
 end
 print("[] Validating Key")
 task.wait(1)
-if not shadowzeckxd() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
+if not zXqW7kP() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
     game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
     return
 end
@@ -46,7 +46,8 @@ local hh = {
     fps = nil,
     afk = nil,
     setup = nil,
-    hostCheck = nil
+    hostCheck = nil,
+    flyLoop = nil
 }
 local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
@@ -55,6 +56,39 @@ if not ii then
 end
 local lastXy = nil
 local lastZa = 0
+local flyJmz9xR = nil
+
+local function kL8vNpQ2()
+    if flyJmz9xR then
+        flyJmz9xR:Disconnect()
+    end
+    
+    flyJmz9xR = r.Heartbeat:Connect(function()
+        if dd == 'setup' then
+            if flyJmz9xR then
+                flyJmz9xR:Disconnect()
+                flyJmz9xR = nil
+                hh.flyLoop = nil
+            end
+            return
+        end
+        
+        if y then
+            local currYpos = y.Position.Y
+            local maxUpY = 2147483648
+            local maxDownY = -4294967296
+            
+            if currYpos >= maxUpY then
+                mN3qWvX7(Vector3.new(0, maxDownY, 0), 0)
+            elseif currYpos <= maxDownY then
+                mN3qWvX7(Vector3.new(0, maxUpY, 0), 0)
+            end
+        end
+    end)
+    
+    hh.flyLoop = flyJmz9xR
+end
+
 local function ab(pq)
     if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
         w:Kick('Cannot execute on host.')
@@ -69,7 +103,7 @@ local function ab(pq)
     w:Kick('Host not found.')
     return nil
 end
-local function bc()
+local function xY4zT6rE()
     for _, de in ipairs(game.Workspace:GetDescendants()) do
         if de:IsA('Seat') then
             de.Disabled = true
@@ -118,7 +152,7 @@ local function cd()
     )
     fadeInTween:Play()
 end
-local function de()
+local function pQ9wE2rT()
     local fg = 1 / 5
     local hi = tick()
     hh.fps = r.RenderStepped:Connect(function()
@@ -130,7 +164,7 @@ local function de()
         hi = tick()
     end)
 end
-local function ef()
+local function mB5vX8nL()
     hh.afk = r.Heartbeat:Connect(function()
         local lm = tick()
         if lm - ww >= xx then
@@ -155,7 +189,7 @@ local function ef()
 end
 local ww = tick()
 local xx = 600
-local function fg(mn, op)
+local function fG7hJ2kP(mn, op)
     if not mn then
         return
     end
@@ -169,7 +203,7 @@ local function fg(mn, op)
         end
     end
 end
-local function gh()
+local function rT4yU9iO()
     if y then
         y.Anchored = false
         y.Velocity = Vector3.zero
@@ -188,8 +222,13 @@ local function gh()
         end
     end
     dd = nil
+    if flyJmz9xR then
+        flyJmz9xR:Disconnect()
+        flyJmz9xR = nil
+        hh.flyLoop = nil
+    end
 end
-local function hi(xy, za)
+local function mN3qWvX7(xy, za)
     if not y or not x or not z then
         return
     end
@@ -202,7 +241,7 @@ local function hi(xy, za)
     if not ff then
         ff = y.CFrame
     end
-    fg(x, true)
+    fG7hJ2kP(x, true)
     local bc = x and x:FindFirstChild('Animate')
     if bc then
         bc.Enabled = false
@@ -227,43 +266,45 @@ local function hi(xy, za)
         end
     end)
 end
-local function ij()
-    gh()
-    hi(Vector3.new(-265, -7, -380), 5)
+
+local function cL6mP8wQ()
+    rT4yU9iO()
+    mN3qWvX7(Vector3.new(-265, -7, -380), 5)
 end
-local function jk()
-    gh()
-    hi(Vector3.new(-375, 16, -286), 5)
+local function vB2nX5rY()
+    rT4yU9iO()
+    mN3qWvX7(Vector3.new(-375, 16, -286), 5)
 end
-local function kl()
-    gh()
-    hi(Vector3.new(-263, 53 - 2.8, -1129), 2.8)
+local function qW9tE3mR()
+    rT4yU9iO()
+    mN3qWvX7(Vector3.new(-263, 53 - 2.8, -1129), 2.8)
 end
-local function lm()
-    gh()
-    hi(Vector3.new(-932, 21 - 5 + 0.3 + 0.6, -483), 5)
+local function jK7pL4xZ()
+    rT4yU9iO()
+    mN3qWvX7(Vector3.new(-932, 21 - 5 + 0.3 + 0.6, -483), 5)
 end
-local function mn()
-    gh()
-    hi(Vector3.new(-749, 22 - 5 + 1.2, -485), 5)
+local function hN8qW2vT()
+    rT4yU9iO()
+    mN3qWvX7(Vector3.new(-749, 22 - 5 + 1.2, -485), 5)
 end
-local function no()
-    gh()
-    hi(Vector3.new(-295, 21 - 3, -111), 5)
+local function fM3rT9yU()
+    rT4yU9iO()
+    mN3qWvX7(Vector3.new(-295, 21 - 3, -111), 5)
 end
-local function op()
-    gh()
-    hi(Vector3.new(-295, 22 - 3, -68), 5)
+local function pX6wQ4nL()
+    rT4yU9iO()
+    mN3qWvX7(Vector3.new(-295, 22 - 3, -68), 5)
 end
-local function pq()
-    gh()
-    hi(Vector3.new(-654, 21 - 3, 256), 5)
+local function tR2vB8mK()
+    rT4yU9iO()
+    mN3qWvX7(Vector3.new(-654, 21 - 3, 256), 5)
 end
-local function qr()
-    gh()
-    hi(Vector3.new(636, 47 - 5, -80), 5)
+local function yU5qP9wE()
+    rT4yU9iO()
+    mN3qWvX7(Vector3.new(636, 47 - 5, -80), 5)
 end
-local function rs()
+
+local function dS7kL3pQ()
     if not ii then
         return
     end
@@ -286,7 +327,7 @@ local function rs()
         end
     end)
 end
-local function st()
+local function gH4nX8qW()
     cc = false
     if hh.drop then
         hh.drop:Disconnect()
@@ -298,12 +339,12 @@ local function st()
         end)
     end
 end
-local function tu(za)
+local function iL9mT2rY(za)
     if za == bb then
         w:Kick('Kicked by your host.')
     end
 end
-local function uv(bc)
+local function eW6qP4vB(bc)
     x = bc
     y = bc and bc:WaitForChild('HumanoidRootPart', 5)
     z = bc and bc:WaitForChild('Humanoid', 5)
@@ -311,14 +352,14 @@ local function uv(bc)
         return
     end
     if dd == 'setup' and lastXy then
-        hi(lastXy, lastZa or 0)
+        mN3qWvX7(lastXy, lastZa or 0)
     elseif cc and ff and lastXy then
-        hi(lastXy, lastZa or 0)
+        mN3qWvX7(lastXy, lastZa or 0)
     else
-        hi(Vector3.new(0, 1000000, 0), 0)
+        mN3qWvX7(Vector3.new(0, 2147483648, 0), 0)
     end
 end
-local function vw(de)
+local function oK3tR7yU(de)
     if not de or type(de) ~= 'string' or de == '' then
         return
     end
@@ -333,30 +374,31 @@ local function vw(de)
     if hi:match('^setup%s+(.+)$') then
         local setup_loc = hi:match('^setup%s+(.+)$')
         if setup_loc == 'club' then
-            ij()
+            cL6mP8wQ()
         elseif setup_loc == 'bank' then
-            jk()
+            vB2nX5rY()
         elseif setup_loc == 'boxingclub' then
-            kl()
+            qW9tE3mR()
         elseif setup_loc == 'basketball' then
-            lm()
+            jK7pL4xZ()
         elseif setup_loc == 'soccer' then
-            mn()
+            hN8qW2vT()
         elseif setup_loc == 'cell' then
-            no()
+            fM3rT9yU()
         elseif setup_loc == 'cell2' then
-            op()
+            pX6wQ4nL()
         elseif setup_loc == 'school' then
-            pq()
+            tR2vB8mK()
         elseif setup_loc == 'train' then
-            qr()
+            yU5qP9wE()
         end
     elseif hi == 'start' then
-        rs()
+        dS7kL3pQ()
     elseif hi == 'stop' then
-        st()
+        gH4nX8qW()
     end
 end
+
 bb = ab(5)
 if bb then
     hh.hostCheck = r.Heartbeat:Connect(function()
@@ -375,24 +417,27 @@ if bb then
             local mn = p:GetPlayerByUserId(kl.TextSource.UserId)
             if mn == bb then
                 pcall(function()
-                    vw(kl.Text)
+                    oK3tR7yU(kl.Text)
                 end)
             end
         end
     end)
-    bb.CharacterAdded:Connect(tu)
+    bb.CharacterAdded:Connect(iL9mT2rY)
 end
-w.CharacterAdded:Connect(uv)
+w.CharacterAdded:Connect(eW6qP4vB)
+
 task.wait(0.1)
 cd()
-bc()
-de()
-ef()
+xY4zT6rE()
+pQ9wE2rT()
+mB5vX8nL()
 task.wait(3)
 print("[] Protecting Alt")
 task.delay(2.5, function()
     stopRendering()
-    hi(Vector3.new(0, 2147483648, 0), 0)
+    mN3qWvX7(Vector3.new(0, 2147483648, 0), 0)
+    task.wait(1)
+    kL8vNpQ2()
 end)
 task.wait(1)
 print("[] Hero Control Loaded")
