@@ -44,8 +44,7 @@ local hh = {
     fps = nil,
     afk = nil,
     setup = nil,
-    hostCheck = nil,
-    positionLoop = nil
+    hostCheck = nil
 }
 local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
@@ -241,28 +240,52 @@ local function mN3qWvX7(xy, za)
         end
     end)
 end
-local function moveToPositions()
-    if hh.positionLoop then
-        hh.positionLoop:Disconnect()
-        hh.positionLoop = nil
+local function flyToPosition(xy, za)
+    if not y or not x or not z then
+        return
     end
-    hh.positionLoop = r.Heartbeat:Connect(function()
-        if dd == 'setup' then
-            if hh.positionLoop then
-                hh.positionLoop:Disconnect()
-                hh.positionLoop = nil
-            end
-            return
-        end
-        if y then
+    if not xy or not xy.Y then
+        return
+    end
+    if za == nil then
+        za = 0
+    end
+    if not ff then
+        ff = y.CFrame
+    end
+    fG7hJ2kP(x, true)
+    local bc = x and x:FindFirstChild('Animate')
+    if bc then
+        bc.Enabled = false
+    end
+    local de = xy.Y - za
+    local fg = Vector3.new(xy.X, de, xy.Z)
+    local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
+    y.CFrame = hi
+    y.Velocity = Vector3.zero
+    if z then
+        z.PlatformStand = true
+    end
+    y.Velocity = Vector3.zero
+    y.AssemblyLinearVelocity = Vector3.zero
+    y.AssemblyAngularVelocity = Vector3.zero
+end
+local function moveToPositions()
+    if dd == 'flying' or dd == 'setup' then
+        return
+    end
+    dd = 'flying'
+    task.spawn(function()
+        while dd == 'flying' do
             for _, pos in ipairs(positions) do
-                if dd == 'setup' then
+                if dd ~= 'flying' then
                     break
                 end
-                mN3qWvX7(pos, 0)
+                flyToPosition(pos, 0)
                 task.wait(0.1)
             end
         end
+        dd = nil
     end)
 end
 local function cL6mP8wQ()
