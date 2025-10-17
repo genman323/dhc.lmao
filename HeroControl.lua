@@ -6,7 +6,7 @@ print("[] Checking Coordinates")
 task.wait(1)
 local function zXqW7kP()
     for _ = 1, 5 do
-        if getgenv().Hero_Key and getgenv().HeroControl and getgenv().HeroControl.Host then
+        if getgenv().Key and getgenv().HeroControl and getgenv().HeroControl.Host then
             return true
         end
         task.wait(0.1)
@@ -15,7 +15,7 @@ local function zXqW7kP()
 end
 print("[] Validating Key")
 task.wait(1)
-if not zXqW7kP() or getgenv().Hero_Key ~= 'Hero_XzQaPrAv_Admin' then
+if not zXqW7kP() or getgenv().Key ~= 'Hero_XzQaPrAv_Admin' then
     game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
     return
 end
