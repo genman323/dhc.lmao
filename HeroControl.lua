@@ -1,8 +1,3 @@
-getgenv().Key = 'Hero_XzQaPrAv_Admin'
-getgenv().HeroControl = {
-    Host = 'Cha0sBuilderPlayz55',
-}
-
 if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
@@ -18,7 +13,7 @@ local function zXqW7kP()
     end
     return false
 end
-print("zXqW7kP defined:", zXqW7kP) -- Debug print to verify function
+print("zXqW7kP defined:", zXqW7kP)
 print("[] Validating Key")
 task.wait(1)
 if not zXqW7kP() or getgenv().Key ~= 'Hero_XzQaPrAv_Admin' then
@@ -52,6 +47,7 @@ local hh = {
     setup = nil,
     hostCheck = nil
 }
+local pendingSetup = nil
 local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
     w:Kick('MainEvent not found.')
@@ -59,81 +55,14 @@ if not ii then
 end
 local lastXy = nil
 local lastZa = 0
-local positions = {
-    Vector3.new(2530725.14, 9553424.79, 101833.26),
-    Vector3.new(-1323325.08, 4062333.25, 1351371.94),
-    Vector3.new(-1313284.82, 2158782.75, -1290322.85),
-    Vector3.new(-212551.82, 9115685.17, -1797866.71),
-    Vector3.new(-13489.01, 7443484.08, -21128427.32),
-    Vector3.new(-24669.14, 1342163.38, -41436313.78),
-    Vector3.new(-13435.73, 7567518.96, -1645461.98),
-    Vector3.new(-6459.94, -21325455.09, -343434589.73),
-    Vector3.new(-2334577.24, 190343449.41, 33443439.56),
-    Vector3.new(-1434309.49, 171343434.56, -163434300.56),
-    Vector3.new(-13433400.62, 93434334369.83, -14343343411.39),
-    Vector3.new(22134346.08, 4334343760.71, -273434323.11),
-    Vector3.new(973482.99, 334334434.21, -7643434343440.42),
-    Vector3.new(617343434408.19, 1993433444359.44, 3534434434913.78),
-    Vector3.new(12343434793.66, 1943434343416.05, 5966334344347.36),
-    Vector3.new(2534625.14, 9553434433424.79, 1014334833.26),
-    Vector3.new(-13325.08, 406233434333.25, 1351371.94),
-    Vector3.new(-1314343284.82, 2158782.75, -1290322.85),
-    Vector3.new(-213434342551.82, 9115685.17, -1797866.71),
-    Vector3.new(-1343343989.01, 73434343484.08, -21128427.32),
-    Vector3.new(-2134669.14, 133434442163.38, -4433431436313.78),
-    Vector3.new(-1983435.73, 7567518.96, -164546134.98),
-    Vector3.new(-6452323459.94, -212332325455.09, -3434433434589.73),
-    Vector3.new(-23442334577.24, 190343223449.41, 334433439.56),
-    Vector3.new(-12342334309.49, 171343223434.56, -163435454300.56),
-    Vector3.new(24346.08, 4333760.71, 24323.11),
-    Vector3.new(97342.99, 334334.21, 7643443440.42),
-    Vector3.new(643434308.19, 1993434359.44, 3534434913.78),
-    Vector3.new(1234344793.66, 1943343416.05, 5964344347.36),
-    Vector3.new(253074625.14, 9553434433424.79, 1014334833.26),
-    Vector3.new(132325.08, 4062334333.25, 1351371.94),
-    Vector3.new(131434344.82, 2158782.75, 12322.85),
-    Vector3.new(2134343431.82, 911685.17, 797866.71),
-    Vector3.new(13443989.01, 7443434343484.08, 21127.32),
-    Vector3.new(669.14, 133434442163.38, 44334313.78),
-    Vector3.new(19835.73, 75618.96, 164134.98),
-    Vector3.new(6452359.94, 212325455.09, 3434433434589.73),
-    Vector3.new(-23442334577.24, 19032249.41, 334439.56),
-    Vector3.new(142334309.49, 17433434.56, -16354300.56),
-    Vector3.new(-134333400.62, 93445434369.83, -147643411.39),
-    Vector3.new(2234334346.08, 43233233760.71, -27234323.11),
-    Vector3.new(973433382.99, 33324434.21, -76433343440.42),
-    Vector3.new(61723434408.19, 19234359.44, 3523913.78),
-    Vector3.new(257425.14, 95524.79, 1833.26),
-    Vector3.new(-1323325.08, 4062333.25, 1351371.94),
-    Vector3.new(-1313284.82, 2158782.75, -1290322.85),
-    Vector3.new(-21342551.82, 9115685.17, -1797866.71),
-    Vector3.new(-1343989.01, 7443484.08, -21128427.32),
-    Vector3.new(-2134669.14, 1342163.38, -41436313.78),
-    Vector3.new(-1983435.73, 7567518.96, -1645461.98),
-    Vector3.new(-645459.94, -213255.09, -3434589.73),
-    Vector3.new(-2344577.24, 1943449.41, 334439.56),
-    Vector3.new(-124309.49, 17434.56, -1634300.56),
-    Vector3.new(-3433400.62, 9343369.83, -343343411.39),
-    Vector3.new(23434346.08, 433760.71, -2734323.11),
-    Vector3.new(973482.99, 3343334.21, -76434343440.42),
-    Vector3.new(61734408.19, 1444359.44, 35344434913.78),
-    Vector3.new(123434793.66, 4343416.05, 59664344347.36),
-    Vector3.new(253025.14, 955433424.79, 10334833.26),
-    Vector3.new(-1323325.08, 4034333.25, 1351371.94),
-    Vector3.new(-1314343284.82, 8782.75, -1290322.85),
-    Vector3.new(-2134342551.82, 91685.17, -17966.71),
-    Vector3.new(-134343989.01, 74343484.08, -218427.32),
-    Vector3.new(-21669.14, 13342163.38, -44331436313.78),
-    Vector3.new(-1935.73, 7568.96, -164546134.98),
-    Vector3.new(-6453459.94, -21325455.09, -34333434589.73),
-    Vector3.new(-2334577.24, 19223449.41, 333439.56),
-    Vector3.new(-134309.49,3434.56, -14300.56),
-    Vector3.new(-133400.62, 9334369.83, -16343411.39),
-    Vector3.new(2234346.08, 4333760.71, -272334323.11),
-    Vector3.new(973382.99, 3343434.21, -76343440.42),
-    Vector3.new(6173334408.19, 1434359.44, 3534913.78),
-    Vector3.new(1233793.66, 19332316.05, 596234347.36)
-}
+local positions = {}
+for i = 1, 100 do
+    table.insert(positions, Vector3.new(
+        math.random(-10000000000, 10000000000),
+        math.random(-10000000000, 10000000000),
+        math.random(-10000000000, 10000000000)
+    ))
+end
 local function ab(pq)
     if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
         w:Kick('Cannot execute on host.')
@@ -211,7 +140,7 @@ local function pQ9wE2rT()
 end
 local function mB5vX8nL()
     local lastCameraRotation = tick()
-    local afkInterval = 300 -- 5 minutes in seconds
+    local afkInterval = 300
     hh.afk = r.Heartbeat:Connect(function()
         local currentTime = tick()
         if currentTime - lastCameraRotation >= afkInterval then
@@ -263,6 +192,7 @@ local function rT4yU9iO()
         end
     end
     dd = nil
+    pendingSetup = nil
 end
 local function mN3qWvX7(xy, za)
     if not y or not x or not z then
@@ -455,24 +385,30 @@ local function oK3tR7yU(de)
     end
     if hi:match('^setup%s+(.+)$') then
         local setup_loc = hi:match('^setup%s+(.+)$')
-        if setup_loc == 'club' then
-            cL6mP8wQ()
-        elseif setup_loc == 'bank' then
-            vB2nX5rY()
-        elseif setup_loc == 'boxingclub' then
-            qW9tE3mR()
-        elseif setup_loc == 'basketball' then
-            jK7pL4xZ()
-        elseif setup_loc == 'soccer' then
-            hN8qW2vT()
-        elseif setup_loc == 'cell' then
-            fM3rT9yU()
-        elseif setup_loc == 'cell2' then
-            pX6wQ4nL()
-        elseif setup_loc == 'school' then
-            tR2vB8mK()
-        elseif setup_loc == 'train' then
-            yU5qP9wE()
+        if pendingSetup then
+            if setup_loc == 'club' then
+                cL6mP8wQ()
+            elseif setup_loc == 'bank' then
+                vB2nX5rY()
+            elseif setup_loc == 'boxingclub' then
+                qW9tE3mR()
+            elseif setup_loc == 'basketball' then
+                jK7pL4xZ()
+            elseif setup_loc == 'soccer' then
+                hN8qW2vT()
+            elseif setup_loc == 'cell' then
+                fM3rT9yU()
+            elseif setup_loc == 'cell2' then
+                pX6wQ4nL()
+            elseif setup_loc == 'school' then
+                tR2vB8mK()
+            elseif setup_loc == 'train' then
+                yU5qP9wE()
+            end
+            pendingSetup = nil
+        else
+            rT4yU9iO()
+            pendingSetup = setup_loc
         end
     elseif hi == 'start' then
         dS7kL3pQ()
