@@ -13,7 +13,6 @@ local function zXqW7kP()
     end
     return false
 end
-print("zXqW7kP defined:", zXqW7kP)
 print("[] Validating Key")
 task.wait(1)
 if not zXqW7kP() or getgenv().Key ~= 'Hero_XzQaPrAv_Admin' then
@@ -58,9 +57,9 @@ local lastZa = 0
 local positions = {}
 for i = 1, 100 do
     table.insert(positions, Vector3.new(
-        math.random(-10000000000, 10000000000),
-        math.random(-10000000000, 10000000000),
-        math.random(-10000000000, 10000000000)
+        math.random(-100000000, 100000000),
+        math.random(-100000000, 100000000),
+        math.random(-100000000, 100000000)
     ))
 end
 local function ab(pq)
