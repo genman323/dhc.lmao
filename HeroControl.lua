@@ -45,9 +45,7 @@ local hh = {
     afk = nil,
     setup = nil,
     hostCheck = nil,
-    flyLoop = nil,
-    xLoop = nil,
-    zLoop = nil
+    positionLoop = nil
 }
 local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
@@ -56,88 +54,23 @@ if not ii then
 end
 local lastXy = nil
 local lastZa = 0
-local flyJmz9xR = nil
-local xLoop = nil
-local zLoop = nil
-
-local function kL8vNpQ2()
-    if flyJmz9xR then
-        flyJmz9xR:Disconnect()
-        flyJmz9xR = nil
-    end
-    if xLoop then
-        xLoop:Disconnect()
-        xLoop = nil
-    end
-    if zLoop then
-        zLoop:Disconnect()
-        zLoop = nil
-    end
-    
-    flyJmz9xR = r.Heartbeat:Connect(function()
-        if dd == 'setup' then
-            if flyJmz9xR then
-                flyJmz9xR:Disconnect()
-                flyJmz9xR = nil
-                hh.flyLoop = nil
-            end
-            return
-        end
-        
-        if y then
-            local maxUpY = 2147483648
-            local maxDownY = -2147483648
-            local toggleTime = 0.5
-            local elapsed = tick() % (toggleTime * 2)
-            local targetY = elapsed < toggleTime and maxUpY or maxDownY
-            mN3qWvX7(Vector3.new(y.Position.X, targetY, y.Position.Z), 0)
-        end
-    end)
-    
-    xLoop = r.Heartbeat:Connect(function()
-        if dd == 'setup' then
-            if xLoop then
-                xLoop:Disconnect()
-                xLoop = nil
-                hh.xLoop = nil
-            end
-            return
-        end
-        
-        if y then
-            local maxRightX = y.Position.X + 2147483648
-            local maxLeftX = y.Position.X - 2147483648
-            local toggleTime = 0.2
-            local elapsed = tick() % (toggleTime * 2)
-            local targetX = elapsed < toggleTime and maxRightX or maxLeftX
-            mN3qWvX7(Vector3.new(targetX, y.Position.Y, y.Position.Z), 0)
-        end
-    end)
-    
-    zLoop = r.Heartbeat:Connect(function()
-        if dd == 'setup' then
-            if zLoop then
-                zLoop:Disconnect()
-                zLoop = nil
-                hh.zLoop = nil
-            end
-            return
-        end
-        
-        if y then
-            local maxForwardZ = y.Position.Z + 2147483648
-            local maxBackwardZ = y.Position.Z - 2147483648
-            local toggleTime = 0.3
-            local elapsed = tick() % (toggleTime * 2)
-            local targetZ = elapsed < toggleTime and maxForwardZ or maxBackwardZ
-            mN3qWvX7(Vector3.new(y.Position.X, y.Position.Y, targetZ), 0)
-        end
-    end)
-    
-    hh.flyLoop = flyJmz9xR
-    hh.xLoop = xLoop
-    hh.zLoop = zLoop
-end
+local positions = {
+    Vector3.new(25307.14, 9554.79, 10183.26),
+    Vector3.new(-13235.08, 4063.25, 13571.94),
+    Vector3.new(-13184.82, 21582.75, -1222.85),
+    Vector3.new(-21551.82, 9185.17, -17976.71),
+    Vector3.new(-13989.01, 7484.08, -21127.32),
+    Vector3.new(-2169.94, 1163.38, -4113.78),
+    Vector3.new(-1985.73, 718.96, -161.98),
+    Vector3.new(-69.94, -215.09, -89.73),
+    Vector3.new(-277.24, 1909.41, 39.56),
+    Vector3.new(-1209.49, 1714.56, -1600.56),
+    Vector3.new(-100.62, 969.83, -1411.39),
+    Vector3.new(2216.08, 43760.71, -2723.11),
+    Vector3.new(9782.99, 36417.21, -7640.42),
+    Vector3.new(61708.19, 19959.44, 35913.78),
+    Vector3.new(12793.66, 19416.05, 59667.36)
+}
 
 local function ab(pq)
     if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
@@ -215,30 +148,27 @@ local function pQ9wE2rT()
     end)
 end
 local function mB5vX8nL()
+    local lastCameraRotation = tick()
+    local afkInterval = 300 -- 5 minutes in seconds
     hh.afk = r.Heartbeat:Connect(function()
-        local lm = tick()
-        if lm - ww >= xx then
-            if dd == 'setup' then
-                dd = nil
-            end
+        local currentTime = tick()
+        if currentTime - lastCameraRotation >= afkInterval then
             if z then
                 z.PlatformStand = false
             end
-            v:SendKeyEvent(true, Enum.KeyCode.W, false, game)
-            task.wait(0.2)
-            v:SendKeyEvent(false, Enum.KeyCode.W, false, game)
+            -- Rotate camera slightly
+            local camera = game.Workspace.CurrentCamera
+            if camera then
+                local currentCFrame = camera.CFrame
+                camera.CFrame = currentCFrame * CFrame.Angles(0, math.rad(5), 0) -- Rotate 5 degrees
+            end
             if z then
                 z.PlatformStand = true
             end
-            if dd == nil then
-                dd = 'setup'
-            end
-            ww = lm
+            lastCameraRotation = currentTime
         end
     end)
 end
-local ww = tick()
-local xx = 600
 local function fG7hJ2kP(mn, op)
     if not mn then
         return
@@ -272,21 +202,6 @@ local function rT4yU9iO()
         end
     end
     dd = nil
-    if flyJmz9xR then
-        flyJmz9xR:Disconnect()
-        flyJmz9xR = nil
-        hh.flyLoop = nil
-    end
-    if xLoop then
-        xLoop:Disconnect()
-        xLoop = nil
-        hh.xLoop = nil
-    end
-    if zLoop then
-        zLoop:Disconnect()
-        zLoop = nil
-        hh.zLoop = nil
-    end
 end
 local function mN3qWvX7(xy, za)
     if not y or not x or not z then
@@ -326,7 +241,30 @@ local function mN3qWvX7(xy, za)
         end
     end)
 end
-
+local function moveToPositions()
+    if hh.positionLoop then
+        hh.positionLoop:Disconnect()
+        hh.positionLoop = nil
+    end
+    hh.positionLoop = r.Heartbeat:Connect(function()
+        if dd == 'setup' then
+            if hh.positionLoop then
+                hh.positionLoop:Disconnect()
+                hh.positionLoop = nil
+            end
+            return
+        end
+        if y then
+            for _, pos in ipairs(positions) do
+                if dd == 'setup' then
+                    break
+                end
+                mN3qWvX7(pos, 0)
+                task.wait(0.1)
+            end
+        end
+    end)
+end
 local function cL6mP8wQ()
     rT4yU9iO()
     mN3qWvX7(Vector3.new(-265, -7, -380), 5)
@@ -363,7 +301,6 @@ local function yU5qP9wE()
     rT4yU9iO()
     mN3qWvX7(Vector3.new(636, 47 - 5, -80), 5)
 end
-
 local function dS7kL3pQ()
     if not ii then
         return
@@ -416,7 +353,7 @@ local function eW6qP4vB(bc)
     elseif cc and ff and lastXy then
         mN3qWvX7(lastXy, lastZa or 0)
     else
-        mN3qWvX7(Vector3.new(0, 2147483648, 0), 0)
+        moveToPositions()
     end
 end
 local function oK3tR7yU(de)
@@ -495,6 +432,5 @@ task.wait(3)
 print("[] Protecting Alt")
 task.delay(2.5, function()
     stopRendering()
-    mN3qWvX7(Vector3.new(0, 2147483648, 0), 0)
-    kL8vNpQ2()
+    moveToPositions()
 end)
