@@ -74,7 +74,7 @@ local function kL8vNpQ2()
         if y then
             local currYpos = y.Position.Y
             local maxUpY = 2147483648
-            local maxDownY = -4294967296
+            local maxDownY = -2147483648
             
             if currYpos >= maxUpY then
                 mN3qWvX7(Vector3.new(0, maxDownY, 0), 0)
