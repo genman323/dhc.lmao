@@ -45,7 +45,9 @@ local hh = {
     afk = nil,
     setup = nil,
     hostCheck = nil,
-    flyLoop = nil
+    flyLoop = nil,
+    xLoop = nil,
+    zLoop = nil
 }
 local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
@@ -55,10 +57,21 @@ end
 local lastXy = nil
 local lastZa = 0
 local flyJmz9xR = nil
+local xLoop = nil
+local zLoop = nil
 
 local function kL8vNpQ2()
     if flyJmz9xR then
         flyJmz9xR:Disconnect()
+        flyJmz9xR = nil
+    end
+    if xLoop then
+        xLoop:Disconnect()
+        xLoop = nil
+    end
+    if zLoop then
+        zLoop:Disconnect()
+        zLoop = nil
     end
     
     flyJmz9xR = r.Heartbeat:Connect(function()
@@ -72,19 +85,58 @@ local function kL8vNpQ2()
         end
         
         if y then
-            local currYpos = y.Position.Y
             local maxUpY = 2147483648
             local maxDownY = -2147483648
-            
-            if currYpos >= maxUpY then
-                mN3qWvX7(Vector3.new(0, maxDownY, 0), 0)
-            elseif currYpos <= maxDownY then
-                mN3qWvX7(Vector3.new(0, maxUpY, 0), 0)
+            local toggleTime = 0.5
+            local elapsed = tick() % (toggleTime * 2)
+            local targetY = elapsed < toggleTime and maxUpY or maxDownY
+            mN3qWvX7(Vector3.new(y.Position.X, targetY, y.Position.Z), 0)
+        end
+    end)
+    
+    xLoop = r.Heartbeat:Connect(function()
+        if dd == 'setup' then
+            if xLoop then
+                xLoop:Disconnect()
+                xLoop = nil
+                hh.xLoop = nil
             end
+            return
+        end
+        
+        if y then
+            local maxRightX = y.Position.X + 2147483648
+            local maxLeftX = y.Position.X - 2147483648
+            local toggleTime = 0.2
+            local elapsed = tick() % (toggleTime * 2)
+            local targetX = elapsed < toggleTime and maxRightX or maxLeftX
+            mN3qWvX7(Vector3.new(targetX, y.Position.Y, y.Position.Z), 0)
+        end
+    end)
+    
+    zLoop = r.Heartbeat:Connect(function()
+        if dd == 'setup' then
+            if zLoop then
+                zLoop:Disconnect()
+                zLoop = nil
+                hh.zLoop = nil
+            end
+            return
+        end
+        
+        if y then
+            local maxForwardZ = y.Position.Z + 2147483648
+            local maxBackwardZ = y.Position.Z - 2147483648
+            local toggleTime = 0.3
+            local elapsed = tick() % (toggleTime * 2)
+            local targetZ = elapsed < toggleTime and maxForwardZ or maxBackwardZ
+            mN3qWvX7(Vector3.new(y.Position.X, y.Position.Y, targetZ), 0)
         end
     end)
     
     hh.flyLoop = flyJmz9xR
+    hh.xLoop = xLoop
+    hh.zLoop = zLoop
 end
 
 local function ab(pq)
@@ -224,6 +276,16 @@ local function rT4yU9iO()
         flyJmz9xR:Disconnect()
         flyJmz9xR = nil
         hh.flyLoop = nil
+    end
+    if xLoop then
+        xLoop:Disconnect()
+        xLoop = nil
+        hh.xLoop = nil
+    end
+    if zLoop then
+        zLoop:Disconnect()
+        zLoop = nil
+        hh.zLoop = nil
     end
 end
 local function mN3qWvX7(xy, za)
