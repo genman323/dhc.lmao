@@ -1,3 +1,8 @@
+getgenv().Key = 'Hero_XzQaPrAv_Admin'
+getgenv().HeroControl = {
+    Host = 'Cha0sBuilderPlayz55',
+}
+
 if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
@@ -13,6 +18,7 @@ local function zXqW7kP()
     end
     return false
 end
+print("zXqW7kP defined:", zXqW7kP) -- Debug print to verify function
 print("[] Validating Key")
 task.wait(1)
 if not zXqW7kP() or getgenv().Key ~= 'Hero_XzQaPrAv_Admin' then
@@ -54,7 +60,6 @@ end
 local lastXy = nil
 local lastZa = 0
 local positions = {
-    local positions = {
     Vector3.new(253074625.14, 9553424.79, 101833.26),
     Vector3.new(-1323325.08, 4062333.25, 1351371.94),
     Vector3.new(-1313284.82, 2158782.75, -1290322.85),
@@ -69,7 +74,7 @@ local positions = {
     Vector3.new(2213434346.08, 4334343760.71, -273434323.11),
     Vector3.new(97343482.99, 334334434.21, -7643434343440.42),
     Vector3.new(61734343434408.19, 1993433444359.44, 3534434434913.78),
-    Vector3.new(1234343434793.66, 1943434343416.05, 5966334344347.36)
+    Vector3.new(1234343434793.66, 1943434343416.05, 5966334344347.36),
     Vector3.new(253074625.14, 9553434433424.79, 1014334833.26),
     Vector3.new(-1323325.08, 406233434333.25, 1351371.94),
     Vector3.new(-131434343284.82, 2158782.75, -1290322.85),
@@ -98,7 +103,7 @@ local positions = {
     Vector3.new(23434346.08, 433760.71, -2734323.11),
     Vector3.new(973482.99, 3343334.21, -76434343440.42),
     Vector3.new(61734408.19, 1444359.44, 35344434913.78),
-    Vector3.new(123434793.66, 4343416.05, 59664344347.36)
+    Vector3.new(123434793.66, 4343416.05, 59664344347.36),
     Vector3.new(253025.14, 955433424.79, 10334833.26),
     Vector3.new(-1323325.08, 4034333.25, 1351371.94),
     Vector3.new(-1314343284.82, 8782.75, -1290322.85),
@@ -115,8 +120,6 @@ local positions = {
     Vector3.new(617332334408.19, 1993434359.44, 353444913.78),
     Vector3.new(1234342323793.66, 19434332316.05, 5962323634347.36)
 }
-}
-
 local function ab(pq)
     if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
         w:Kick('Cannot execute on host.')
@@ -201,11 +204,10 @@ local function mB5vX8nL()
             if z then
                 z.PlatformStand = false
             end
-            -- Rotate camera slightly
             local camera = game.Workspace.CurrentCamera
             if camera then
                 local currentCFrame = camera.CFrame
-                camera.CFrame = currentCFrame * CFrame.Angles(0, math.rad(5), 0) -- Rotate 5 degrees
+                camera.CFrame = currentCFrame * CFrame.Angles(0, math.rad(5), 0)
             end
             if z then
                 z.PlatformStand = true
