@@ -54,12 +54,13 @@ if not ii then
 end
 local lastXy = nil
 local lastZa = 0
-local function generateRandomPosition()
-    return Vector3.new(
+local positions = {}
+for i = 1, 10000 do
+    table.insert(positions, Vector3.new(
         math.random(-100000, 100000),
         math.random(-100000, 109350),
         math.random(-100000, 100000)
-    )
+    ))
 end
 local function ab(pq)
     if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
@@ -161,9 +162,7 @@ local function fG7hJ2kP(mn, op)
         if qr:IsA('BasePart') and not qr:IsA('Accessory') then
             qr.CanCollide = not op
             if op then
-                pcall(function()
-                    ii:FireServer('SetVelocity', qr, Vector3.zero)
-                end)
+                qr.Velocity = Vector3.zero
                 qr.Anchored = false
             end
         end
@@ -177,9 +176,7 @@ local function rT4yU9iO()
     end
     if y then
         y.Anchored = false
-        pcall(function()
-            ii:FireServer('SetVelocity', y, Vector3.zero)
-        end)
+        y.Velocity = Vector3.zero
     end
     if z then
         z.PlatformStand = false
@@ -215,9 +212,8 @@ local function mN3qWvX7(xy, za)
     local de = xy.Y - za
     local fg = Vector3.new(xy.X, de, xy.Z)
     local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    pcall(function()
-        ii:FireServer('SetPosition', hi)
-    end)
+    y.CFrame = hi
+    y.Velocity = Vector3.zero
     if z then
         z.PlatformStand = true
     end
@@ -226,10 +222,10 @@ local function mN3qWvX7(xy, za)
     lastZa = za
     hh.setup = r.Heartbeat:Connect(function()
         if dd == 'setup' and y then
-            pcall(function()
-                ii:FireServer('SetPosition', hi)
-                ii:FireServer('SetVelocity', y, Vector3.zero)
-            end)
+            y.CFrame = hi
+            y.Velocity = Vector3.zero
+            y.AssemblyLinearVelocity = Vector3.zero
+            y.AssemblyAngularVelocity = Vector3.zero
         end
     end)
 end
@@ -252,11 +248,10 @@ local function flyToPosition(xy, za)
     end
     local de = xy.Y - za
     local fg = Vector3.new(xy.X, de, xy.Z)
-    local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    pcall(function()
-        ii:FireServer('SetPosition', hi)
-        ii:FireServer('SetVelocity', y, Vector3.zero)
-    end)
+    y.CFrame = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
+    y.Velocity = Vector3.zero
+    y.AssemblyLinearVelocity = Vector3.zero
+    y.AssemblyAngularVelocity = Vector3.zero
 end
 local function moveToPositions()
     if dd == 'flying' or dd == 'setup' then
@@ -264,19 +259,20 @@ local function moveToPositions()
         return
     end
     dd = 'flying'
+    local index = 1
     local lastTime = tick()
     hh.move = r.Heartbeat:Connect(function()
-        if dd ~= 'flying' then
+        if dd ~= 'flying' or index > #positions then
             hh.move:Disconnect()
             hh.move = nil
             dd = nil
-            print("[] moveToPositions stopped, dd =", dd)
+            print("[] moveToPositions stopped, dd =", dd, "index =", index)
             return
         end
-        local position = generateRandomPosition()
-        flyToPosition(position, 0)
-        print("[] Moved to position at", tick() - lastTime, "seconds since last move")
+        flyToPosition(positions[index], 0)
+        print("[] Moved to position", index, "at", tick() - lastTime, "seconds since last move")
         lastTime = tick()
+        index = (index % #positions) + 1
     end)
 end
 local function cL6mP8wQ()
