@@ -58,7 +58,7 @@ local lastZa = 0
 local positions = {}
 for i = 1, 100000 do
     table.insert(positions, Vector3.new(
-        math.random(80000000, 20000000), 
+        math.random(8000000, 20000000), 
         1000000,                       
         math.random(80000000, 20000000)  
     ))
