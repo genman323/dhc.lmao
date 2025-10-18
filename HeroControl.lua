@@ -26,7 +26,6 @@ local q = game:GetService('ReplicatedStorage')
 local r = game:GetService('RunService')
 local t = game:GetService('TweenService')
 local u = game:GetService('TextChatService')
-local v = game:GetService('VirtualInputManager')
 local w = p.LocalPlayer
 local x = w.Character or w.CharacterAdded:Wait()
 local y = x and x:WaitForChild('HumanoidRootPart', 5)
@@ -173,9 +172,15 @@ local function rT4yU9iO()
         hh.setup:Disconnect()
         hh.setup = nil
     end
+    if hh.move then
+        hh.move:Disconnect()
+        hh.move = nil
+    end
     if y then
         y.Anchored = false
         y.Velocity = Vector3.zero
+        y.AssemblyLinearVelocity = Vector3.zero
+        y.AssemblyAngularVelocity = Vector3.zero
     end
     if z then
         z.PlatformStand = false
@@ -209,11 +214,16 @@ local function mN3qWvX7(xy, za)
     local de = xy.Y - za
     local fg = Vector3.new(xy.X, de, xy.Z)
     local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
+    y.Anchored = true
     y.CFrame = hi
     y.Velocity = Vector3.zero
+    y.AssemblyLinearVelocity = Vector3.zero
+    y.AssemblyAngularVelocity = Vector3.zero
     if z then
         z.PlatformStand = true
     end
+    task.wait(0.1)
+    y.Anchored = false
     dd = 'setup'
     lastXy = xy
     lastZa = za
@@ -250,7 +260,6 @@ local function flyToPosition(xy, za)
     y.AssemblyLinearVelocity = Vector3.zero
     y.AssemblyAngularVelocity = Vector3.zero
 end
--- Modified moveToPositions for rapid movement at fixed Y
 local function moveToPositions()
     if dd == 'flying' or dd == 'setup' then
         return
@@ -351,10 +360,8 @@ local function eW6qP4vB(bc)
     if not y or not z then
         return
     end
-    task.delay(1, function()
-        pcall(function()
-            ii:FireServer('Block', true)
-        end)
+    pcall(function()
+        ii:FireServer('Block', true)
     end)
     if dd == 'setup' and lastXy then
         mN3qWvX7(lastXy, lastZa or 0)
@@ -432,6 +439,9 @@ if bb then
 end
 w.CharacterAdded:Connect(eW6qP4vB)
 if w.Character then
+    pcall(function()
+        ii:FireServer('Block', true)
+    end)
     eW6qP4vB(w.Character)
 end
 
