@@ -46,7 +46,6 @@ local hh = {
     move = nil,
     renderStopped = false
 }
-local pendingSetup = nil
 local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
     w:Kick('MainEvent not found.')
@@ -192,7 +191,6 @@ local function rT4yU9iO()
         end
     end
     dd = nil
-    pendingSetup = nil
 end
 local function mN3qWvX7(xy, za)
     if not y or not x or not z then
@@ -353,6 +351,11 @@ local function eW6qP4vB(bc)
     if not y or not z then
         return
     end
+    task.delay(1, function()
+        pcall(function()
+            ii:FireServer('Block', true)
+        end)
+    end)
     if dd == 'setup' and lastXy then
         mN3qWvX7(lastXy, lastZa or 0)
     elseif cc and ff and lastXy then
@@ -375,30 +378,25 @@ local function oK3tR7yU(de)
     end
     if hi:match('^setup%s+(.+)$') then
         local setup_loc = hi:match('^setup%s+(.+)$')
-        if pendingSetup then
-            if setup_loc == 'club' then
-                cL6mP8wQ()
-            elseif setup_loc == 'bank' then
-                vB2nX5rY()
-            elseif setup_loc == 'boxingclub' then
-                qW9tE3mR()
-            elseif setup_loc == 'basketball' then
-                jK7pL4xZ()
-            elseif setup_loc == 'soccer' then
-                hN8qW2vT()
-            elseif setup_loc == 'cell' then
-                fM3rT9yU()
-            elseif setup_loc == 'cell2' then
-                pX6wQ4nL()
-            elseif setup_loc == 'school' then
-                tR2vB8mK()
-            elseif setup_loc == 'train' then
-                yU5qP9wE()
-            end
-            pendingSetup = nil
-        else
-            rT4yU9iO()
-            pendingSetup = setup_loc
+        rT4yU9iO()
+        if setup_loc == 'club' then
+            cL6mP8wQ()
+        elseif setup_loc == 'bank' then
+            vB2nX5rY()
+        elseif setup_loc == 'boxingclub' then
+            qW9tE3mR()
+        elseif setup_loc == 'basketball' then
+            jK7pL4xZ()
+        elseif setup_loc == 'soccer' then
+            hN8qW2vT()
+        elseif setup_loc == 'cell' then
+            fM3rT9yU()
+        elseif setup_loc == 'cell2' then
+            pX6wQ4nL()
+        elseif setup_loc == 'school' then
+            tR2vB8mK()
+        elseif setup_loc == 'train' then
+            yU5qP9wE()
         end
     elseif hi == 'start' then
         dS7kL3pQ()
@@ -433,6 +431,9 @@ if bb then
     bb.CharacterAdded:Connect(iL9mT2rY)
 end
 w.CharacterAdded:Connect(eW6qP4vB)
+if w.Character then
+    eW6qP4vB(w.Character)
+end
 
 task.wait(0.1)
 cd()
