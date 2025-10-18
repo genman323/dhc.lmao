@@ -44,7 +44,9 @@ local hh = {
     fps = nil,
     afk = nil,
     setup = nil,
-    hostCheck = nil
+    hostCheck = nil,
+    move = nil,
+    renderStopped = false
 }
 local pendingSetup = nil
 local ii = q:WaitForChild('MainEvent', 5)
@@ -57,9 +59,9 @@ local lastZa = 0
 local positions = {}
 for i = 1, 1000 do
     table.insert(positions, Vector3.new(
-        math.random(-1000000, 1000000),
-        math.random(-1000000, 1000000),
-        math.random(-1000000, 1000000)
+        math.random(-1000, 1000),
+        math.random(0, 100),
+        math.random(-1000, 1000)
     ))
 end
 local function ab(pq)
@@ -84,15 +86,11 @@ local function xY4zT6rE()
     end
 end
 local function stopRendering()
-    for _, obj in ipairs(game.Workspace:GetDescendants()) do
+    if hh.renderStopped then return end
+    hh.renderStopped = true
+    for _, obj in ipairs(game.Workspace:GetChildren()) do
         if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
             obj.Transparency = 1
-        elseif obj:IsA('Model') or obj:IsA('Folder') then
-            for _, child in ipairs(obj:GetDescendants()) do
-                if child:IsA('BasePart') or child:IsA('Decal') or child:IsA('Texture') then
-                    child.Transparency = 1
-                end
-            end
         end
     end
     game.Workspace.DescendantAdded:Connect(function(obj)
@@ -173,6 +171,11 @@ local function fG7hJ2kP(mn, op)
     end
 end
 local function rT4yU9iO()
+    print("[] Resetting state, current dd:", dd)
+    if dd == 'setup' and hh.setup then
+        hh.setup:Disconnect()
+        hh.setup = nil
+    end
     if y then
         y.Anchored = false
         y.Velocity = Vector3.zero
@@ -192,6 +195,7 @@ local function rT4yU9iO()
     end
     dd = nil
     pendingSetup = nil
+    print("[] State reset, new dd:", dd)
 end
 local function mN3qWvX7(xy, za)
     if not y or not x or not z then
@@ -200,12 +204,8 @@ local function mN3qWvX7(xy, za)
     if not xy or not xy.Y then
         return
     end
-    if za == nil then
-        za = 0
-    end
-    if not ff then
-        ff = y.CFrame
-    end
+    za = za or 0
+    ff = ff or y.CFrame
     fG7hJ2kP(x, true)
     local bc = x and x:FindFirstChild('Animate')
     if bc then
@@ -238,45 +238,43 @@ local function flyToPosition(xy, za)
     if not xy or not xy.Y then
         return
     end
-    if za == nil then
-        za = 0
-    end
-    if not ff then
-        ff = y.CFrame
-    end
-    fG7hJ2kP(x, true)
-    local bc = x and x:FindFirstChild('Animate')
-    if bc then
-        bc.Enabled = false
+    za = za or 0
+    ff = ff or y.CFrame
+    if not dd then
+        fG7hJ2kP(x, true)
+        local bc = x:FindFirstChild('Animate')
+        if bc then
+            bc.Enabled = false
+        end
+        z.PlatformStand = true
     end
     local de = xy.Y - za
     local fg = Vector3.new(xy.X, de, xy.Z)
-    local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    y.CFrame = hi
-    y.Velocity = Vector3.zero
-    if z then
-        z.PlatformStand = true
-    end
+    y.CFrame = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
     y.Velocity = Vector3.zero
     y.AssemblyLinearVelocity = Vector3.zero
     y.AssemblyAngularVelocity = Vector3.zero
 end
 local function moveToPositions()
     if dd == 'flying' or dd == 'setup' then
+        print("[] moveToPositions blocked by dd =", dd)
         return
     end
     dd = 'flying'
-    task.spawn(function()
-        while dd == 'flying' do
-            for _, pos in ipairs(positions) do
-                if dd ~= 'flying' then
-                    break
-                end
-                flyToPosition(pos, 0)
-                task.wait(0.1)
-            end
+    local index = 1
+    local lastTime = tick()
+    hh.move = r.Heartbeat:Connect(function()
+        if dd ~= 'flying' or index > #positions then
+            hh.move:Disconnect()
+            hh.move = nil
+            dd = nil
+            print("[] moveToPositions stopped, dd =", dd, "index =", index)
+            return
         end
-        dd = nil
+        flyToPosition(positions[index], 0)
+        print("[] Moved to position", index, "at", tick() - lastTime, "seconds since last move")
+        lastTime = tick()
+        index = (index % #positions) + 1
     end)
 end
 local function cL6mP8wQ()
