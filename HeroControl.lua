@@ -54,12 +54,13 @@ if not ii then
 end
 local lastXy = nil
 local lastZa = 0
+-- Modified positions table to stay at 859210 studs Y, with random X and Z within 295356 studs
 local positions = {}
 for i = 1, 10000 do
     table.insert(positions, Vector3.new(
-        math.random(-10000, 10000),
-        math.random(500000, 500000),
-        math.random(-10000, 10000)
+        math.random(-295356, 295356), -- Random X within ±295356 studs
+        859210,                       -- Fixed Y at 859210 studs
+        math.random(-295356, 295356)  -- Random Z within ±295356 studs
     ))
 end
 local function ab(pq)
@@ -169,7 +170,6 @@ local function fG7hJ2kP(mn, op)
     end
 end
 local function rT4yU9iO()
-    print("[] Resetting state, current dd:", dd)
     if dd == 'setup' and hh.setup then
         hh.setup:Disconnect()
         hh.setup = nil
@@ -193,7 +193,6 @@ local function rT4yU9iO()
     end
     dd = nil
     pendingSetup = nil
-    print("[] State reset, new dd:", dd)
 end
 local function mN3qWvX7(xy, za)
     if not y or not x or not z then
@@ -253,25 +252,21 @@ local function flyToPosition(xy, za)
     y.AssemblyLinearVelocity = Vector3.zero
     y.AssemblyAngularVelocity = Vector3.zero
 end
+-- Modified moveToPositions for rapid movement at fixed Y
 local function moveToPositions()
     if dd == 'flying' or dd == 'setup' then
-        print("[] moveToPositions blocked by dd =", dd)
         return
     end
     dd = 'flying'
     local index = 1
-    local lastTime = tick()
     hh.move = r.Heartbeat:Connect(function()
         if dd ~= 'flying' or index > #positions then
             hh.move:Disconnect()
             hh.move = nil
             dd = nil
-            print("[] moveToPositions stopped, dd =", dd, "index =", index)
             return
         end
         flyToPosition(positions[index], 0)
-        print("[] Moved to position", index, "at", tick() - lastTime, "seconds since last move")
-        lastTime = tick()
         index = (index % #positions) + 1
     end)
 end
