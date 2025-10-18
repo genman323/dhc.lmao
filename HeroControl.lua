@@ -161,7 +161,9 @@ local function fG7hJ2kP(mn, op)
         if qr:IsA('BasePart') and not qr:IsA('Accessory') then
             qr.CanCollide = not op
             if op then
-                qr.Velocity = Vector3.zero
+                pcall(function()
+                    ii:FireServer('SetVelocity', qr, Vector3.zero)
+                end)
                 qr.Anchored = false
             end
         end
@@ -175,7 +177,9 @@ local function rT4yU9iO()
     end
     if y then
         y.Anchored = false
-        y.Velocity = Vector3.zero
+        pcall(function()
+            ii:FireServer('SetVelocity', y, Vector3.zero)
+        end)
     end
     if z then
         z.PlatformStand = false
@@ -211,8 +215,9 @@ local function mN3qWvX7(xy, za)
     local de = xy.Y - za
     local fg = Vector3.new(xy.X, de, xy.Z)
     local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    y.CFrame = hi
-    y.Velocity = Vector3.zero
+    pcall(function()
+        ii:FireServer('SetPosition', hi)
+    end)
     if z then
         z.PlatformStand = true
     end
@@ -221,10 +226,10 @@ local function mN3qWvX7(xy, za)
     lastZa = za
     hh.setup = r.Heartbeat:Connect(function()
         if dd == 'setup' and y then
-            y.CFrame = hi
-            y.Velocity = Vector3.zero
-            y.AssemblyLinearVelocity = Vector3.zero
-            y.AssemblyAngularVelocity = Vector3.zero
+            pcall(function()
+                ii:FireServer('SetPosition', hi)
+                ii:FireServer('SetVelocity', y, Vector3.zero)
+            end)
         end
     end)
 end
@@ -247,10 +252,11 @@ local function flyToPosition(xy, za)
     end
     local de = xy.Y - za
     local fg = Vector3.new(xy.X, de, xy.Z)
-    y.CFrame = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    y.Velocity = Vector3.zero
-    y.AssemblyLinearVelocity = Vector3.zero
-    y.AssemblyAngularVelocity = Vector3.zero
+    local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
+    pcall(function()
+        ii:FireServer('SetPosition', hi)
+        ii:FireServer('SetVelocity', y, Vector3.zero)
+    end)
 end
 local function moveToPositions()
     if dd == 'flying' or dd == 'setup' then
