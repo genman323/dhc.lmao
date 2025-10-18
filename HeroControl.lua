@@ -2,7 +2,6 @@ if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
-task.wait(1)
 local function zXqW7kP()
     for _ = 1, 5 do
         if getgenv().Key and getgenv().HeroControl and getgenv().HeroControl.Host then
@@ -12,7 +11,6 @@ local function zXqW7kP()
     end
     return false
 end
-task.wait(1)
 if not zXqW7kP() or getgenv().Key ~= 'Hero_XzQaPrAv_Admin' then
     game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
     return
@@ -42,7 +40,7 @@ local hh = {
     afk = nil,
     setup = nil,
     hostCheck = nil,
-    move = nil,
+    initial = nil,
     renderStopped = false
 }
 local ii = q:WaitForChild('MainEvent', 5)
@@ -53,14 +51,6 @@ end
 local lastXy = nil
 local lastZa = 0
 
-local positions = {}
-for i = 1, 100000 do
-    table.insert(positions, Vector3.new(
-        math.random(0, 35126963), 
-        20000000,                       
-        math.random(0, 50126963)  
-    ))
-end
 local function ab(pq)
     if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
         w:Kick('Cannot execute on host.')
@@ -172,9 +162,9 @@ local function rT4yU9iO()
         hh.setup:Disconnect()
         hh.setup = nil
     end
-    if hh.move then
-        hh.move:Disconnect()
-        hh.move = nil
+    if dd == 'initial' and hh.initial then
+        hh.initial:Disconnect()
+        hh.initial = nil
     end
     if y then
         y.Anchored = false
@@ -198,7 +188,18 @@ local function rT4yU9iO()
     dd = nil
 end
 local function mN3qWvX7(xy, za)
-    if not y or not x or not z then
+    local attempts = 0
+    local maxAttempts = 10
+    while attempts < maxAttempts and (not x or not y or not z) do
+        x = w.Character
+        if x then
+            y = x:WaitForChild('HumanoidRootPart', 1)
+            z = x:WaitForChild('Humanoid', 1)
+        end
+        attempts = attempts + 1
+        task.wait(0.1)
+    end
+    if not x or not y or not z then
         return
     end
     if not xy or not xy.Y then
@@ -214,16 +215,15 @@ local function mN3qWvX7(xy, za)
     local de = xy.Y - za
     local fg = Vector3.new(xy.X, de, xy.Z)
     local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    y.Anchored = true
+    task.wait(0.1) -- Ensure character is ready
     y.CFrame = hi
     y.Velocity = Vector3.zero
     y.AssemblyLinearVelocity = Vector3.zero
     y.AssemblyAngularVelocity = Vector3.zero
+    y.Anchored = true
     if z then
         z.PlatformStand = true
     end
-    task.wait(0.1)
-    y.Anchored = false
     dd = 'setup'
     lastXy = xy
     lastZa = za
@@ -233,48 +233,54 @@ local function mN3qWvX7(xy, za)
             y.Velocity = Vector3.zero
             y.AssemblyLinearVelocity = Vector3.zero
             y.AssemblyAngularVelocity = Vector3.zero
+            y.Anchored = true
         end
     end)
 end
-local function flyToPosition(xy, za)
-    if not y or not x or not z then
-        return
-    end
-    if not xy or not xy.Y then
-        return
-    end
-    za = za or 0
-    ff = ff or y.CFrame
-    if not dd then
-        fG7hJ2kP(x, true)
-        local bc = x:FindFirstChild('Animate')
-        if bc then
-            bc.Enabled = false
+local function setInitialPosition()
+    local attempts = 0
+    local maxAttempts = 10
+    while attempts < maxAttempts and (not x or not y or not z) do
+        x = w.Character
+        if x then
+            y = x:WaitForChild('HumanoidRootPart', 1)
+            z = x:WaitForChild('Humanoid', 1)
         end
-        z.PlatformStand = true
+        attempts = attempts + 1
+        task.wait(0.1)
     end
-    local de = xy.Y - za
-    local fg = Vector3.new(xy.X, de, xy.Z)
-    y.CFrame = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
+    if not x or not y or not z then
+        return
+    end
+    rT4yU9iO()
+    ff = ff or y.CFrame
+    fG7hJ2kP(x, true)
+    local bc = x and x:FindFirstChild('Animate')
+    if bc then
+        bc.Enabled = false
+    end
+    local fg = Vector3.new(35126963, 0, 50126963)
+    local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
+    task.wait(0.1) -- Ensure character is ready
+    y.CFrame = hi
     y.Velocity = Vector3.zero
     y.AssemblyLinearVelocity = Vector3.zero
     y.AssemblyAngularVelocity = Vector3.zero
-end
-local function moveToPositions()
-    if dd == 'flying' or dd == 'setup' then
-        return
+    y.Anchored = true
+    if z then
+        z.PlatformStand = true
     end
-    dd = 'flying'
-    local index = 1
-    hh.move = r.Heartbeat:Connect(function()
-        if dd ~= 'flying' or index > #positions then
-            hh.move:Disconnect()
-            hh.move = nil
-            dd = nil
-            return
+    dd = 'initial'
+    lastXy = fg
+    lastZa = 0
+    hh.initial = r.Heartbeat:Connect(function()
+        if dd == 'initial' and y then
+            y.CFrame = hi
+            y.Velocity = Vector3.zero
+            y.AssemblyLinearVelocity = Vector3.zero
+            y.AssemblyAngularVelocity = Vector3.zero
+            y.Anchored = true
         end
-        flyToPosition(positions[index], 0)
-        index = (index % #positions) + 1
     end)
 end
 local function cL6mP8wQ()
@@ -365,10 +371,8 @@ local function eW6qP4vB(bc)
     end)
     if dd == 'setup' and lastXy then
         mN3qWvX7(lastXy, lastZa or 0)
-    elseif cc and ff and lastXy then
-        mN3qWvX7(lastXy, lastZa or 0)
     else
-        moveToPositions()
+        setInitialPosition()
     end
 end
 local function oK3tR7yU(de)
@@ -445,13 +449,11 @@ if w.Character then
     eW6qP4vB(w.Character)
 end
 
-task.wait(0.1)
 cd()
 xY4zT6rE()
 pQ9wE2rT()
 mB5vX8nL()
-task.wait(3)
 task.delay(2.5, function()
     stopRendering()
-    moveToPositions()
+    setInitialPosition()
 end)
