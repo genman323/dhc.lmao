@@ -54,13 +54,13 @@ if not ii then
 end
 local lastXy = nil
 local lastZa = 0
--- Modified positions table to stay at 859210 studs Y, with random X and Z within 295356 studs
+
 local positions = {}
-for i = 1, 10000 do
+for i = 1, 10 do
     table.insert(positions, Vector3.new(
-        math.random(-2225356, 23551356), 
+        math.random(-5, 5), 
         15140596,                       
-        math.random(-297556, 29534356)  
+        math.random(-5, 5)  
     ))
 end
 local function ab(pq)
