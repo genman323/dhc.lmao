@@ -58,7 +58,7 @@ local positions = {}
 for i = 1, 1000 do
     table.insert(positions, Vector3.new(
         math.random(-100000, 100000),
-        math.random(-1936, 19350),
+        math.random(-100000, 109350),
         math.random(-100000, 100000)
     ))
 end
