@@ -2,7 +2,6 @@ if game.PlaceId ~= 2788229376 then
     game:GetService('Players').LocalPlayer:Kick('wrong game retard')
     return
 end
-print("[] Checking Coordinates")
 task.wait(1)
 local function zXqW7kP()
     for _ = 1, 5 do
@@ -13,7 +12,6 @@ local function zXqW7kP()
     end
     return false
 end
-print("[] Validating Key")
 task.wait(1)
 if not zXqW7kP() or getgenv().Key ~= 'Hero_XzQaPrAv_Admin' then
     game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
@@ -59,9 +57,9 @@ local lastZa = 0
 local positions = {}
 for i = 1, 1000 do
     table.insert(positions, Vector3.new(
-        math.random(-1000, 1000),
-        math.random(0, 100),
-        math.random(-1000, 1000)
+        math.random(-100000, 100000),
+        math.random(-1936, 19350),
+        math.random(-100000, 100000)
     ))
 end
 local function ab(pq)
@@ -447,7 +445,6 @@ xY4zT6rE()
 pQ9wE2rT()
 mB5vX8nL()
 task.wait(3)
-print("[] Protecting Alt")
 task.delay(2.5, function()
     stopRendering()
     moveToPositions()
