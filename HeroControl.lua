@@ -54,13 +54,12 @@ if not ii then
 end
 local lastXy = nil
 local lastZa = 0
-local positions = {}
-for i = 1, 1000 do
-    table.insert(positions, Vector3.new(
+local function generateRandomPosition()
+    return Vector3.new(
         math.random(-100000, 100000),
         math.random(-100000, 109350),
         math.random(-100000, 100000)
-    ))
+    )
 end
 local function ab(pq)
     if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
@@ -259,20 +258,19 @@ local function moveToPositions()
         return
     end
     dd = 'flying'
-    local index = 1
     local lastTime = tick()
     hh.move = r.Heartbeat:Connect(function()
-        if dd ~= 'flying' or index > #positions then
+        if dd ~= 'flying' then
             hh.move:Disconnect()
             hh.move = nil
             dd = nil
-            print("[] moveToPositions stopped, dd =", dd, "index =", index)
+            print("[] moveToPositions stopped, dd =", dd)
             return
         end
-        flyToPosition(positions[index], 0)
-        print("[] Moved to position", index, "at", tick() - lastTime, "seconds since last move")
+        local position = generateRandomPosition()
+        flyToPosition(position, 0)
+        print("[] Moved to position at", tick() - lastTime, "seconds since last move")
         lastTime = tick()
-        index = (index % #positions) + 1
     end)
 end
 local function cL6mP8wQ()
