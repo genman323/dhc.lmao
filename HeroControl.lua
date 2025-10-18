@@ -56,11 +56,11 @@ local lastXy = nil
 local lastZa = 0
 
 local positions = {}
-for i = 1, 10 do
+for i = 1, 100000 do
     table.insert(positions, Vector3.new(
-        math.random(-5, 5), 
+        math.random(-1923375, 2492533), 
         15140596,                       
-        math.random(-5, 5)  
+        math.random(-19435353, 6943536)  
     ))
 end
 local function ab(pq)
