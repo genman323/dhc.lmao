@@ -277,6 +277,8 @@ local function rT4yU9iO()
     end
   end
   dd = nil
+  lastXy = nil
+  lastZa = 0
   if flyJmz9xR then
     flyJmz9xR:Disconnect()
     flyJmz9xR = nil
@@ -329,6 +331,9 @@ local function mN3qWvX7(xy, za)
       y.AssemblyLinearVelocity = Vector3.zero
       y.AssemblyAngularVelocity = Vector3.zero
     end
+  end)
+  pcall(function()
+    ii:FireServer('Block', true)
   end)
 end
 
@@ -400,7 +405,7 @@ local function gH4nX8qW()
   end
   if ii then
     pcall(function()
-      ii:FireServer('Block', false)
+      ii:FireServer('Block', true) -- Keep block on even when stopping drop
     end)
   end
 end
@@ -416,7 +421,9 @@ local function eW6qP4vB(bc)
   if not y or not z then
     return
   end
-  ii:FireServer('Block', true)
+  pcall(function()
+    ii:FireServer('Block', true)
+  end)
   if dd == 'setup' and lastXy then
     mN3qWvX7(lastXy, lastZa or 0)
   elseif cc and ff and lastXy then
@@ -494,7 +501,9 @@ if bb then
 end
 w.CharacterAdded:Connect(eW6qP4vB)
 
-ii:FireServer('Block', true)
+pcall(function()
+  ii:FireServer('Block', true)
+end)
 
 cd()
 xY4zT6rE()
