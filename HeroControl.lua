@@ -40,7 +40,6 @@ local hh = {
     afk = nil,
     setup = nil,
     hostCheck = nil,
-    initial = nil,
     renderStopped = false
 }
 local ii = q:WaitForChild('MainEvent', 5)
@@ -162,10 +161,6 @@ local function rT4yU9iO()
         hh.setup:Disconnect()
         hh.setup = nil
     end
-    if dd == 'initial' and hh.initial then
-        hh.initial:Disconnect()
-        hh.initial = nil
-    end
     if y then
         y.Anchored = false
         y.Velocity = Vector3.zero
@@ -200,9 +195,11 @@ local function mN3qWvX7(xy, za)
         task.wait(0.1)
     end
     if not x or not y or not z then
+        warn('Failed to initialize character for teleportation')
         return
     end
     if not xy or not xy.Y then
+        warn('Invalid position provided for teleportation')
         return
     end
     za = za or 0
@@ -224,57 +221,14 @@ local function mN3qWvX7(xy, za)
     if z then
         z.PlatformStand = true
     end
+    pcall(function()
+        ii:FireServer('Block', true)
+    end)
     dd = 'setup'
     lastXy = xy
     lastZa = za
     hh.setup = r.Heartbeat:Connect(function()
         if dd == 'setup' and y then
-            y.CFrame = hi
-            y.Velocity = Vector3.zero
-            y.AssemblyLinearVelocity = Vector3.zero
-            y.AssemblyAngularVelocity = Vector3.zero
-            y.Anchored = true
-        end
-    end)
-end
-local function setInitialPosition()
-    local attempts = 0
-    local maxAttempts = 10
-    while attempts < maxAttempts and (not x or not y or not z) do
-        x = w.Character
-        if x then
-            y = x:WaitForChild('HumanoidRootPart', 1)
-            z = x:WaitForChild('Humanoid', 1)
-        end
-        attempts = attempts + 1
-        task.wait(0.1)
-    end
-    if not x or not y or not z then
-        return
-    end
-    rT4yU9iO()
-    ff = ff or y.CFrame
-    fG7hJ2kP(x, true)
-    local bc = x and x:FindFirstChild('Animate')
-    if bc then
-        bc.Enabled = false
-    end
-    local fg = Vector3.new(35126963, 0, 50126963)
-    local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    task.wait(0.1) -- Ensure character is ready
-    y.CFrame = hi
-    y.Velocity = Vector3.zero
-    y.AssemblyLinearVelocity = Vector3.zero
-    y.AssemblyAngularVelocity = Vector3.zero
-    y.Anchored = true
-    if z then
-        z.PlatformStand = true
-    end
-    dd = 'initial'
-    lastXy = fg
-    lastZa = 0
-    hh.initial = r.Heartbeat:Connect(function()
-        if dd == 'initial' and y then
             y.CFrame = hi
             y.Velocity = Vector3.zero
             y.AssemblyLinearVelocity = Vector3.zero
@@ -371,8 +325,6 @@ local function eW6qP4vB(bc)
     end)
     if dd == 'setup' and lastXy then
         mN3qWvX7(lastXy, lastZa or 0)
-    else
-        setInitialPosition()
     end
 end
 local function oK3tR7yU(de)
@@ -453,7 +405,4 @@ cd()
 xY4zT6rE()
 pQ9wE2rT()
 mB5vX8nL()
-task.delay(2.5, function()
-    stopRendering()
-    setInitialPosition()
-end)
+stopRendering()
