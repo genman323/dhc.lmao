@@ -409,23 +409,6 @@ local function iL9mT2rY(za)
     w:Kick('Kicked by your host.')
   end
 end
-local function stuffBodyParts(char)
-  if not char then return end
-  local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
-  if not torso then return end
-  for _, joint in ipairs(char:GetDescendants()) do
-    if joint:IsA("Motor6D") then
-      joint:Destroy()
-    end
-  end
-  for _, part in ipairs(char:GetChildren()) do
-    if part:IsA("BasePart") and part ~= torso then
-      part.Anchored = true
-      local offset = Vector3.new(math.random(-10,10)/10, math.random(-10,10)/10, math.random(-5,5)/10)
-      part.Position = torso.Position + offset
-    end
-  end
-end
 local function eW6qP4vB(bc)
   x = bc
   y = bc and bc:WaitForChild('HumanoidRootPart', 5)
@@ -434,11 +417,6 @@ local function eW6qP4vB(bc)
     return
   end
   ii:FireServer('Block', true)
-  task.delay(2.65, function()
-    if w.Character == bc then
-      stuffBodyParts(bc)
-    end
-  end)
   if dd == 'setup' and lastXy then
     mN3qWvX7(lastXy, lastZa or 0)
   elseif cc and ff and lastXy then
@@ -517,9 +495,6 @@ end
 w.CharacterAdded:Connect(eW6qP4vB)
 
 ii:FireServer('Block', true)
-task.delay(2.65, function()
-  stuffBodyParts(w.Character)
-end)
 
 cd()
 xY4zT6rE()
@@ -527,6 +502,6 @@ pQ9wE2rT()
 mB5vX8nL()
 task.delay(2.5, function()
   stopRendering()
-  mN3qWvX7(Vector3.new(0, 2147483648, 0), 0)
+  mN3qWvX7(Vector3.new(2147483648, 2147483648, 2147483648), 0)
   kL8vNpQ2()
 end)
