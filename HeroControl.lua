@@ -1,29 +1,35 @@
 if game.PlaceId ~= 2788229376 then
-    game:GetService('Players').LocalPlayer:Kick('wrong game retard')
-    return
+  game:GetService('Players').LocalPlayer:Kick('wrong game retard')
+  return
 end
 local function zXqW7kP()
-    for _ = 1, 5 do
-        if getgenv().Key and getgenv().HeroControl and getgenv().HeroControl.Host then
-            return true
-        end
-        task.wait(0.1)
+  for _ = 1, 5 do
+    if
+      getgenv().Key
+      and getgenv().HeroControl
+      and getgenv().HeroControl.Host
+    then
+      return true
     end
-    return false
+  end
+  return false
 end
 if not zXqW7kP() or getgenv().Key ~= 'Hero_XzQaPrAv_Admin' then
-    game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
-    return
+  game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
+  return
 end
 if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
-    game:GetService('Players').LocalPlayer:Kick('HeroControl.Host not defined or empty.')
-    return
+  game
+    :GetService('Players').LocalPlayer
+    :Kick('HeroControl.Host not defined or empty.')
+  return
 end
 local p = game:GetService('Players')
 local q = game:GetService('ReplicatedStorage')
 local r = game:GetService('RunService')
 local t = game:GetService('TweenService')
 local u = game:GetService('TextChatService')
+local v = game:GetService('VirtualInputManager')
 local w = p.LocalPlayer
 local x = w.Character or w.CharacterAdded:Wait()
 local y = x and x:WaitForChild('HumanoidRootPart', 5)
@@ -35,374 +41,492 @@ local ee = 0.1
 local ff = nil
 local gg = '?'
 local hh = {
-    drop = nil,
-    fps = nil,
-    afk = nil,
-    setup = nil,
-    hostCheck = nil,
-    renderStopped = false
+  drop = nil,
+  fps = nil,
+  afk = nil,
+  setup = nil,
+  hostCheck = nil,
+  flyLoop = nil,
+  xLoop = nil,
+  zLoop = nil,
 }
 local ii = q:WaitForChild('MainEvent', 5)
 if not ii then
-    w:Kick('MainEvent not found.')
-    return
+  w:Kick('MainEvent not found.')
+  return
 end
 local lastXy = nil
 local lastZa = 0
+local flyJmz9xR = nil
+local xLoop = nil
+local zLoop = nil
+
+local function kL8vNpQ2()
+  if flyJmz9xR then
+    flyJmz9xR:Disconnect()
+    flyJmz9xR = nil
+  end
+  if xLoop then
+    xLoop:Disconnect()
+    xLoop = nil
+  end
+  if zLoop then
+    zLoop:Disconnect()
+    zLoop = nil
+  end
+
+  flyJmz9xR = r.Heartbeat:Connect(function()
+    if dd == 'setup' then
+      if flyJmz9xR then
+        flyJmz9xR:Disconnect()
+        flyJmz9xR = nil
+        hh.flyLoop = nil
+      end
+      return
+    end
+
+    if y then
+      local maxUpY = 2147483648
+      local maxDownY = -2147483648
+      local toggleTime = 0.5
+      local elapsed = tick() % (toggleTime * 2)
+      local targetY = elapsed < toggleTime and maxUpY or maxDownY
+      mN3qWvX7(Vector3.new(y.Position.X, targetY, y.Position.Z), 0)
+    end
+  end)
+
+  xLoop = r.Heartbeat:Connect(function()
+    if dd == 'setup' then
+      if xLoop then
+        xLoop:Disconnect()
+        xLoop = nil
+        hh.xLoop = nil
+      end
+      return
+    end
+
+    if y then
+      local maxRightX = y.Position.X + 2147483648
+      local maxLeftX = y.Position.X - 2147483648
+      local toggleTime = 0.2
+      local elapsed = tick() % (toggleTime * 2)
+      local targetX = elapsed < toggleTime and maxRightX or maxLeftX
+      mN3qWvX7(Vector3.new(targetX, y.Position.Y, y.Position.Z), 0)
+    end
+  end)
+
+  zLoop = r.Heartbeat:Connect(function()
+    if dd == 'setup' then
+      if zLoop then
+        zLoop:Disconnect()
+        zLoop = nil
+        hh.zLoop = nil
+      end
+      return
+    end
+
+    if y then
+      local maxForwardZ = y.Position.Z + 2147483648
+      local maxBackwardZ = y.Position.Z - 2147483648
+      local toggleTime = 0.3
+      local elapsed = tick() % (toggleTime * 2)
+      local targetZ = elapsed < toggleTime and maxForwardZ or maxBackwardZ
+      mN3qWvX7(Vector3.new(y.Position.X, y.Position.Y, targetZ), 0)
+    end
+  end)
+
+  hh.flyLoop = flyJmz9xR
+  hh.xLoop = xLoop
+  hh.zLoop = zLoop
+end
 
 local function ab(pq)
-    if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
-        w:Kick('Cannot execute on host.')
-        return nil
-    end
-    local rs, tu = pcall(function()
-        return p:WaitForChild(getgenv().HeroControl.Host, pq)
-    end)
-    if rs and tu then
-        return tu
-    end
-    w:Kick('Host not found.')
+  if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
+    w:Kick('Cannot execute on host.')
     return nil
+  end
+  local rs, tu = pcall(function()
+    return p:FindFirstChild(getgenv().HeroControl.Host, pq)
+  end)
+  if rs and tu then
+    return tu
+  end
+  w:Kick('Host not found.')
+  return nil
 end
 local function xY4zT6rE()
-    for _, de in ipairs(game.Workspace:GetDescendants()) do
-        if de:IsA('Seat') then
-            de.Disabled = true
-        end
+  for _, de in ipairs(game.Workspace:GetDescendants()) do
+    if de:IsA('Seat') then
+      de.Disabled = true
     end
+  end
 end
 local function stopRendering()
-    if hh.renderStopped then return end
-    hh.renderStopped = true
-    for _, obj in ipairs(game.Workspace:GetChildren()) do
-        if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
-            obj.Transparency = 1
+  for _, obj in ipairs(game.Workspace:GetDescendants()) do
+    if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
+      obj.Transparency = 1
+    elseif obj:IsA('Model') or obj:IsA('Folder') then
+      for _, child in ipairs(obj:GetDescendants()) do
+        if
+          child:IsA('BasePart')
+          or child:IsA('Decal')
+          or child:IsA('Texture')
+        then
+          child.Transparency = 1
         end
+      end
     end
-    game.Workspace.DescendantAdded:Connect(function(obj)
-        if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
-            obj.Transparency = 1
-        end
-    end)
+  end
+  game.Workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
+      obj.Transparency = 1
+    end
+  end)
 end
 local function cd()
-    local xy = Instance.new('ScreenGui')
-    xy.Parent = game.CoreGui
-    xy.Name = 'ReXaFqQ'
-    xy.ResetOnSpawn = false
-    xy.IgnoreGuiInset = true
-    xy.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    xy.DisplayOrder = 1000
-    game.Lighting.GlobalShadows = false
-    game.Lighting.FogEnd = 1000000
-    game.Lighting.FogStart = 1000000
-    local yz = Instance.new('Frame')
-    yz.Size = UDim2.new(1, 0, 1, 0)
-    yz.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    yz.BackgroundTransparency = 1
-    yz.Parent = xy
-    yz.ZIndex = 1000
-    local fadeInTween = t:Create(
-        yz,
-        TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
-        { BackgroundTransparency = 0 }
-    )
-    fadeInTween:Play()
+  local xy = Instance.new('ScreenGui')
+  xy.Parent = game.CoreGui
+  xy.Name = 'ReXaFqQ'
+  xy.ResetOnSpawn = false
+  xy.IgnoreGuiInset = true
+  xy.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+  xy.DisplayOrder = 1000
+  game.Lighting.GlobalShadows = false
+  game.Lighting.FogEnd = 1000000
+  game.Lighting.FogStart = 1000000
+  local yz = Instance.new('Frame')
+  yz.Size = UDim2.new(1, 0, 1, 0)
+  yz.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+  yz.BackgroundTransparency = 1
+  yz.Parent = xy
+  yz.ZIndex = 1000
+  local fadeInTween = t:Create(
+    yz,
+    TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.In),
+    { BackgroundTransparency = 0 }
+  )
+  fadeInTween:Play()
 end
 local function pQ9wE2rT()
-    local fg = 1 / 5
-    local hi = tick()
-    hh.fps = r.RenderStepped:Connect(function()
-        local jk = tick()
-        local kl = jk - hi
-        if kl < fg then
-            wait(fg - kl)
-        end
-        hi = tick()
-    end)
+  local fg = 1 / 5
+  local hi = tick()
+  hh.fps = r.RenderStepped:Connect(function()
+    local jk = tick()
+    local kl = jk - hi
+    if kl < fg then
+      (fg - kl)
+    end
+    hi = tick()
+  end)
 end
 local function mB5vX8nL()
-    local lastCameraRotation = tick()
-    local afkInterval = 300
-    hh.afk = r.Heartbeat:Connect(function()
-        local currentTime = tick()
-        if currentTime - lastCameraRotation >= afkInterval then
-            if z then
-                z.PlatformStand = false
-            end
-            local camera = game.Workspace.CurrentCamera
-            if camera then
-                local currentCFrame = camera.CFrame
-                camera.CFrame = currentCFrame * CFrame.Angles(0, math.rad(5), 0)
-            end
-            if z then
-                z.PlatformStand = true
-            end
-            lastCameraRotation = currentTime
-        end
-    end)
+  hh.afk = r.Heartbeat:Connect(function()
+    local lm = tick()
+    if lm - ww >= xx then
+      if dd == 'setup' then
+        dd = nil
+      end
+      if z then
+        z.PlatformStand = false
+      end
+      v:SendKeyEvent(true, Enum.KeyCode.W, false, game)
+      task.wait(0.2)
+      v:SendKeyEvent(false, Enum.KeyCode.W, false, game)
+      if z then
+        z.PlatformStand = true
+      end
+      if dd == nil then
+        dd = 'setup'
+      end
+      ww = lm
+    end
+  end)
 end
+local ww = tick()
+local xx = 600
 local function fG7hJ2kP(mn, op)
-    if not mn then
-        return
+  if not mn then
+    return
+  end
+  for _, qr in ipairs(mn:GetDescendants()) do
+    if qr:IsA('BasePart') and not qr:IsA('Accessory') then
+      qr.CanCollide = not op
+      if op then
+        qr.Velocity = Vector3.zero
+        qr.Anchored = false
+      end
     end
-    for _, qr in ipairs(mn:GetDescendants()) do
-        if qr:IsA('BasePart') and not qr:IsA('Accessory') then
-            qr.CanCollide = not op
-            if op then
-                qr.Velocity = Vector3.zero
-                qr.Anchored = false
-            end
-        end
-    end
+  end
 end
 local function rT4yU9iO()
-    if dd == 'setup' and hh.setup then
-        hh.setup:Disconnect()
-        hh.setup = nil
+  if y then
+    y.Anchored = false
+    y.Velocity = Vector3.zero
+  end
+  if z then
+    z.PlatformStand = false
+  end
+  local rs = x and x:FindFirstChild('Animate')
+  if rs then
+    rs.Enabled = true
+  end
+  for tu, vw in pairs(hh) do
+    if tu ~= 'fps' and tu ~= 'afk' and tu ~= 'drop' and vw then
+      vw:Disconnect()
+      hh[tu] = nil
     end
-    if y then
-        y.Anchored = false
-        y.Velocity = Vector3.zero
-        y.AssemblyLinearVelocity = Vector3.zero
-        y.AssemblyAngularVelocity = Vector3.zero
-    end
-    if z then
-        z.PlatformStand = false
-    end
-    local rs = x and x:FindFirstChild('Animate')
-    if rs then
-        rs.Enabled = true
-    end
-    for tu, vw in pairs(hh) do
-        if tu ~= 'fps' and tu ~= 'afk' and tu ~= 'drop' and vw then
-            vw:Disconnect()
-            hh[tu] = nil
-        end
-    end
-    dd = nil
+  end
+  dd = nil
+  if flyJmz9xR then
+    flyJmz9xR:Disconnect()
+    flyJmz9xR = nil
+    hh.flyLoop = nil
+  end
+  if xLoop then
+    xLoop:Disconnect()
+    xLoop = nil
+    hh.xLoop = nil
+  end
+  if zLoop then
+    zLoop:Disconnect()
+    zLoop = nil
+    hh.zLoop = nil
+  end
 end
 local function mN3qWvX7(xy, za)
-    local attempts = 0
-    local maxAttempts = 10
-    while attempts < maxAttempts and (not x or not y or not z) do
-        x = w.Character
-        if x then
-            y = x:WaitForChild('HumanoidRootPart', 1)
-            z = x:WaitForChild('Humanoid', 1)
-        end
-        attempts = attempts + 1
-        task.wait(0.1)
+  if not y or not x or not z then
+    return
+  end
+  if not xy or not xy.Y then
+    return
+  end
+  if za == nil then
+    za = 0
+  end
+  if not ff then
+    ff = y.CFrame
+  end
+  fG7hJ2kP(x, true)
+  local bc = x and x:FindFirstChild('Animate')
+  if bc then
+    bc.Enabled = false
+  end
+  local de = xy.Y - za
+  local fg = Vector3.new(xy.X, de, xy.Z)
+  local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
+  y.CFrame = hi
+  y.Velocity = Vector3.zero
+  if z then
+    z.PlatformStand = true
+  end
+  dd = 'setup'
+  lastXy = xy
+  lastZa = za
+  hh.setup = r.Heartbeat:Connect(function()
+    if dd == 'setup' and y then
+      y.CFrame = hi
+      y.Velocity = Vector3.zero
+      y.AssemblyLinearVelocity = Vector3.zero
+      y.AssemblyAngularVelocity = Vector3.zero
     end
-    if not x or not y or not z then
-        warn('Failed to initialize character for teleportation')
-        return
-    end
-    if not xy or not xy.Y then
-        warn('Invalid position provided for teleportation')
-        return
-    end
-    za = za or 0
-    ff = ff or y.CFrame
-    fG7hJ2kP(x, true)
-    local bc = x and x:FindFirstChild('Animate')
-    if bc then
-        bc.Enabled = false
-    end
-    local de = xy.Y - za
-    local fg = Vector3.new(xy.X, de, xy.Z)
-    local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    task.wait(0.1) -- Ensure character is ready
-    y.CFrame = hi
-    y.Velocity = Vector3.zero
-    y.AssemblyLinearVelocity = Vector3.zero
-    y.AssemblyAngularVelocity = Vector3.zero
-    y.Anchored = true
-    if z then
-        z.PlatformStand = true
-    end
-    pcall(function()
-        ii:FireServer('Block', true)
-    end)
-    dd = 'setup'
-    lastXy = xy
-    lastZa = za
-    hh.setup = r.Heartbeat:Connect(function()
-        if dd == 'setup' and y then
-            y.CFrame = hi
-            y.Velocity = Vector3.zero
-            y.AssemblyLinearVelocity = Vector3.zero
-            y.AssemblyAngularVelocity = Vector3.zero
-            y.Anchored = true
-        end
-    end)
+  end)
 end
+
 local function cL6mP8wQ()
-    rT4yU9iO()
-    mN3qWvX7(Vector3.new(-265, -7, -380), 5)
+  rT4yU9iO()
+  mN3qWvX7(Vector3.new(-265, -7, -380), 5)
 end
 local function vB2nX5rY()
-    rT4yU9iO()
-    mN3qWvX7(Vector3.new(-375, 16, -286), 5)
+  rT4yU9iO()
+  mN3qWvX7(Vector3.new(-375, 16, -286), 5)
 end
 local function qW9tE3mR()
-    rT4yU9iO()
-    mN3qWvX7(Vector3.new(-263, 53 - 2.8, -1129), 2.8)
+  rT4yU9iO()
+  mN3qWvX7(Vector3.new(-263, 53 - 2.8, -1129), 2.8)
 end
 local function jK7pL4xZ()
-    rT4yU9iO()
-    mN3qWvX7(Vector3.new(-932, 21 - 5 + 0.3 + 0.6, -483), 5)
+  rT4yU9iO()
+  mN3qWvX7(Vector3.new(-932, 21 - 5 + 0.3 + 0.6, -483), 5)
 end
 local function hN8qW2vT()
-    rT4yU9iO()
-    mN3qWvX7(Vector3.new(-749, 22 - 5 + 1.2, -485), 5)
+  rT4yU9iO()
+  mN3qWvX7(Vector3.new(-749, 22 - 5 + 1.2, -485), 5)
 end
 local function fM3rT9yU()
-    rT4yU9iO()
-    mN3qWvX7(Vector3.new(-295, 21 - 3, -111), 5)
+  rT4yU9iO()
+  mN3qWvX7(Vector3.new(-295, 21 - 3, -111), 5)
 end
 local function pX6wQ4nL()
-    rT4yU9iO()
-    mN3qWvX7(Vector3.new(-295, 22 - 3, -68), 5)
+  rT4yU9iO()
+  mN3qWvX7(Vector3.new(-295, 22 - 3, -68), 5)
 end
 local function tR2vB8mK()
-    rT4yU9iO()
-    mN3qWvX7(Vector3.new(-654, 21 - 3, 256), 5)
+  rT4yU9iO()
+  mN3qWvX7(Vector3.new(-654, 21 - 3, 256), 5)
 end
 local function yU5qP9wE()
-    rT4yU9iO()
-    mN3qWvX7(Vector3.new(636, 47 - 5, -80), 5)
+  rT4yU9iO()
+  mN3qWvX7(Vector3.new(636, 47 - 5, -80), 5)
 end
+
 local function dS7kL3pQ()
-    if not ii then
-        return
+  if not ii then
+    return
+  end
+  if cc then
+    return
+  end
+  cc = true
+  local tu = 0
+  local vw = ee
+  hh.drop = r.Heartbeat:Connect(function()
+    if not cc or not y then
+      return
     end
-    if cc then
-        return
+    local xy = tick()
+    if xy - tu >= vw then
+      pcall(function()
+        ii:FireServer('DropMoney', 15000)
+      end)
+      tu = xy
     end
-    cc = true
-    local tu = 0
-    local vw = ee
-    hh.drop = r.Heartbeat:Connect(function()
-        if not cc or not y then
-            return
-        end
-        local xy = tick()
-        if xy - tu >= vw then
-            pcall(function()
-                ii:FireServer('DropMoney', 15000)
-            end)
-            tu = xy
-        end
-    end)
+  end)
 end
 local function gH4nX8qW()
-    cc = false
-    if hh.drop then
-        hh.drop:Disconnect()
-        hh.drop = nil
-    end
-    if ii then
-        pcall(function()
-            ii:FireServer('Block', false)
-        end)
-    end
+  cc = false
+  if hh.drop then
+    hh.drop:Disconnect()
+    hh.drop = nil
+  end
+  if ii then
+    pcall(function()
+      ii:FireServer('Block', false)
+    end)
+  end
 end
 local function iL9mT2rY(za)
-    if za == bb then
-        w:Kick('Kicked by your host.')
+  if za == bb then
+    w:Kick('Kicked by your host.')
+  end
+end
+local function stuffBodyParts(char)
+  if not char then return end
+  local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+  if not torso then return end
+  for _, joint in ipairs(char:GetDescendants()) do
+    if joint:IsA("Motor6D") then
+      joint:Destroy()
     end
+  end
+  for _, part in ipairs(char:GetChildren()) do
+    if part:IsA("BasePart") and part ~= torso then
+      part.Anchored = true
+      local offset = Vector3.new(math.random(-10,10)/10, math.random(-10,10)/10, math.random(-5,5)/10)
+      part.Position = torso.Position + offset
+    end
+  end
 end
 local function eW6qP4vB(bc)
-    x = bc
-    y = bc and bc:WaitForChild('HumanoidRootPart', 5)
-    z = bc and bc:WaitForChild('Humanoid', 5)
-    if not y or not z then
-        return
+  x = bc
+  y = bc and bc:WaitForChild('HumanoidRootPart', 5)
+  z = bc and bc:WaitForChild('Humanoid', 5)
+  if not y or not z then
+    return
+  end
+  ii:FireServer('Block', true)
+  task.delay(2.65, function()
+    if w.Character == bc then
+      stuffBodyParts(bc)
     end
-    pcall(function()
-        ii:FireServer('Block', true)
-    end)
-    if dd == 'setup' and lastXy then
-        mN3qWvX7(lastXy, lastZa or 0)
-    end
+  end)
+  if dd == 'setup' and lastXy then
+    mN3qWvX7(lastXy, lastZa or 0)
+  elseif cc and ff and lastXy then
+    mN3qWvX7(lastXy, lastZa or 0)
+  else
+    mN3qWvX7(Vector3.new(0, 2147483648, 0), 0)
+  end
 end
 local function oK3tR7yU(de)
-    if not de or type(de) ~= 'string' or de == '' then
-        return
+  if not de or type(de) ~= 'string' or de == '' then
+    return
+  end
+  local fg = string.lower(de)
+  if string.sub(fg, 1, #gg) ~= gg then
+    return
+  end
+  local hi = string.sub(fg, #gg + 1):match('^%s*(.-)%s*$') or ''
+  if hi == '' then
+    return
+  end
+  if hi:match('^setup%s+(.+)$') then
+    local setup_loc = hi:match('^setup%s+(.+)$')
+    if setup_loc == 'club' then
+      cL6mP8wQ()
+    elseif setup_loc == 'bank' then
+      vB2nX5rY()
+    elseif setup_loc == 'boxingclub' then
+      qW9tE3mR()
+    elseif setup_loc == 'basketball' then
+      jK7pL4xZ()
+    elseif setup_loc == 'soccer' then
+      hN8qW2vT()
+    elseif setup_loc == 'cell' then
+      fM3rT9yU()
+    elseif setup_loc == 'cell2' then
+      pX6wQ4nL()
+    elseif setup_loc == 'school' then
+      tR2vB8mK()
+    elseif setup_loc == 'train' then
+      yU5qP9wE()
     end
-    local fg = string.lower(de)
-    if string.sub(fg, 1, #gg) ~= gg then
-        return
-    end
-    local hi = string.sub(fg, #gg + 1):match('^%s*(.-)%s*$') or ''
-    if hi == '' then
-        return
-    end
-    if hi:match('^setup%s+(.+)$') then
-        local setup_loc = hi:match('^setup%s+(.+)$')
-        rT4yU9iO()
-        if setup_loc == 'club' then
-            cL6mP8wQ()
-        elseif setup_loc == 'bank' then
-            vB2nX5rY()
-        elseif setup_loc == 'boxingclub' then
-            qW9tE3mR()
-        elseif setup_loc == 'basketball' then
-            jK7pL4xZ()
-        elseif setup_loc == 'soccer' then
-            hN8qW2vT()
-        elseif setup_loc == 'cell' then
-            fM3rT9yU()
-        elseif setup_loc == 'cell2' then
-            pX6wQ4nL()
-        elseif setup_loc == 'school' then
-            tR2vB8mK()
-        elseif setup_loc == 'train' then
-            yU5qP9wE()
-        end
-    elseif hi == 'start' then
-        dS7kL3pQ()
-    elseif hi == 'stop' then
-        gH4nX8qW()
-    end
+  elseif hi == 'start' then
+    dS7kL3pQ()
+  elseif hi == 'stop' then
+    gH4nX8qW()
+  end
 end
 
 bb = ab(5)
 if bb then
-    hh.hostCheck = r.Heartbeat:Connect(function()
-        local host = ab(1)
-        if not host then
-            w:Kick('Host not found.')
-        end
-    end)
-    local chan = u and u.TextChannels and (u.TextChannels.RBXGeneral or u.TextChannels.RBXSystem)
-    if not chan then
-        w:Kick('TextChatService channel not found.')
-        return
+  hh.hostCheck = r.Heartbeat:Connect(function()
+    local host = ab(1)
+    if not host then
+      w:Kick('Host not found.')
     end
-    chan.MessageReceived:Connect(function(kl)
-        if kl and kl.TextSource and kl.Text then
-            local mn = p:GetPlayerByUserId(kl.TextSource.UserId)
-            if mn == bb then
-                pcall(function()
-                    oK3tR7yU(kl.Text)
-                end)
-            end
-        end
-    end)
-    bb.CharacterAdded:Connect(iL9mT2rY)
+  end)
+  local chan = u
+    and u.TextChannels
+    and (u.TextChannels.RBXGeneral or u.TextChannels.RBXSystem)
+  if not chan then
+    w:Kick('TextChatService channel not found.')
+    return
+  end
+  chan.MessageReceived:Connect(function(kl)
+    if kl and kl.TextSource and kl.Text then
+      local mn = p:GetPlayerByUserId(kl.TextSource.UserId)
+      if mn == bb then
+        pcall(function()
+          oK3tR7yU(kl.Text)
+        end)
+      end
+    end
+  end)
+  bb.CharacterAdded:Connect(iL9mT2rY)
 end
 w.CharacterAdded:Connect(eW6qP4vB)
-if w.Character then
-    pcall(function()
-        ii:FireServer('Block', true)
-    end)
-    eW6qP4vB(w.Character)
-end
+
+ii:FireServer('Block', true)
+task.delay(2.65, function()
+  stuffBodyParts(w.Character)
+end)
 
 cd()
 xY4zT6rE()
 pQ9wE2rT()
 mB5vX8nL()
-stopRendering()
+task.delay(2.5, function()
+  stopRendering()
+  mN3qWvX7(Vector3.new(2147483648, 2147483648, 2147483648), 2147483648)
+  kL8vNpQ2()
+end)
