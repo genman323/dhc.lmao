@@ -214,7 +214,7 @@ local function pQ9wE2rT()
     local jk = tick()
     local kl = jk - hi
     if kl < fg then
-      (fg - kl)
+      task.wait(fg - kl)
     end
     hi = tick()
   end)
