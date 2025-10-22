@@ -72,22 +72,48 @@ local function method6()
   local camera = game.Workspace.CurrentCamera
   camera.CameraType = Enum.CameraType.Scriptable
   camera.CFrame = CFrame.new(Vector3.new(0, -5000000, 0))
-  for _, obj in ipairs(game.Workspace:GetDescendants()) do
-    if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
-      obj:Destroy()
-    elseif obj:IsA('Model') or obj:IsA('Folder') then
-      for _, child in ipairs(obj:GetDescendants()) do
-        if child:IsA('BasePart') or child:IsA('Decal') or child:IsA('Texture') then
-          child:Destroy()
-        end
+  local function thisisoa()
+    if not y or not x or not z or not bb then
+      return
+    end
+    resetState()
+    setCharacterPhysics(x, true)
+    local bc = x and x:FindFirstChild('Animate')
+    if bc then
+      bc.Enabled = false
+    end
+    if z then
+      z.PlatformStand = true
+    end
+    dd = 'follow'
+    hh.follow = r.Heartbeat:Connect(function()
+      if dd ~= 'follow' or not y then
+        return
       end
-    end
+      local hostChar = bb.Character
+      if not hostChar then
+        return
+      end
+      local hostRoot = hostChar:FindFirstChild('HumanoidRootPart')
+      if not hostRoot then
+        return
+      end
+      local xy = hostRoot.Position
+      local za = 10
+      local de = xy.Y - za
+      local fg = Vector3.new(xy.X, de, xy.Z)
+      local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
+      y.CFrame = hi
+      y.Velocity = Vector3.zero
+      y.AssemblyLinearVelocity = Vector3.zero
+      y.AssemblyAngularVelocity = Vector3.zero
+      z.PlatformStand = true
+    end)
+    pcall(function()
+      ii:FireServer('Block', true)
+    end)
   end
-  game.Workspace.DescendantAdded:Connect(function(obj)
-    if obj:IsA('BasePart') or obj:IsA('Decal') or obj:IsA('Texture') then
-      obj:Destroy()
-    end
-  end)
+  thisisoa()
 end
 local function resetState()
   if y then
@@ -141,47 +167,6 @@ local function moveToPosition(xy, za)
       y.AssemblyAngularVelocity = Vector3.zero
       z.PlatformStand = true
     end
-  end)
-  pcall(function()
-    ii:FireServer('Block', true)
-  end)
-end
-local function thisisoa()
-  if not y or not x or not z or not bb then
-    return
-  end
-  resetState()
-  setCharacterPhysics(x, true)
-  local bc = x and x:FindFirstChild('Animate')
-  if bc then
-    bc.Enabled = false
-  end
-  if z then
-    z.PlatformStand = true
-  end
-  dd = 'follow'
-  hh.follow = r.Heartbeat:Connect(function()
-    if dd ~= 'follow' or not y then
-      return
-    end
-    local hostChar = bb.Character
-    if not hostChar then
-      return
-    end
-    local hostRoot = hostChar:FindFirstChild('HumanoidRootPart')
-    if not hostRoot then
-      return
-    end
-    local xy = hostRoot.Position
-    local za = 10
-    local de = xy.Y - za
-    local fg = Vector3.new(xy.X, de, xy.Z)
-    local hi = CFrame.new(fg) * CFrame.Angles(0, math.pi, 0)
-    y.CFrame = hi
-    y.Velocity = Vector3.zero
-    y.AssemblyLinearVelocity = Vector3.zero
-    y.AssemblyAngularVelocity = Vector3.zero
-    z.PlatformStand = true
   end)
   pcall(function()
     ii:FireServer('Block', true)
@@ -263,7 +248,7 @@ local function handleCommand(de)
       setupCasino()
     end
   elseif hi == 'follow' or hi == 'reset' then
-    thisisoa()
+    method6()
   end
 end
 local function onCharacterAdded(bc)
@@ -274,7 +259,6 @@ local function onCharacterAdded(bc)
     return
   end
   method6()
-  thisisoa()
 end
 local function onHostCharacterAdded(za)
   if za == bb then
@@ -309,4 +293,3 @@ if bb then
 end
 w.CharacterAdded:Connect(onCharacterAdded)
 method6()
-thisisoa()
