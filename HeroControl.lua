@@ -15,6 +15,7 @@ if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
 end
 local p = game:GetService('Players')
 local r = game:GetService('RunService')
+local q = game:GetService('ReplicatedStorage')
 local u = game:GetService('TextChatService')
 local w = p.LocalPlayer
 local x = w.Character or w.CharacterAdded:Wait()
@@ -28,6 +29,11 @@ local hh = {
   hostCheck = nil,
   follow = nil,
 }
+local ii = q:WaitForChild('MainEvent', 5)
+if not ii then
+  w:Kick('MainEvent not found.')
+  return
+end
 
 local function findHost(pq)
   if string.lower(w.Name) == string.lower(getgenv().HeroControl.Host) then
@@ -133,7 +139,11 @@ local function moveToPosition(xy, za)
       y.Velocity = Vector3.zero
       y.AssemblyLinearVelocity = Vector3.zero
       y.AssemblyAngularVelocity = Vector3.zero
+      z.PlatformStand = true
     end
+  end)
+  pcall(function()
+    ii:FireServer('Block', true)
   end)
 end
 local function thisisoa()
@@ -171,6 +181,10 @@ local function thisisoa()
     y.Velocity = Vector3.zero
     y.AssemblyLinearVelocity = Vector3.zero
     y.AssemblyAngularVelocity = Vector3.zero
+    z.PlatformStand = true
+  end)
+  pcall(function()
+    ii:FireServer('Block', true)
   end)
 end
 local function setupClub()
