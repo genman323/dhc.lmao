@@ -30,162 +30,131 @@ if isHost then
   gui.Name = "HeroControl"
   gui.ResetOnSpawn = false
 
+  -- Main Frame
   local mainFrame = Instance.new("Frame", gui)
-  mainFrame.Size = UDim2.new(0, 220, 0, 420)
-  mainFrame.Position = UDim2.new(0, 15, 0.5, -210)
-  mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+  mainFrame.Size = UDim2.new(0, 300, 0, 400)
+  mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+  mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
   mainFrame.BorderSizePixel = 0
 
-  local mainCorner = Instance.new("UICorner", mainFrame)
-  mainCorner.CornerRadius = UDim.new(0, 16)
-
-  local mainStroke = Instance.new("UIStroke", mainFrame)
-  mainStroke.Color = Color3.fromRGB(45, 45, 55)
-  mainStroke.Thickness = 2
-
-  -- Gradient background
-  local gradient = Instance.new("UIGradient", mainFrame)
-  gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 35)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25))
-  }
-  gradient.Rotation = 45
-
-  -- Header
-  local header = Instance.new("Frame", mainFrame)
-  header.Size = UDim2.new(1, 0, 0, 60)
-  header.Position = UDim2.new(0, 0, 0, 0)
-  header.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
-  header.BorderSizePixel = 0
-
-  local headerCorner = Instance.new("UICorner", header)
-  headerCorner.CornerRadius = UDim.new(0, 16)
-
-  local headerGradient = Instance.new("UIGradient", header)
-  headerGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 162, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 140, 220))
-  }
-  headerGradient.Rotation = 90
-
-  local title = Instance.new("TextLabel", header)
-  title.Size = UDim2.new(1, -20, 1, 0)
-  title.Position = UDim2.new(0, 10, 0, 0)
-  title.Text = "🚀 HERO CONTROL"
+  -- Title
+  local title = Instance.new("TextLabel", mainFrame)
+  title.Size = UDim2.new(1, 0, 0, 40)
+  title.Position = UDim2.new(0, 0, 0, 0)
+  title.Text = "Hezyan"
   title.TextColor3 = Color3.fromRGB(255, 255, 255)
-  title.BackgroundTransparency = 1
+  title.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
   title.Font = Enum.Font.GothamBold
-  title.TextSize = 18
-  title.TextXAlignment = Enum.TextXAlignment.Left
+  title.TextSize = 16
+  title.BorderSizePixel = 0
 
-  -- Scroll Frame
-  local scrollFrame = Instance.new("ScrollingFrame", mainFrame)
-  scrollFrame.Size = UDim2.new(1, -20, 1, -80)
-  scrollFrame.Position = UDim2.new(0, 10, 0, 70)
-  scrollFrame.BackgroundTransparency = 1
-  scrollFrame.BorderSizePixel = 0
-  scrollFrame.ScrollBarThickness = 6
-  scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 162, 255)
-  scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 380)
+  -- Tabs
+  local tabFrame = Instance.new("Frame", mainFrame)
+  tabFrame.Size = UDim2.new(1, -10, 0, 30)
+  tabFrame.Position = UDim2.new(0, 5, 0, 45)
+  tabFrame.BackgroundTransparency = 1
 
-  local uiList = Instance.new("UIListLayout", scrollFrame)
-  uiList.Padding = UDim.new(0, 8)
-  uiList.SortOrder = Enum.SortOrder.LayoutOrder
+  local tabLayout = Instance.new("UIListLayout", tabFrame)
+  tabLayout.FillDirection = Enum.FillDirection.Horizontal
+  tabLayout.Padding = UDim.new(0, 5)
 
-  -- Drop Button
-  local dropBtn = Instance.new("TextButton", scrollFrame)
-  dropBtn.Size = UDim2.new(1, -20, 0, 50)
-  dropBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-  dropBtn.Text = "💰 DROP $15K"
-  dropBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-  dropBtn.Font = Enum.Font.GothamBold
-  dropBtn.TextSize = 15
-  dropBtn.BorderSizePixel = 0
-  dropBtn.LayoutOrder = 1
+  local tabs = {"main", "visuals", "character", "misc", "settings"}
+  local currentTab = "main"
 
-  local dropCorner = Instance.new("UICorner", dropBtn)
-  dropCorner.CornerRadius = UDim.new(0, 12)
+  for _, tab in ipairs(tabs) do
+    local tabButton = Instance.new("TextButton", tabFrame)
+    tabButton.Size = UDim2.new(0, 50, 1, 0)
+    tabButton.Text = tab
+    tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    tabButton.BorderSizePixel = 0
+    tabButton.Font = Enum.Font.Gotham
+    tabButton.TextSize = 12
 
-  local dropStroke = Instance.new("UIStroke", dropBtn)
-  dropStroke.Color = Color3.fromRGB(70, 70, 90)
-  dropStroke.Thickness = 2
-
-  -- Setup Buttons
-  local buttons = {
-    {text = "🎰 Casino", cmd = "co"},
-    {text = "🏫 School", cmd = "sl"},
-    {text = "🔒 Cell", cmd = "cl"},
-    {text = "🔒 Cell 2", cmd = "c2"},
-    {text = "🏦 Bank", cmd = "b"},
-    {text = "🎪 Club", cmd = "c"},
-    {text = "🥊 Boxing Club", cmd = "bc"},
-    {text = "🏀 Basketball", cmd = "bb"},
-    {text = "⚽ Soccer", cmd = "s"},
-    {text = "🚂 Train", cmd = "t"}
-  }
-
-  for i, btnInfo in ipairs(buttons) do
-    local button = Instance.new("TextButton", scrollFrame)
-    button.Size = UDim2.new(1, -20, 0, 48)
-    button.Text = btnInfo.text
-    button.TextColor3 = Color3.fromRGB(220, 220, 220)
-    button.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    button.BorderSizePixel = 0
-    button.Font = Enum.Font.Gotham
-    button.TextSize = 14
-    button.LayoutOrder = i + 1
-
-    local btnCorner = Instance.new("UICorner", button)
-    btnCorner.CornerRadius = UDim.new(0, 10)
-
-    local btnStroke = Instance.new("UIStroke", button)
-    btnStroke.Color = Color3.fromRGB(65, 65, 80)
-    btnStroke.Thickness = 1.5
-
-    button.MouseButton1Click:Connect(function()
-      if chan then
-        chan:SendAsync(gg .. "setup " .. btnInfo.cmd)
-        button.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
-        wait(0.15)
-        button.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-      end
+    tabButton.MouseButton1Click:Connect(function()
+      currentTab = tab
+      updateContent()
     end)
 
-    button.MouseEnter:Connect(function()
-      button.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
-      btnStroke.Color = Color3.fromRGB(0, 162, 255)
+    tabButton.MouseEnter:Connect(function()
+      tabButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
     end)
 
-    button.MouseLeave:Connect(function()
-      button.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-      btnStroke.Color = Color3.fromRGB(65, 65, 80)
+    tabButton.MouseLeave:Connect(function()
+      tabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
     end)
   end
 
-  -- Drop button events
-  dropBtn.MouseButton1Click:Connect(function()
-    if chan then
-      chan:SendAsync(gg .. "d")
-      dropBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-      wait(0.15)
-      dropBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+  -- Content Frame
+  local contentFrame = Instance.new("Frame", mainFrame)
+  contentFrame.Size = UDim2.new(1, -10, 0, 300)
+  contentFrame.Position = UDim2.new(0, 5, 0, 80)
+  contentFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+  contentFrame.BorderSizePixel = 0
+
+  local contentLayout = Instance.new("UIListLayout", contentFrame)
+  contentLayout.Padding = UDim.new(0, 5)
+
+  local function createToggle(name, key)
+    local toggleFrame = Instance.new("Frame", contentFrame)
+    toggleFrame.Size = UDim2.new(1, -10, 0, 30)
+    toggleFrame.BackgroundTransparency = 1
+
+    local toggleButton = Instance.new("TextButton", toggleFrame)
+    toggleButton.Size = UDim2.new(0, 20, 1, 0)
+    toggleButton.Position = UDim2.new(0, 0, 0, 0)
+    toggleButton.Text = ""
+    toggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    toggleButton.BorderSizePixel = 0
+
+    local toggleLabel = Instance.new("TextLabel", toggleFrame)
+    toggleLabel.Size = UDim2.new(1, -25, 1, 0)
+    toggleLabel.Position = UDim2.new(0, 25, 0, 0)
+    toggleLabel.Text = name
+    toggleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleLabel.BackgroundTransparency = 1
+    toggleLabel.Font = Enum.Font.Gotham
+    toggleLabel.TextSize = 12
+
+    local isEnabled = false
+    toggleButton.MouseButton1Click:Connect(function()
+      isEnabled = not isEnabled
+      toggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(0, 162, 255) or Color3.fromRGB(45, 45, 60)
+      if chan then
+        chan:SendAsync(gg .. key .. (isEnabled and " 1" or " 0"))
+      end
+    end)
+  end
+
+  local function updateContent()
+    contentFrame:ClearAllChildren()
+    contentLayout.Parent = contentFrame
+
+    if currentTab == "main" then
+      createToggle("silent aim", "sa")
+      createToggle("closest part", "cp")
+      createToggle("match y axis", "my")
+    elseif currentTab == "visuals" then
+      createToggle("sticky aim targeting", "sat")
+      createToggle("visible only", "vo")
+    elseif currentTab == "character" then
+      createToggle("ignore protected", "ip")
+      createToggle("ignore crew/team", "ict")
+    elseif currentTab == "misc" then
+      createToggle("magic bullet exploits", "mbe")
+      createToggle("extra pellet", "ep")
+    elseif currentTab == "settings" then
+      createToggle("kill aura", "ka")
+      createToggle("trust only target", "tot")
     end
-  end)
+  end
 
-  dropBtn.MouseEnter:Connect(function()
-    dropBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-    dropStroke.Color = Color3.fromRGB(0, 200, 0)
-  end)
-
-  dropBtn.MouseLeave:Connect(function()
-    dropBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-    dropStroke.Color = Color3.fromRGB(70, 70, 90)
-  end)
+  updateContent()
 
   return
 end
 
--- ALTS: Load control script
+-- ALTS: Load control script (unchanged)
 local r = game:GetService('RunService')
 local u = game:GetService('TextChatService')
 local x = w.Character or w.CharacterAdded:Wait()
