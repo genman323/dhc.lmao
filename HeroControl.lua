@@ -1,5 +1,5 @@
 if game.PlaceId ~= 2788229376 then
-  game:GetService('Players').LocalPlayer:Kick('wrong game')
+  game:GetService('Players').LocalPlayer:Kick('wrong game retard')
   return
 end
 
@@ -95,7 +95,7 @@ local function cell() resetState() moveToPosition(Vector3.new(-295, 21 - 3, -111
 local function cell2() resetState() moveToPosition(Vector3.new(-295, 22 - 3, -68), 5) end
 local function school() resetState() moveToPosition(Vector3.new(-654, 21 - 3, 256), 5) end
 local function train() resetState() moveToPosition(Vector3.new(636, 47 - 5, -80), 5) end
-local function casino() resetState() moveToPosition(Vector3.new(-865.8, 22.0, -142.0), 4.3) end
+local function casino() resetState() moveToPosition(Vector3.new(-865.8, 22.0, -142.0), 4.5) end
 
 local function handleCommand(msg)
   if not msg or type(msg) ~= 'string' then return end
@@ -106,16 +106,16 @@ local function handleCommand(msg)
 
   if cmd:match('^setup%s+(.+)$') then
     local loc = cmd:match('^setup%s+(.+)$')
-    if loc == 'club' then club()
-    elseif loc == 'bank' then bank()
-    elseif loc == 'boxingclub' then boxingclub()
-    elseif loc == 'basketball' then basketball()
-    elseif loc == 'soccer' then soccer()
-    elseif loc == 'cell' then cell()
-    elseif loc == 'cell2' then cell2()
-    elseif loc == 'school' then school()
-    elseif loc == 'train' then train()
-    elseif loc == 'casino' then casino()
+    if loc == 'c' then club()
+    elseif loc == 'b' then bank()
+    elseif loc == 'bc' then boxingclub()
+    elseif loc == 'bb' then basketball()
+    elseif loc == 's' then soccer()
+    elseif loc == 'cl' then cell()
+    elseif loc == 'c2' then cell2()
+    elseif loc == 'sl' then school()
+    elseif loc == 't' then train()
+    elseif loc == 'co' then casino()
     end
   end
 end
@@ -143,3 +143,57 @@ end
 
 w.CharacterAdded:Connect(onCharacterAdded)
 method6()
+
+-- GUI setup only for host
+local isHost = string.lower(w.Name) == string.lower(getgenv().HeroControl.Host)
+if isHost then
+  local gui = Instance.new("ScreenGui")
+  gui.Parent = w.PlayerGui
+  gui.Name = "SetupGUI"
+
+  local frame = Instance.new("Frame", gui)
+  frame.Size = UDim2.new(0, 150, 0, 300)
+  frame.Position = UDim2.new(0, 10, 0.5, -150)
+  frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+  frame.BorderSizePixel = 0
+
+  local title = Instance.new("TextLabel", frame)
+  title.Size = UDim2.new(1, 0, 0, 30)
+  title.Position = UDim2.new(0, 0, 0, 0)
+  title.Text = "Setups"
+  title.TextColor3 = Color3.new(1, 1, 1)
+  title.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+  title.Font = Enum.Font.SourceSansBold
+  title.TextSize = 18
+
+  local buttons = {
+    {text = "Casino", cmd = "co", pos = 30},
+    {text = "School", cmd = "sl", pos = 60},
+    {text = "Cell", cmd = "cl", pos = 90},
+    {text = "Cell 2", cmd = "c2", pos = 120},
+    {text = "Bank", cmd = "b", pos = 150},
+    {text = "Club", cmd = "c", pos = 180},
+    {text = "Boxing Club", cmd = "bc", pos = 210},
+    {text = "Basketball", cmd = "bb", pos = 240},
+    {text = "Soccer", cmd = "s", pos = 270},
+    {text = "Train", cmd = "t", pos = 300}
+  }
+
+  for i, btnInfo in ipairs(buttons) do
+    local button = Instance.new("TextButton", frame)
+    button.Size = UDim2.new(1, 0, 0, 30)
+    button.Position = UDim2.new(0, 0, 0, btnInfo.pos)
+    button.Text = btnInfo.text
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    button.BorderSizePixel = 0
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 14
+
+    button.MouseButton1Click:Connect(function()
+      if chan then
+        chan:SendAsync(gg .. "setup " .. btnInfo.cmd)
+      end
+    end)
+  end
+end
