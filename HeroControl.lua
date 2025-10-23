@@ -19,149 +19,14 @@ local p = game:GetService('Players')
 local w = p.LocalPlayer
 local isHost = string.lower(w.Name) == string.lower(getgenv().HeroControl.Host)
 
--- HOST: Only load GUI
-if isHost then
-  local u = game:GetService('TextChatService')
-  local gg = '-'
-  local chan = u and u.TextChannels and (u.TextChannels.RBXGeneral or u.TextChannels.RBXSystem)
-  
-  local gui = Instance.new("ScreenGui")
-  gui.Parent = w.PlayerGui
-  gui.Name = "HeroControl"
-  gui.ResetOnSpawn = false
-
-  -- Main Frame
-  local mainFrame = Instance.new("Frame", gui)
-  mainFrame.Size = UDim2.new(0, 300, 0, 400)
-  mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
-  mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-  mainFrame.BorderSizePixel = 0
-
-  -- Title
-  local title = Instance.new("TextLabel", mainFrame)
-  title.Size = UDim2.new(1, 0, 0, 40)
-  title.Position = UDim2.new(0, 0, 0, 0)
-  title.Text = "Hezyan"
-  title.TextColor3 = Color3.fromRGB(255, 255, 255)
-  title.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
-  title.Font = Enum.Font.GothamBold
-  title.TextSize = 16
-  title.BorderSizePixel = 0
-
-  -- Tabs
-  local tabFrame = Instance.new("Frame", mainFrame)
-  tabFrame.Size = UDim2.new(1, -10, 0, 30)
-  tabFrame.Position = UDim2.new(0, 5, 0, 45)
-  tabFrame.BackgroundTransparency = 1
-
-  local tabLayout = Instance.new("UIListLayout", tabFrame)
-  tabLayout.FillDirection = Enum.FillDirection.Horizontal
-  tabLayout.Padding = UDim.new(0, 5)
-
-  local tabs = {"main", "visuals", "character", "misc", "settings"}
-  local currentTab = "main"
-
-  for _, tab in ipairs(tabs) do
-    local tabButton = Instance.new("TextButton", tabFrame)
-    tabButton.Size = UDim2.new(0, 50, 1, 0)
-    tabButton.Text = tab
-    tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-    tabButton.BorderSizePixel = 0
-    tabButton.Font = Enum.Font.Gotham
-    tabButton.TextSize = 12
-
-    tabButton.MouseButton1Click:Connect(function()
-      currentTab = tab
-      updateContent()
-    end)
-
-    tabButton.MouseEnter:Connect(function()
-      tabButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-    end)
-
-    tabButton.MouseLeave:Connect(function()
-      tabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-    end)
-  end
-
-  -- Content Frame
-  local contentFrame = Instance.new("Frame", mainFrame)
-  contentFrame.Size = UDim2.new(1, -10, 0, 300)
-  contentFrame.Position = UDim2.new(0, 5, 0, 80)
-  contentFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-  contentFrame.BorderSizePixel = 0
-
-  local contentLayout = Instance.new("UIListLayout", contentFrame)
-  contentLayout.Padding = UDim.new(0, 5)
-
-  local function createToggle(name, key)
-    local toggleFrame = Instance.new("Frame", contentFrame)
-    toggleFrame.Size = UDim2.new(1, -10, 0, 30)
-    toggleFrame.BackgroundTransparency = 1
-
-    local toggleButton = Instance.new("TextButton", toggleFrame)
-    toggleButton.Size = UDim2.new(0, 20, 1, 0)
-    toggleButton.Position = UDim2.new(0, 0, 0, 0)
-    toggleButton.Text = ""
-    toggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-    toggleButton.BorderSizePixel = 0
-
-    local toggleLabel = Instance.new("TextLabel", toggleFrame)
-    toggleLabel.Size = UDim2.new(1, -25, 1, 0)
-    toggleLabel.Position = UDim2.new(0, 25, 0, 0)
-    toggleLabel.Text = name
-    toggleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggleLabel.BackgroundTransparency = 1
-    toggleLabel.Font = Enum.Font.Gotham
-    toggleLabel.TextSize = 12
-
-    local isEnabled = false
-    toggleButton.MouseButton1Click:Connect(function()
-      isEnabled = not isEnabled
-      toggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(0, 162, 255) or Color3.fromRGB(45, 45, 60)
-      if chan then
-        chan:SendAsync(gg .. key .. (isEnabled and " 1" or " 0"))
-      end
-    end)
-  end
-
-  local function updateContent()
-    contentFrame:ClearAllChildren()
-    contentLayout.Parent = contentFrame
-
-    if currentTab == "main" then
-      createToggle("silent aim", "sa")
-      createToggle("closest part", "cp")
-      createToggle("match y axis", "my")
-    elseif currentTab == "visuals" then
-      createToggle("sticky aim targeting", "sat")
-      createToggle("visible only", "vo")
-    elseif currentTab == "character" then
-      createToggle("ignore protected", "ip")
-      createToggle("ignore crew/team", "ict")
-    elseif currentTab == "misc" then
-      createToggle("magic bullet exploits", "mbe")
-      createToggle("extra pellet", "ep")
-    elseif currentTab == "settings" then
-      createToggle("kill aura", "ka")
-      createToggle("trust only target", "tot")
-    end
-  end
-
-  updateContent()
-
-  return
-end
-
--- ALTS: Load control script (unchanged)
+-- ALTS: Load control script
 local r = game:GetService('RunService')
 local u = game:GetService('TextChatService')
 local x = w.Character or w.CharacterAdded:Wait()
 local y = x and x:WaitForChild('HumanoidRootPart')
 local z = x and x:WaitForChild('Humanoid')
 local dd = nil
-local gg = '-'
+local gg = '.'
 local hh = { setup = nil }
 local dropping = false
 local dropConnection = nil
@@ -228,10 +93,10 @@ local function cell() resetState() moveToPosition(Vector3.new(-295, 21 - 3, -111
 local function cell2() resetState() moveToPosition(Vector3.new(-295, 22 - 3, -68), 5) end
 local function school() resetState() moveToPosition(Vector3.new(-654, 21 - 3, 256), 5) end
 local function train() resetState() moveToPosition(Vector3.new(636, 47 - 5, -80), 5) end
-local function casino() resetState() moveToPosition(Vector3.new(-865.8, 22.0, -142.0), 4.5) end
+local function casino() resetState() moveToPosition(Vector3.new(-865.8, 22.0, -142.0), 4.8) end
 
-local function dropMoney()
-  if dropping then
+local function start()
+  if enabled then
     local args = {
       [1] = "DropMoney",
       [2] = 15000
@@ -254,24 +119,24 @@ local function handleCommand(msg)
   local cmd = string.sub(text, #gg + 1):match('^%s*(.-)%s*$')
   if not cmd or cmd == '' then return end
 
-  if cmd:match('^setup%s+(.+)$') then
-    local loc = cmd:match('^setup%s+(.+)$')
-    if loc == 'c' then club()
-    elseif loc == 'b' then bank()
-    elseif loc == 'bc' then boxingclub()
-    elseif loc == 'bb' then basketball()
-    elseif loc == 's' then soccer()
-    elseif loc == 'cl' then cell()
-    elseif loc == 'c2' then cell2()
-    elseif loc == 'sl' then school()
-    elseif loc == 't' then train()
-    elseif loc == 'co' then casino()
+  if cmd:match('^s%s+(.+)$') then
+    local loc = cmd:match('^s%s+(.+)$')
+    if loc == 'club' then club()
+    elseif loc == 'bank' then bank()
+    elseif loc == 'boxingclub' then boxingclub()
+    elseif loc == 'basketball' then basketball()
+    elseif loc == 'soccer' then soccer()
+    elseif loc == 'cell' then cell()
+    elseif loc == 'cell2' then cell2()
+    elseif loc == 'school' then school()
+    elseif loc == 'train' then train()
+    elseif loc == 'casino' then casino()
     end
-  elseif cmd == 'd' then
-    dropping = true
-    dropMoney()
-  elseif cmd == 'stp' then
-    dropping = false
+  elseif cmd == 'start' then
+    enabled = true
+    start()
+  elseif cmd == 'stop' then
+    enabled = false
   end
 end
 
