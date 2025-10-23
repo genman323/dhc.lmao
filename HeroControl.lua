@@ -16,9 +16,94 @@ if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
 end
 
 local p = game:GetService('Players')
+local w = p.LocalPlayer
+local isHost = string.lower(w.Name) == string.lower(getgenv().HeroControl.Host)
+
+-- HOST: Only load GUI
+if isHost then
+  local u = game:GetService('TextChatService')
+  local gg = '-'
+  local chan = u and u.TextChannels and (u.TextChannels.RBXGeneral or u.TextChannels.RBXSystem)
+  
+  local gui = Instance.new("ScreenGui")
+  gui.Parent = w.PlayerGui
+  gui.Name = "SetupGUI"
+
+  local frame = Instance.new("Frame", gui)
+  frame.Size = UDim2.new(0, 160, 0, 340)
+  frame.Position = UDim2.new(0, 10, 0.5, -170)
+  frame.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+  frame.BorderSizePixel = 0
+  frame.Active = true
+  frame.Draggable = true
+
+  local corner = Instance.new("UICorner", frame)
+  corner.CornerRadius = UDim.new(0, 8)
+
+  local title = Instance.new("TextLabel", frame)
+  title.Size = UDim2.new(1, 0, 0, 35)
+  title.Position = UDim2.new(0, 0, 0, 0)
+  title.Text = "📍 Setup Controller"
+  title.TextColor3 = Color3.new(1, 1, 1)
+  title.BackgroundColor3 = Color3.new(0.25, 0.25, 0.25)
+  title.Font = Enum.Font.GothamBold
+  title.TextSize = 16
+  title.TextXAlignment = Enum.TextXAlignment.Center
+
+  local titleCorner = Instance.new("UICorner", title)
+  titleCorner.CornerRadius = UDim.new(0, 8)
+
+  local buttons = {
+    {text = "🎰 Casino", cmd = "co"},
+    {text = "🏫 School", cmd = "sl"},
+    {text = "🔒 Cell", cmd = "cl"},
+    {text = "🔒 Cell 2", cmd = "c2"},
+    {text = "🏦 Bank", cmd = "b"},
+    {text = "🎪 Club", cmd = "c"},
+    {text = "🥊 Boxing Club", cmd = "bc"},
+    {text = "🏀 Basketball", cmd = "bb"},
+    {text = "⚽ Soccer", cmd = "s"},
+    {text = "🚂 Train", cmd = "t"}
+  }
+
+  for i, btnInfo in ipairs(buttons) do
+    local button = Instance.new("TextButton", frame)
+    button.Size = UDim2.new(1, -10, 0, 35)
+    button.Position = UDim2.new(0, 5, 0, 40 + (i-1) * 38)
+    button.Text = btnInfo.text
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    button.BorderSizePixel = 0
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 14
+
+    local btnCorner = Instance.new("UICorner", button)
+    btnCorner.CornerRadius = UDim.new(0, 6)
+
+    button.MouseButton1Click:Connect(function()
+      if chan then
+        chan:SendAsync(gg .. "setup " .. btnInfo.cmd)
+        button.BackgroundColor3 = Color3.new(0, 0.7, 0)
+        wait(0.2)
+        button.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+      end
+    end)
+
+    button.MouseEnter:Connect(function()
+      button.BackgroundColor3 = Color3.new(0.4, 0.4, 0.4)
+    end)
+
+    button.MouseLeave:Connect(function()
+      button.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    end)
+  end
+
+  return -- Host doesn't need the rest
+end
+
+-- ALTS: Load original control script
 local r = game:GetService('RunService')
 local u = game:GetService('TextChatService')
-local w = p.LocalPlayer
 local x = w.Character or w.CharacterAdded:Wait()
 local y = x and x:WaitForChild('HumanoidRootPart')
 local z = x and x:WaitForChild('Humanoid')
@@ -143,57 +228,3 @@ end
 
 w.CharacterAdded:Connect(onCharacterAdded)
 method6()
-
--- GUI setup only for host
-local isHost = string.lower(w.Name) == string.lower(getgenv().HeroControl.Host)
-if isHost then
-  local gui = Instance.new("ScreenGui")
-  gui.Parent = w.PlayerGui
-  gui.Name = "SetupGUI"
-
-  local frame = Instance.new("Frame", gui)
-  frame.Size = UDim2.new(0, 150, 0, 300)
-  frame.Position = UDim2.new(0, 10, 0.5, -150)
-  frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-  frame.BorderSizePixel = 0
-
-  local title = Instance.new("TextLabel", frame)
-  title.Size = UDim2.new(1, 0, 0, 30)
-  title.Position = UDim2.new(0, 0, 0, 0)
-  title.Text = "Setups"
-  title.TextColor3 = Color3.new(1, 1, 1)
-  title.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
-  title.Font = Enum.Font.SourceSansBold
-  title.TextSize = 18
-
-  local buttons = {
-    {text = "Casino", cmd = "co", pos = 30},
-    {text = "School", cmd = "sl", pos = 60},
-    {text = "Cell", cmd = "cl", pos = 90},
-    {text = "Cell 2", cmd = "c2", pos = 120},
-    {text = "Bank", cmd = "b", pos = 150},
-    {text = "Club", cmd = "c", pos = 180},
-    {text = "Boxing Club", cmd = "bc", pos = 210},
-    {text = "Basketball", cmd = "bb", pos = 240},
-    {text = "Soccer", cmd = "s", pos = 270},
-    {text = "Train", cmd = "t", pos = 300}
-  }
-
-  for i, btnInfo in ipairs(buttons) do
-    local button = Instance.new("TextButton", frame)
-    button.Size = UDim2.new(1, 0, 0, 30)
-    button.Position = UDim2.new(0, 0, 0, btnInfo.pos)
-    button.Text = btnInfo.text
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-    button.BorderSizePixel = 0
-    button.Font = Enum.Font.SourceSans
-    button.TextSize = 14
-
-    button.MouseButton1Click:Connect(function()
-      if chan then
-        chan:SendAsync(gg .. "setup " .. btnInfo.cmd)
-      end
-    end)
-  end
-end
