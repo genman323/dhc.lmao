@@ -6,10 +6,10 @@ end
 local script_key = 'qCqkyJnsIdGuValXkmeYLEcN'
 local host = 'username'
 
-local function checkKey()
+local function check()
   return script_key == 'qCqkyJnsIdGuValXkmeYLEcN' and host and host ~= ''
 end
-if not checkKey() then
+if not check() then
   game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
   return
 end
