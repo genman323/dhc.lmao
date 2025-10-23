@@ -3,23 +3,24 @@ if game.PlaceId ~= 2788229376 then
   return
 end
 
+local script_key = 'qCqkyJnsIdGuValXkmeYLEcN'
+local host = 'username'
+
 local function checkKey()
-  return getgenv().Key == 'Hero_XzQaPrAv_Admin' and getgenv().HeroControl and getgenv().HeroControl.Host
+  return script_key == 'qCqkyJnsIdGuValXkmeYLEcN' and host and host ~= ''
 end
 if not checkKey() then
   game:GetService('Players').LocalPlayer:Kick('Invalid Key.')
   return
 end
-if not getgenv().HeroControl.Host or getgenv().HeroControl.Host == '' then
+if not host or host == '' then
   game:GetService('Players').LocalPlayer:Kick('Host not defined.')
   return
 end
 
 local p = game:GetService('Players')
 local w = p.LocalPlayer
-local isHost = string.lower(w.Name) == string.lower(getgenv().HeroControl.Host)
-
--- ALTS: Load control script
+local isHost = string.lower(w.Name) == string.lower(host)
 local r = game:GetService('RunService')
 local u = game:GetService('TextChatService')
 local x = w.Character or w.CharacterAdded:Wait()
@@ -83,7 +84,6 @@ local function moveToPosition(pos, offset)
   end)
 end
 
--- Setup functions
 local function club() resetState() moveToPosition(Vector3.new(-264.9, -6.2, -374.9), 5) end
 local function bank() resetState() moveToPosition(Vector3.new(-375, 16, -286), 5) end
 local function boxingclub() resetState() moveToPosition(Vector3.new(-263, 53 - 2.8, -1129), 2.8) end
@@ -152,7 +152,7 @@ if chan then
   chan.MessageReceived:Connect(function(msg)
     if msg.TextSource and p:GetPlayerByUserId(msg.TextSource.UserId) then
       local sender = p:GetPlayerByUserId(msg.TextSource.UserId)
-      if sender and string.lower(sender.Name) == string.lower(getgenv().HeroControl.Host) then
+      if sender and string.lower(sender.Name) == string.lower(host) then
         pcall(handleCommand, msg.Text)
       end
     end
