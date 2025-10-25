@@ -84,16 +84,15 @@ local function moveToPosition(pos, offset)
   end)
 end
 
-local function club() resetState() moveToPosition(Vector3.new(-264.9, -6.2, -374.9), 5) end
-local function bank() resetState() moveToPosition(Vector3.new(-375, 16, -286), 5) end
+local function club() resetState() moveToPosition(Vector3.new(-264.9, -6.2, -374.9), 2.8) end
+local function bank() resetState() moveToPosition(Vector3.new(-375, 16, -286), 2.8) end
 local function boxingclub() resetState() moveToPosition(Vector3.new(-263, 53 - 2.8, -1129), 2.8) end
-local function basketball() resetState() moveToPosition(Vector3.new(-932, 21 - 5 + 0.3 + 0.6, -483), 5) end
-local function soccer() resetState() moveToPosition(Vector3.new(-749, 22 - 5 + 1.2, -485), 5) end
-local function cell() resetState() moveToPosition(Vector3.new(-295, 21 - 3, -111), 5) end
-local function cell2() resetState() moveToPosition(Vector3.new(-295, 22 - 3, -68), 5) end
-local function school() resetState() moveToPosition(Vector3.new(-654, 21 - 3, 256), 5) end
-local function train() resetState() moveToPosition(Vector3.new(636, 47 - 5, -80), 5) end
-local function casino() resetState() moveToPosition(Vector3.new(-865.8, 22.0, -142.0), 4.8) end
+local function basketball() resetState() moveToPosition(Vector3.new(-932, 21 - 5 + 0.3 + 0.6, -483), 2.8) end
+local function soccer() resetState() moveToPosition(Vector3.new(-749, 22 - 5 + 1.2, -485), 2.8) end
+local function cell() resetState() moveToPosition(Vector3.new(-295, 21 - 3, -111), 2.8) end
+local function cell2() resetState() moveToPosition(Vector3.new(-295, 22 - 3, -68), 2.8) end
+local function school() resetState() moveToPosition(Vector3.new(-654, 21 - 3, 256), 2.8) end
+local function train() resetState() moveToPosition(Vector3.new(636, 47 - 5, -80), 2.8) end
 
 local function start()
   if enabled then
@@ -130,7 +129,6 @@ local function handleCommand(msg)
     elseif loc == 'cell2' then cell2()
     elseif loc == 'school' then school()
     elseif loc == 'train' then train()
-    elseif loc == 'casino' then casino()
     end
   elseif cmd == 'start' then
     enabled = true
